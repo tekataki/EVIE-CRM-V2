@@ -82,6 +82,9 @@ export function createAccounts({fetcher=fetch}={}) {
  api.use('/data/*',async(c,next)=>{const s=await auth(c);if(!s||c.req.header('X-Evie-User')!==s.user.id)return jsonError(c,'La sesión cambió. Inicia sesión de nuevo.',401);c.set('account',s);await next()})
  api.post('/data/pull',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||typeof b.after!=='string'||b.after.length>200||Object.keys(b).some(k=>k!=='after'))return jsonError(c,'Cursor inválido.');const r=await remote(c,'/rest/v1/rpc/evie_pull',{method:'POST',access:s.tokens.access_token,body:{after_key:b.after}});if(!r.ok)return jsonError(c,'No se pudo leer la cuenta.',502);const rows=await r.json();return c.json({owner:s.user.id,rows,next:rows.length===500?rows.at(-1).collection+'/'+rows.at(-1).record_id:''})})
  api.post('/data/push',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||!Array.isArray(b.changes)||!b.changes.length||b.changes.length>5000||Object.keys(b).some(k=>k!=='changes'))return jsonError(c,'Lote de 1 a 5000 cambios requerido.');const r=await remote(c,'/rest/v1/rpc/evie_apply',{method:'POST',access:s.tokens.access_token,body:{changes:b.changes}});if(!r.ok)return jsonError(c,r.status===409?'Otro dispositivo cambió estos registros.':'No se pudieron guardar los cambios.',r.status===409?409:422);return c.json({owner:s.user.id,rows:await r.json()})})
- api.onError((err,c)=>jsonError(c,'Servicio temporalmente no disponible. No se han descartado cambios locales.',503))
+ api.onError((err,c)=>{
+  console.error('EVIE_ACCOUNTS_ERROR', err?.stack || err?.message || String(err))
+  return jsonError(c,'Servicio temporalmente no disponible. No se han descartado cambios locales.',503)
+})
  return api
 }
