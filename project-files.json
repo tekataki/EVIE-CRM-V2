@@ -1,0 +1,20 @@
+[
+ "desktop-agenda.js","desktop-voice.js","desktop-ui.js","pcm-recorder.js","pig-hologram.js","phase3.css",
+ "vendor/lucide.min.js","vendor/jszip.min.js","vendor/three.module.min.js","vendor/three.core.min.js","vendor/THREE-LICENSE.txt","vendor/LUCIDE-LICENSE.txt","vendor/JSZIP-LICENSE.txt",
+ "ivy-state-machine.js","ivy-local-tools.js","ivy-command-bus.js","ivy-audio-reactor.js","ivy-voice-browser.js","ivy-core-renderer.js","ivy-command-surface.js","ivy-module-worlds.js","ivy-shell.js","ivy.css","ivy-modules.css","tests-ivy.js","manifest.webmanifest","icons/ivy-192.png","icons/ivy-512.png",
+ "review-rc-care.html","review-rc-care-dark.html","review-rc-journalEditor.html","review-rc-journalEditor-dark.html","review-rc-journalCalendar.html",
+ "review-rc-finance.html","review-rc-soma.html","review-rc-books.html","review-rc-alvento.html","review-rc-content.html","review-rc-vision.html","review-rc-stats.html","review-rc-gym.html","review-rc-goals.html","review-rc-agendaDay.html",
+ "tests-modules.js","module-experience.js","module-experience.css","tests-insights.js","insight-charts.js","insight-charts.css","review-rc-form.html","review-rc-form-review.html","tests-forms.js","form-safety.js","form-safety.css",
+ "dali-core.js","dali-core.css","tests-core.js","review-rc-core.html","review-rc-core-dark.html","review-rc-core-attention.html","review-rc-core-urgent-dark.html",
+ "RC_REPORT.md","review-rc-agenda.html","review-rc-journal.html","review-rc-nutrition.html","review-rc-import.html","review-rc-context.html","review-rc-start.js","review-rc-open.js",
+ "requirements-rc.md","rc-data.js","journal-data.js","journal-editor.js","agenda.js","journal-view.js","context-export.js","entity-links.js","nutrition.js","rc-app.js","rc.css","schemas/dali.journal.entry.schema.json","samples/journal-entry-example.json",
+ "index.html","config.js","domain.js","recurrence.js","v2-domain.js","migrations.js","store.js","records.js","media-store.js","farm-domain.js","importer.js","views.js","forms.js","v2-views.js","v2-app.js","app.js","styles.css","v2.css","icon.svg",
+ "neural-care.js","neural-care.css","review-animal.html","review-health.html","review-milestones.html","review-care-start.js","review-care-open.js",
+ "neural-farm.js","neural-farm.css","neural-milestones.js","neural.css","neural-home.css","neural-signals.js","neural-home.js","neural-forms.js","neural-core.js","images/dali-logo.jpg","requirements-v4.md",
+ "CHANGELOG_DALI_V4.md","DESIGN_SYSTEM.md","MIGRATION_REPORT.md","TEST_REPORT.md","ASSET_INVENTORY.md",
+ "README.md","CHANGELOG.md","CHECKLIST.md","QA.md",".env.example","project-files.json","requirements.txt","requirements-v2.md","requirements-farm.md",
+ "pig-model.js","pig-events.js","farm-feed.js","farm-forecast.js","farm-inventory-tools.js","farm-upgrade.js","farm-validation.js","pig-insights.js","pig-views.js","pig-feed-view.js","pig-feed-catalog.js","pig-reports.js","pig-calendar.js","pig-forms.js","pig-feed-forms.js","pig-inventory-forms.js","pig-care-forms.js","pig-app.js","pig.css","reference/feed-board-wide.jpg",
+ "schemas/dali.crm.import.schema.json","schemas/dali.gym.session.schema.json","schemas/dali.learning.route.schema.json",
+ "samples/farm-feed.json","samples/general.json","samples/gym-partial.json","samples/invalid.json",
+ "tests-rc.js","tests-catalog.js","tests-neural.js","tests.html","tests.js","tests-ui.js","tests-farm.js","tests-farm-integration.js","review-farm.html","review-feed.html","review-farm-key.js","review-farm-start.js","review-dark.html","review-setup.js","review-start.js"
+]
