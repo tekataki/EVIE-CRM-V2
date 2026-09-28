@@ -1,0 +1,639 @@
+# PROMPT MAESTRO — DALI OS
+
+## Instrucción principal
+
+Actúa como un equipo senior completo compuesto por: arquitecto de software, desarrollador full-stack, diseñador de producto/UI/UX, especialista en bases de datos, seguridad, accesibilidad, aplicaciones responsive y control de calidad.
+
+Tu tarea es **construir dentro de este proyecto una aplicación web full-stack funcional, pulida y lista para usarse**, no limitarte a explicar cómo se haría, crear un mockup estático ni entregar componentes aislados.
+
+El producto será un CRM personal llamado provisionalmente **DALI OS**: un centro de mando privado para administrar finanzas, entrenamiento, objetivos, clientes de SOMA, aprendizaje, bitácora personal y perfil. El nombre debe quedar centralizado en una configuración para poder cambiarlo fácilmente después.
+
+El resultado debe sentirse como una aplicación premium hecha específicamente para su dueño, no como una plantilla genérica de dashboard.
+
+---
+
+## 1. Protocolo obligatorio antes de programar
+
+Recibirás archivos completos de una aplicación financiera que ya existe, además de capturas e imágenes de referencia. **Antes de cambiar código:**
+
+1. Inspecciona la estructura completa del proyecto adjunto.
+2. Identifica la estructura HTML, CSS y JavaScript existente, las librerías cargadas por CDN, el sistema de estilos, componentes o patrones reutilizables, rutas, estado, persistencia y backend.
+3. Ejecuta el proyecto y comprueba qué funciona actualmente.
+4. Haz un inventario breve de lo que conservarás, extenderás, corregirás o reemplazarás.
+5. Reutiliza la lógica, componentes, estilos, datos y funcionalidades financieras existentes cuando estén bien construidos.
+6. No reescribas todo desde cero sin una razón técnica real.
+7. No borres ni sobrescribas información existente del usuario.
+8. Antes de una migración de datos, crea una ruta segura de respaldo/importación y evita duplicados.
+
+Orden de prioridad cuando exista un conflicto:
+
+1. Este documento y sus requisitos funcionales.
+2. Los datos y funciones que ya operen correctamente en la aplicación financiera.
+3. Las capturas visuales adjuntas.
+4. Tus decisiones de implementación.
+
+Las capturas son referencias de jerarquía, interacción y estilo; no deben copiarse de forma torpe ni convertir el producto en un clon. Extiende su lenguaje visual de manera coherente al resto del CRM.
+
+### Stack técnico obligatorio
+
+La aplicación debe construirse con **HTML Vanilla, CSS y JavaScript Vanilla**, usando **Tailwind CSS mediante CDN** y cualquier librería adicional de JavaScript exclusivamente mediante **CDN** cuando sea necesaria. **No uses Node.js, NPM, PNPM, Yarn, Bun ni ningún package manager; no instales módulos ni dependencias locales y no introduzcas pasos de compilación, bundling o build.** El proyecto debe poder abrirse y desplegarse como archivos web estáticos, sin una cadena de compilación previa.
+
+Mantén los archivos principales del proyecto directamente en la **carpeta raíz** para que sea sencillo subirlos posteriormente a un repositorio de GitHub. Prioriza una estructura simple y portable, por ejemplo `index.html`, `styles.css`, `app.js`, `config.js`, `manifest.json` y archivos equivalentes cuando sean necesarios. Evita estructuras de framework o carpetas generadas por herramientas de build. Si una librería externa es útil, cárgala desde un CDN confiable y fija una versión concreta cuando sea posible.
+
+Si no existe backend funcional, utiliza **Supabase** para autenticación, Postgres, Storage y Row Level Security, consumiendo el cliente compatible directamente desde el navegador mediante CDN cuando corresponda. No inventes que una integración funciona si faltan credenciales: deja la interfaz terminada, una capa de servicio clara, `.env.example` o archivo de configuración de ejemplo sin secretos y una guía corta de configuración. Nunca expongas claves privadas o credenciales sensibles en el frontend.
+
+Después de la inspección, crea un plan de implementación por fases y comienza a construir de inmediato. Solo detente a preguntar si falta una decisión que realmente impida continuar o si se requieren credenciales externas. Para decisiones menores, elige una solución profesional, coherente y reversible.
+
+---
+
+## 2. Identidad del producto
+
+### Concepto visual
+
+Diseña un **centro de mando personal de tecnología de superhéroe**, con inspiración sutil en la tecnología de Spider-Man, pero sin verse infantil, saturado, temático ni como fan art. No utilices logotipos, personajes, imágenes o elementos protegidos de Spider-Man. La inspiración debe aparecer mediante:
+
+- Geometría sutil tipo red o trayectorias conectadas.
+- Sensación de HUD tecnológico limpio.
+- Profundidad mediante capas, luces suaves y microinteracciones.
+- Acentos azul eléctrico y rojo usados con intención.
+- Base en blanco, azul marino, grafito y grises fríos, tomando como fuente visual principal la aplicación financiera adjunta.
+- Tarjeta financiera con gradiente azul premium, chip dorado y símbolo NFC, similar a la referencia.
+
+El diseño debe ser **minimalista, elegante, rápido, útil y con personalidad**. Evita el exceso de glassmorphism, neones, sombras pesadas, tarjetas dentro de tarjetas, degradados sin función y animaciones que estorben.
+
+Implementa tema claro y oscuro con tokens de diseño compartidos. El tema inicial puede seguir el estilo predominante de los archivos existentes. Los colores de estado deben conservar significado consistente:
+
+- Azul: acciones principales e información.
+- Verde: ingreso, cumplimiento o resultado positivo.
+- Rojo: gasto, atraso, error o alerta importante.
+- Ámbar: próximo a vencer o atención.
+- Gris: datos secundarios, pausados o inactivos.
+
+### Sistema visual
+
+- Tipografía moderna, muy legible y con jerarquía clara.
+- Espaciado basado en una escala consistente.
+- Bordes redondeados modernos, sin exagerarlos.
+- Iconos de una sola familia; no mezclar estilos.
+- Números financieros alineados y fáciles de comparar.
+- Animaciones discretas de aproximadamente 150–250 ms.
+- Estados completos: carga, vacío, error, éxito, sin conexión, deshabilitado y confirmación.
+- Retroalimentación visible después de guardar, editar o eliminar.
+- Acciones destructivas con confirmación y opción de recuperación cuando sea razonable.
+
+### Accesibilidad
+
+- Documento y contenido en `es-MX`.
+- Contraste mínimo WCAG AA.
+- Navegación por teclado y foco visible.
+- Etiquetas accesibles para iconos y campos.
+- Áreas táctiles de al menos 48 × 48 px.
+- Compatibilidad con `prefers-reduced-motion`.
+- No comunicar estados solamente por color.
+
+---
+
+## 3. Responsive real: móvil, tablet y PC
+
+Debe ser una sola aplicación adaptable, con todas las funciones disponibles en cualquier dispositivo. No construyas una página de escritorio comprimida para móvil.
+
+### PC, desde aproximadamente 1024 px
+
+- Barra lateral fija o plegable.
+- Área de contenido amplia con grid de dos o tres columnas cuando beneficie la lectura.
+- Gráficas, tablas y paneles con mayor densidad de información.
+- El botón de tres líneas debe permitir contraer o expandir la barra lateral.
+- Aprovecha el ancho sin estirar demasiado los textos o formularios.
+
+### Tablet, aproximadamente 768–1023 px
+
+- Barra lateral colapsable.
+- Tarjetas en una o dos columnas según el contenido.
+- Formularios cómodos tanto con tacto como con teclado.
+
+### Móvil, desde 360 px
+
+- Encabezado con botón de tres líneas arriba a la izquierda.
+- Al tocarlo, abrir un drawer con todos los apartados, perfil y configuración.
+- Contenido principal en una columna, sin cortes ni desbordamientos.
+- Acciones principales alcanzables con una mano.
+- Barra inferior opcional para Inicio y las acciones más frecuentes, manteniendo el menú lateral como navegación completa.
+- Botón principal de agregar visible cuando tenga sentido.
+- Formularios y flujos rápidos mediante bottom sheets, inspirados en las capturas.
+- Teclado numérico grande para cantidades de dinero, pagos, peso y métricas numéricas.
+- Tablas convertidas en tarjetas o listas legibles; nunca obligar a hacer zoom.
+- Gráficas adaptables y desplazamiento horizontal solo cuando sea semánticamente necesario.
+- Respetar safe areas, teclado virtual y barras del navegador.
+
+Prueba como mínimo los anchos 360, 390, 768, 1024 y 1440 px. No debe existir scroll horizontal accidental.
+
+---
+
+## 4. Navegación y arquitectura de información
+
+Apartados principales, en este orden lógico:
+
+1. **Inicio**
+2. **Finanzas**
+3. **Gimnasio**
+4. **Objetivos**
+5. **SOMA**
+6. **Aprendizaje**
+7. **Bitácora personal**
+8. **Mi perfil**
+
+La aplicación debe recordar la última sección visitada. Agrega búsqueda global o comando rápido únicamente si queda bien integrado y realmente funciona.
+
+### Inicio — centro de mando
+
+Construye una pantalla inicial útil para saber en menos de diez segundos qué requiere atención hoy. Debe incluir:
+
+- Saludo contextual: “Bienvenido, Dali”, fecha local y resumen breve.
+- Saldo disponible e ingresos/gastos del periodo seleccionado.
+- Pagos personales próximos y vencidos.
+- Cobros y seguimientos pendientes de SOMA.
+- Entrenamiento correspondiente al día y última sesión.
+- Objetivos diarios y progreso semanal.
+- Habilidad activa y siguiente misión de aprendizaje.
+- Estado de la bitácora: registrada o pendiente.
+- Acciones rápidas para movimiento financiero, objetivo, entrenamiento, cliente y bitácora.
+
+Permite reordenar u ocultar widgets sin romper el diseño. Los datos deben provenir de los módulos reales, no de cifras duplicadas o escritas a mano.
+
+---
+
+## 5. Módulo Finanzas
+
+Este módulo debe conservar y mejorar la experiencia de la aplicación financiera adjunta.
+
+### Encabezado y resumen
+
+- Tarjeta bancaria digital premium con marca visual configurable, chip, NFC, titular y saldo disponible en MXN.
+- Mantener una estética cercana a la tarjeta azul de referencia.
+- El saldo debe calcularse a partir de movimientos reales.
+- Selector de periodo: semanal, mensual, anual y, si encaja limpiamente, rango personalizado.
+- Resumen del periodo: ingresos, gastos y saldo/neto.
+- Gráfica de evolución o comparación útil, sin llenar la pantalla de gráficas decorativas.
+
+### Movimientos
+
+- Agregar ingreso o gasto.
+- Flujo móvil en dos pasos como la referencia: primero monto con pad numérico; después concepto, categoría, nota opcional, fecha y hora.
+- En PC, usar modal o panel lateral optimizado para teclado, conservando el pad como opción.
+- Campos: tipo, cantidad, concepto, categoría, nota, fecha/hora y origen relacionado.
+- Categorías editables. Ejemplos iniciales: Ventas, Clientes, Reembolso, Inversión, Gasolina, Comida, Gimnasio, Escuela, Personal y Otro.
+- Actividad reciente, historial completo, búsqueda y filtros por fecha, tipo, categoría y cantidad.
+- Edición y eliminación segura.
+- Exportación a CSV y resumen imprimible si puede implementarse sin deteriorar el flujo principal.
+
+Nunca uses números de punto flotante para dinero. Almacena importes en centavos o usa un tipo decimal seguro. Formatea en MXN y separa almacenamiento de presentación.
+
+### Pagos pendientes personales
+
+- Crear pagos con concepto, cantidad, vencimiento, categoría, recurrencia, prioridad, nota y estado.
+- Estados: pendiente, próximo, vencido y pagado.
+- Permitir pagos parciales.
+- Al marcar como pagado, ofrecer crear el gasto correspondiente una sola vez.
+- Mostrar próximos vencimientos y total pendiente.
+
+### Préstamos activos
+
+El usuario presta dinero a distintas personas y necesita saber cuánto le deben.
+
+- Registrar persona, monto original, fecha, motivo, calendario acordado y notas.
+- Registrar abonos parciales.
+- Calcular automáticamente pagado, saldo restante, porcentaje recuperado y siguiente fecha.
+- Estados: activo, atrasado, liquidado y cancelado.
+- Historial completo de abonos.
+- Al registrar un abono, ofrecer crear un ingreso vinculado sin duplicarlo.
+
+---
+
+## 6. Módulo Gimnasio
+
+El propósito es recuperar constancia, medir progresión y facilitar el registro durante la sesión. No debe sentirse como una hoja de cálculo incómoda.
+
+### Panel principal
+
+- Entrenamiento de hoy.
+- Racha y asistencia semanal/mensual.
+- Volumen, sesiones, récords personales y evolución.
+- Peso corporal actual y progreso hacia la meta.
+- Última sesión y siguiente sesión.
+- Botón grande “Iniciar entrenamiento”.
+
+### Rutinas y sesiones
+
+- Crear y editar planes, días, grupos musculares y ejercicios.
+- Base inicial editable: lunes Upper, martes Pierna, miércoles descanso, jueves Pecho/Espalda y viernes Brazo.
+- Registrar por ejercicio: series, repeticiones, peso, RIR/RPE, calentamiento, notas y completado.
+- Copiar datos de la sesión anterior y sugerir progresión, pero nunca modificar el plan sin confirmación.
+- Temporizador de descanso discreto, persistente y con notificación local cuando sea posible.
+- Cambiar el orden de ejercicios y agregar series rápidamente.
+- Historial por ejercicio y por sesión.
+- Biblioteca editable de ejercicios.
+
+### Progreso corporal
+
+- Peso, medidas opcionales, fotos de progreso privadas y notas.
+- Gráficas simples y comparables por periodo.
+- Metas iniciales editables: alcanzar 80–82 kg con buena composición y press de banca de 70 kg.
+- Récords personales detectados a partir del historial, con confirmación visual.
+
+No uses recomendaciones médicas ni afirmes medir recuperación real. Los estados de energía, fatiga o desempeño deben presentarse como autoevaluaciones del usuario.
+
+---
+
+## 7. Módulo Objetivos
+
+Debe manejar cuatro horizontes: **diarios, semanales, mensuales y anuales**.
+
+### Funciones
+
+- Crear, editar, eliminar, archivar y completar objetivos.
+- Campos: título, descripción, periodo, categoría, prioridad, fecha límite, progreso, métrica, valor inicial, meta, unidad y proyecto relacionado.
+- Vista separada por horizonte y vista unificada.
+- Lista clara con casillas para objetivos binarios y barras para objetivos medibles.
+- Porcentaje de cumplimiento por periodo.
+- Rachas para hábitos cuando corresponda.
+- Historial y comparación, no únicamente el estado actual.
+- Categorías sugeridas: Personal, SOMA, Alvento, Rancho, Gimnasio, Escuela, Finanzas y Aprendizaje.
+
+### Regla crítica de reinicio
+
+Los objetivos diarios recurrentes se renuevan cada día según la zona horaria `America/Mexico_City`, pero **jamás se eliminan**. Al cerrar el día, guarda una instancia histórica con su estado y crea la correspondiente al nuevo día. Aplica lógica equivalente para objetivos semanales, mensuales y anuales. Evita que recargar la página o ejecutar dos veces el proceso genere duplicados.
+
+Permite convertir tareas de Aprendizaje, seguimientos de SOMA y acciones sugeridas por la Bitácora en objetivos, siempre con confirmación del usuario.
+
+---
+
+## 8. Módulo SOMA
+
+SOMA es una agencia orientada a crear herramientas digitales de crecimiento para negocios. Alejandro dirige relaciones comerciales y ventas; Daniel dirige desarrollo y tecnología. Este módulo debe funcionar como CRM operativo ligero para brindar seguimiento excelente al cliente.
+
+### Pipeline de clientes
+
+- Vista en tarjetas y lista/tabla adaptable.
+- Etapas editables: Prospecto, Contactado, Interesado, Diagnóstico, Propuesta, Negociación, Cliente activo, Entrega, Completado, Pausado y Perdido.
+- Búsqueda, filtros y orden por siguiente acción, deuda o etapa.
+- Estadísticas: clientes activos, valor contratado, cobrado, pendiente, seguimientos próximos y proyectos atrasados.
+
+### Ficha individual de cliente
+
+- Negocio/nombre, responsable, teléfono, correo, redes, dirección y origen del prospecto.
+- Proyecto, paquete, precio total, fecha de inicio, fecha estimada de entrega y responsable interno.
+- Servicios y entregables: sitio web, fotografías, sesión con modelos, edición, QR, mantenimiento u otros configurables.
+- Estado de cada entregable, responsable, fecha y notas.
+- Plan de pagos configurable: anticipo, número total de pagos, monto por pago, fechas y estado.
+- Resumen: total, cobrado, pendiente, vencido y siguiente pago.
+- Adeudos adicionales separados del proyecto principal.
+- Notas con fecha, autor y posibilidad de fijar notas importantes.
+- Historial de actividad y siguiente acción.
+- Botón “Contactar por WhatsApp”.
+
+Usa un enlace `https://wa.me/` correctamente normalizado para abrir la conversación directa. Permite preparar un mensaje opcional con variables seguras, pero no presentes esto como WhatsApp Business API. Solo crea una integración de API real si existen credenciales y autorización adecuadas; nunca guardes secretos en el frontend.
+
+### Integración SOMA ↔ Finanzas
+
+- Al marcar una cuota o adeudo como pagado, ofrecer crear un ingreso en Finanzas.
+- Ambas entidades deben quedar enlazadas con identificadores únicos.
+- La operación debe ser idempotente: presionar dos veces o recargar jamás debe duplicar el ingreso.
+- Si se elimina o revierte un pago, mostrar claramente qué ocurrirá con el movimiento vinculado y pedir confirmación.
+
+Incluye a **Intensity** como cliente solo si ya aparece en los datos entregados o, si no existe ningún dato, como registro inicial editable sin inventar cantidades actuales. Conserva la información real que encuentre en los archivos; no la sustituya por ejemplos.
+
+---
+
+## 9. Módulo Aprendizaje
+
+Este apartado debe convertir cualquier habilidad en una ruta clara desde cero hasta dominio. No es una lista de cursos: es un sistema de progresión, práctica y evidencia.
+
+### Panel de aprendizaje
+
+- Habilidades activas, pausadas y completadas.
+- Porcentaje de dominio por habilidad.
+- Tiempo invertido, racha, sesiones y última actividad.
+- Próxima misión recomendada.
+- Panorama semanal y avance general.
+- Vista de tarjetas y vista de árbol/ruta en móvil y PC.
+
+### Crear una habilidad
+
+Campos:
+
+- Nombre.
+- Categoría.
+- Motivo para aprenderla.
+- Nivel actual y nivel objetivo.
+- Fecha de inicio y fecha objetivo.
+- Horas o minutos disponibles por semana.
+- Prioridad.
+- Método de evaluación.
+- Ruta manual o botón “Desglosar ruta”.
+
+La arquitectura debe estar preparada para que una capa de IA genere un borrador de ruta estructurada. Si no existe una API configurada, permite crearla manualmente y no simules una generación exitosa.
+
+### Estructura de cada habilidad
+
+1. Fundamentos.
+2. Nivel básico.
+3. Aplicación práctica.
+4. Nivel intermedio.
+5. Nivel avanzado.
+6. Dominio.
+7. Proyecto o prueba final.
+
+Cada nivel contiene competencias; cada competencia contiene actividades, prácticas, recursos, notas y evidencias. Las actividades pueden tener dependencia de una anterior, orden, dificultad, puntos/peso, duración estimada y estado.
+
+### Cálculo de progreso
+
+No calcules el avance simplemente contando casillas. Usa:
+
+`progreso = puntos completados / puntos totales × 100`
+
+- Los puntos deben reflejar dificultad e importancia.
+- El porcentaje debe recalcularse al editar la ruta.
+- Si se agregan tareas, explica visualmente por qué cambió el porcentaje.
+- Una habilidad no llega al 100% hasta completar una prueba o proyecto final con evidencia.
+- Permite marcar: no iniciado, aprendiendo, practicando, dominado y requiere repaso.
+
+### Ruta inicial: Ventas para SOMA
+
+Crea una ruta inicial editable con estas áreas:
+
+1. Mentalidad comercial y creación de valor.
+2. Cliente ideal e investigación del negocio.
+3. Construcción de una oferta.
+4. Prospección y preparación.
+5. Primer contacto y pitch.
+6. Preguntas de diagnóstico y escucha.
+7. Demostración y propuesta.
+8. Manejo de objeciones.
+9. Negociación.
+10. Cierre.
+11. Seguimiento y experiencia del cliente.
+12. Métricas, revisión y mejora.
+13. Automatización del proceso comercial.
+14. Prueba final: prospectar, diagnosticar, presentar y cerrar un cliente real.
+
+Adapta ejemplos a restaurantes, páginas web, QR, fotografía, seguimiento por WhatsApp y planes de pago de SOMA. No marques automáticamente competencias como dominadas.
+
+Permite crear después rutas para marketing, programación web/app, edición de video, inglés, francés, ruso, psicología, finanzas u otras habilidades, sin codificarlas de forma rígida.
+
+### Integraciones
+
+- Convertir una actividad en objetivo diario o semanal.
+- Registrar una sesión de estudio.
+- Permitir que una venta real de SOMA sea evidencia de una competencia.
+- Detectar menciones de aprendizaje en la Bitácora y sugerir registrar avance, sin hacerlo automáticamente.
+
+---
+
+## 10. Módulo Bitácora personal
+
+El usuario debe poder contar por voz o escribir libremente lo que ocurrió en su día. El sistema lo procesará, organizará y almacenará por fecha.
+
+### Flujo principal
+
+1. Botón “Crear día”.
+2. Escribir o iniciar dictado por voz.
+3. Mostrar transcripción editable en tiempo real cuando el navegador lo permita.
+4. Botón “Procesar mi día”.
+5. Convertir el relato en una estructura clara.
+6. Mostrar una vista previa editable.
+7. Guardar únicamente después de la confirmación del usuario.
+
+Ofrece entrada manual si el navegador no soporta reconocimiento de voz. No guardes audio permanentemente por defecto. Si se integra un proveedor de transcripción o IA, sus credenciales deben usarse solo del lado servidor.
+
+### Estructura generada
+
+- Título breve.
+- Resumen del día.
+- Personal y relaciones.
+- Universidad/escuela.
+- Trabajo y negocios.
+- SOMA y ventas.
+- Gimnasio y salud.
+- Aprendizaje.
+- Logros.
+- Dificultades.
+- Estado percibido, expresado como interpretación editable, no diagnóstico.
+- Productividad estimada de 0 a 100, editable y acompañada de una breve razón.
+- Aprendizaje del día.
+- Qué podría mejorarse.
+- Pendientes y siguiente acción.
+- Etiquetas.
+
+La IA debe respetar estrictamente lo narrado. Puede resumir y clasificar, pero no inventar acontecimientos, emociones, resultados ni métricas. Si algo es incierto, marcarlo como pendiente de confirmar.
+
+### Historial e insights
+
+- Calendario y línea de tiempo por día.
+- Búsqueda por texto, fecha, etiqueta o categoría.
+- Vista semanal y mensual.
+- Tendencias de productividad, constancia, gimnasio y logros, dejando claro que son estimaciones basadas en registros del usuario.
+- Las sugerencias de objetivos o movimientos nunca deben guardarse en otros módulos sin confirmación.
+
+Define un contrato JSON validable para el resultado del procesador y maneja respuestas incompletas o inválidas. Si no existe API, conserva el relato como borrador y permite estructurarlo manualmente.
+
+---
+
+## 11. Módulo Mi perfil
+
+Debe sentirse como el perfil central de una aplicación personal premium.
+
+### Diseño
+
+- Fotografía de perfil grande y centrada en la parte superior.
+- Imagen circular o con una forma elegante coherente con el sistema visual.
+- Permitir subir, recortar, reposicionar, comprimir, cambiar y eliminar la fotografía.
+- Nombre y alias inmediatamente debajo.
+- Tarjeta de identidad personal con información editable.
+- En PC puede usar composición de dos columnas; en móvil debe conservar la foto centrada y tarjetas apiladas.
+
+### Datos iniciales editables
+
+- Nombre completo: **Alejandro Dali Medina Ramírez**.
+- Nombre preferido: **Dali**.
+- Fecha de nacimiento: **6 de diciembre de 2008**.
+- Edad: calcularla dinámicamente desde la fecha de nacimiento según `America/Mexico_City`; nunca escribirla como constante.
+- Ubicación: **Ciudad Guzmán, Jalisco, México**.
+- Ocupación/rol: **Emprendedor y estudiante de Ingeniería en Gestión Empresarial**.
+- Institución: **Instituto Tecnológico de Ciudad Guzmán (ITCG)**.
+- Idiomas editables: español, inglés, francés y ruso.
+- Intereses editables: negocios, marketing digital, programación web/app, edición de video, psicología, fitness/box, criminología, filosofía, carros, gaming y basketball.
+- Proyectos activos editables: SOMA, ALVENTO y rancho porcino familiar.
+- Meta financiera principal editable; si no existe información importada, inicializar en **$33,000 MXN netos al mes**.
+- Biografía o manifiesto corto editable.
+
+No muestres datos familiares, documentos oficiales, dirección exacta, contraseñas ni información sensible. Mi perfil es privado y debe estar protegido por autenticación.
+
+### Resumen personal
+
+Incluye estadísticas derivadas y enlazadas, no capturadas dos veces:
+
+- Cumplimiento de objetivos.
+- Progreso de habilidades.
+- Constancia en gimnasio.
+- Días registrados en bitácora.
+- Proyectos activos.
+- Racha general.
+
+Agrega configuración de tema, zona horaria, moneda, preferencias, exportación de datos y cierre de sesión dentro del perfil o en una subsección de configuración.
+
+---
+
+## 12. Datos, autenticación y seguridad
+
+El CRM contiene información financiera y personal. Implementa como mínimo:
+
+- Autenticación real y rutas protegidas.
+- Arquitectura preparada para más de un usuario, aunque inicialmente la use una persona.
+- Toda tabla privada debe incluir `user_id` y políticas de acceso por propietario.
+- Row Level Security si se usa Supabase.
+- Validación tanto en cliente como en servidor.
+- Secretos únicamente en variables de entorno del servidor.
+- Sanitización de entradas y límites razonables de archivos.
+- Fotografías privadas en almacenamiento con políticas correctas y URLs firmadas cuando corresponda.
+- Ninguna clave secreta expuesta en el repositorio o bundle del navegador.
+- Fechas almacenadas de forma consistente y presentadas en `America/Mexico_City`.
+- Identificadores UUID.
+- `created_at`, `updated_at` y borrado recuperable donde sea útil.
+- Operaciones financieras y sincronizaciones relacionadas ejecutadas de forma transaccional o idempotente.
+
+Si no existen tablas equivalentes, diseña un esquema normalizado que cubra como mínimo:
+
+- Perfil y preferencias.
+- Movimientos y categorías financieras.
+- Pagos pendientes.
+- Préstamos y abonos.
+- Planes, días, ejercicios, sesiones y series de gimnasio.
+- Métricas corporales.
+- Objetivos, recurrencias e historial.
+- Clientes, contactos, proyectos, servicios, entregables, cuotas, pagos, notas y actividades de SOMA.
+- Habilidades, niveles, competencias, actividades, sesiones y evidencias de aprendizaje.
+- Entradas y análisis de bitácora.
+- Relaciones entre módulos y registro de acciones relevantes.
+
+Entrega migraciones reproducibles y tipos alineados con la base de datos. No inventes una base de datos en memoria si se solicitó persistencia real.
+
+---
+
+## 13. Reglas de producto y calidad
+
+### Funcionalidad
+
+- Todos los botones visibles deben funcionar.
+- Todo CRUD debe persistir tras recargar.
+- Formularios con validación clara y mensajes en español mexicano natural.
+- Estados vacíos útiles con una acción siguiente.
+- No rellenar producción con cifras falsas. Los ejemplos deben estar marcados como demostración y ser fáciles de eliminar.
+- Nunca sobrescribir datos existentes con datos de muestra.
+- Usar una única fuente de verdad para cálculos compartidos.
+- No duplicar registros al hacer doble clic, reintentar o recargar.
+
+### Ingeniería
+
+- Usar JavaScript Vanilla moderno y legible; no introducir TypeScript ni transpilers.
+- Componentes reutilizables sin crear abstracciones innecesarias.
+- Separar UI, reglas de negocio, acceso a datos y servicios externos.
+- Evitar archivos gigantes, pero mantener una estructura simple con los archivos principales directamente en la carpeta raíz; separar responsabilidades en archivos JavaScript/CSS adicionales solo cuando aporte claridad.
+- No usar package manager ni archivos de dependencias; el proyecto debe funcionar sin NPM, PNPM, Yarn, Bun ni instalaciones previas.
+- No instalar librerías localmente. Cualquier librería adicional debe cargarse por CDN y solo si aporta una función real.
+- Agregar `.env.example` sin secretos.
+- Manejar errores y registrar información útil sin exponer datos personales.
+- Optimizar imágenes y lazy loading cuando corresponda; no generar bundles ni artefactos compilados.
+- Convertir la app en PWA instalable mediante archivos estándar del navegador (`manifest.json`, service worker, etc.) si encaja, sin herramientas de compilación ni sacrificar estabilidad.
+
+### Pruebas obligatorias
+
+Incluye y ejecuta pruebas para, al menos:
+
+- Cálculo de saldo financiero.
+- Formato y precisión de dinero.
+- Pagos parciales y saldo de préstamos.
+- Sincronización idempotente SOMA ↔ Finanzas.
+- Cálculo ponderado de progreso de aprendizaje.
+- Edad dinámica a partir de la fecha de nacimiento.
+- Reinicio/archivo de objetivos según `America/Mexico_City`.
+- Validación del JSON estructurado de bitácora.
+- Protección de rutas privadas.
+
+Ejecuta las validaciones y pruebas compatibles con este stack sin compilación: revisa errores de consola, valida HTML/CSS/JavaScript, ejecuta las pruebas funcionales necesarias directamente en navegador y comprueba el despliegue estático. No agregues lint, typecheck o build que requieran Node/NPM únicamente para cumplir este punto.
+
+### QA visual y responsive
+
+- Verifica todas las pantallas en 360, 390, 768, 1024 y 1440 px.
+- Revisa menús, modales, bottom sheets, teclado numérico, formularios largos y teclado virtual.
+- Confirma que no haya textos cortados, elementos superpuestos o scroll horizontal accidental.
+- Prueba tema claro/oscuro, estados vacíos, datos largos y cantidades grandes.
+- Respeta la apariencia existente de Finanzas mientras unificas el resto del CRM.
+
+---
+
+## 14. Orden recomendado de implementación
+
+Trabaja en fases completas y verificables:
+
+1. Auditoría de archivos existentes, ejecución y respaldo lógico de datos.
+2. Design system, tokens, layout responsive, navegación y autenticación.
+3. Esquema de datos, migraciones, servicios y políticas de seguridad.
+4. Migración e integración del módulo Finanzas.
+5. Inicio y acciones rápidas con datos reales.
+6. Objetivos.
+7. SOMA y sincronización financiera.
+8. Gimnasio.
+9. Aprendizaje y cálculo ponderado.
+10. Bitácora por texto/voz y contrato de procesamiento.
+11. Mi perfil, fotografía y configuración.
+12. Integraciones cruzadas, notificaciones y pulido.
+13. Pruebas, responsive QA, accesibilidad, rendimiento y validación final del despliegue estático.
+
+Después de cada fase:
+
+- Ejecuta las comprobaciones pertinentes.
+- Corrige regresiones antes de continuar.
+- Mantén una lista breve de completado y pendiente.
+- No declares terminada una función que solo tiene interfaz.
+
+---
+
+## 15. Criterios de aceptación final
+
+La entrega solo está completa si:
+
+1. El usuario puede iniciar sesión y sus datos están protegidos.
+2. La aplicación funciona bien en móvil y PC.
+3. El menú de tres líneas abre todos los apartados en móvil y contrae la barra lateral en PC.
+4. Finanzas conserva o mejora la experiencia adjunta y todos los cálculos son correctos.
+5. Los movimientos utilizan un pad numérico cómodo, especialmente en móvil.
+6. Los pagos pendientes y préstamos admiten abonos parciales.
+7. Gimnasio permite completar una sesión real sin fricción.
+8. Los objetivos recurrentes se archivan y renuevan sin perder historial.
+9. SOMA permite gestionar clientes, entregables, cuotas, notas y WhatsApp.
+10. Un pago de SOMA puede reflejarse en Finanzas sin duplicarse.
+11. Aprendizaje permite construir una ruta desde fundamentos hasta prueba final y calcula progreso ponderado.
+12. La Bitácora acepta texto/voz, permite revisar el desglose y no inventa información.
+13. Mi perfil muestra foto centrada, datos editables y edad calculada dinámicamente.
+14. Todas las acciones persisten después de recargar.
+15. No hay botones de adorno, errores de consola importantes, secretos expuestos ni desbordamientos responsive.
+16. Las validaciones de HTML/CSS/JavaScript, las pruebas funcionales, la consola del navegador y el despliegue estático terminan sin errores importantes, sin requerir build ni NPM.
+
+---
+
+## 16. Entrega esperada
+
+No respondas únicamente con un tutorial. Trabaja directamente sobre los archivos y entrega:
+
+- Aplicación funcional.
+- Código organizado y mantenible.
+- Migraciones y esquema de datos.
+- `.env.example`.
+- Datos existentes preservados o una migración/importación segura.
+- Pruebas relevantes.
+- README breve con apertura/ejecución local sin instalación, configuración, respaldo y despliegue estático.
+- Lista final de funciones terminadas.
+- Lista separada de cualquier integración que dependa de una credencial externa.
+- Evidencia de que validaste HTML/CSS/JavaScript, ejecutaste las pruebas funcionales necesarias, revisaste la consola y comprobaste el despliegue estático sin pasos de build.
+
+Haz que cada pantalla tenga una función real y una jerarquía clara. Prioriza confiabilidad, rapidez de uso, privacidad y coherencia por encima de agregar adornos. El resultado final debe sentirse como **el sistema operativo personal de Dali**: elegante, futurista, útil todos los días y preparado para crecer sin tener que rehacerlo.
