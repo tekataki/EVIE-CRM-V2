@@ -1,0 +1,20 @@
+{
+  "format":"dali.journal.entry",
+  "schema_version":"1.0",
+  "import_id":"a3c12075-5392-4f5d-af5b-5cba8e5af12d",
+  "timezone":"America/Mexico_City",
+  "source":{"type":"chatgpt_daily_reflection","label":"Agenda diaria para CRM"},
+  "entry":{
+    "source_entry_id":"2026-09-17-ejemplo-revisar",
+    "date":"2026-09-17",
+    "title":"Ejemplo para revisar, no es un día real",
+    "raw_narrative":null,
+    "summary":"Sustituye este ejemplo por lo que realmente viviste antes de importarlo.",
+    "highlights":[],"difficulties":[],"learnings":[],"events":[],
+    "emotions":[{"key":"alegria","label":"Alegría","intensity":60,"basis":"inferred","confidence":0.5,"evidence":"Valor de ejemplo; no representa al propietario."}],
+    "indicators":{"energy":{"value":null,"basis":"inferred","confidence":0}},
+    "next_actions":[{"title":"Revisar y sustituir el ejemplo","suggested_module":"agenda","due_hint":null,"duration_minutes":null,"priority":"low","needs_confirmation":true}],
+    "tags":["ejemplo"],"assistant_note":"Reflexión orientativa; no es diagnóstico.",
+    "review_required":true,"confirmed_by_user":false
+  }
+}

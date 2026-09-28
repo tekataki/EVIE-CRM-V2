@@ -1,0 +1,21 @@
+'use strict';
+window.IvyVoice=(()=>{
+ let recognition=null,session=0,timeout=null,muted=true,outputEnvelope=0,lastBoundary=0,active=false;
+ const reset=message=>{if(IvyState.get().phase!=='executing')IvyState.transition('idle',message||'');};
+ function stop(){session++;active=false;clearTimeout(timeout);timeout=null;if(recognition){recognition.onend=null;recognition.onresult=null;recognition.onerror=null;try{recognition.abort();}catch{}recognition=null;}IvyAudio.stop('voice');if('speechSynthesis' in window)speechSynthesis.cancel();outputEnvelope=0;if(IvyState.get().phase!=='awaiting_confirmation'&&IvyState.get().phase!=='executing')reset();}
+ async function listen({consent=false,onTranscript=()=>{},onFinal=()=>{},onError=()=>{}}={}){
+  stop();const ticket=session,Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Speech){onError('Micrófono no disponible para dictado en este navegador. Puedes escribir a Ivy.');return false;}
+  if(consent!==true){onError('Necesitas aceptar el procesamiento de voz antes de dictar.');return false;}
+  try{await IvyAudio.start('voice',true);if(ticket!==session||!IvyAudio.stats().owners.includes('voice'))return false;recognition=new Speech();recognition.lang='es-MX';recognition.continuous=false;recognition.interimResults=true;let finalText='';
+   recognition.onstart=()=>{if(ticket!==session)return;active=true;IvyState.transition('listening','Micrófono activo');};
+   recognition.onresult=event=>{if(ticket!==session)return;let interim='';for(let n=event.resultIndex;n<event.results.length;n++){if(event.results[n].isFinal)finalText+=event.results[n][0].transcript+' ';else interim+=event.results[n][0].transcript;}onTranscript((finalText+interim).trim(),!!interim);};
+   recognition.onerror=event=>{if(ticket!==session)return;const message=({'not-allowed':'Permiso de micrófono denegado. Puedes escribir.','audio-capture':'Micrófono no disponible. Puedes escribir.','network':'Falló el proveedor de dictado. Tu CRM local sigue disponible.','no-speech':'No se detectó voz. Intenta de nuevo o escribe.','aborted':'Dictado cancelado.'})[event.error]||'No se pudo continuar el dictado. Puedes escribir.';stop();IvyState.transition('error',message);onError(message);};
+   recognition.onend=()=>{if(ticket!==session)return;active=false;recognition=null;clearTimeout(timeout);timeout=null;IvyAudio.stop('voice');if(finalText.trim()){if(IvyState.get().phase==='listening')IvyState.transition('transcribing');onFinal(finalText.trim());}else{reset('No se detectó texto. Puedes escribir.');onError('No se detectó texto. Puedes escribir.');}};
+   recognition.start();timeout=setTimeout(()=>{if(ticket===session){stop();onError('Dictado detenido después de 45 segundos. Puedes continuar por texto.');}},45000);return true;
+  }catch(error){stop();const message=error.name==='NotAllowedError'?'Permiso de micrófono denegado. Puedes escribir.':error.message||'Micrófono no disponible.';IvyState.transition('error',message);onError(message);return false;}
+ }
+ function speak(text){if(muted||!('speechSynthesis' in window))return;const utterance=new SpeechSynthesisUtterance(text.slice(0,2500));utterance.lang='es-MX';utterance.rate=1;utterance.onstart=()=>{if(IvyState.get().phase==='awaiting_confirmation')return;IvyState.transition('speaking');lastBoundary=performance.now();outputEnvelope=.2;};utterance.onboundary=()=>{lastBoundary=performance.now();outputEnvelope=.5;};utterance.onend=()=>{outputEnvelope=0;if(IvyState.get().phase==='speaking')reset();};utterance.onerror=()=>{outputEnvelope=0;if(IvyState.get().phase==='speaking')reset('Salida de voz no disponible; el texto sigue visible.');};speechSynthesis.cancel();speechSynthesis.speak(utterance);}
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});window.addEventListener('pagehide',stop);window.addEventListener('ivy-microphone-ended',stop);
+ return {listen,stop,speak,mute:value=>{muted=!!value;if(muted&&'speechSynthesis' in window){speechSynthesis.cancel();outputEnvelope=0;if(IvyState.get().phase==='speaking')reset();}},stats:()=>({active,muted,supported:!!(window.SpeechRecognition||window.webkitSpeechRecognition),outputEnvelope:outputEnvelope*Math.exp(-(performance.now()-lastBoundary)/450)})};
+})();

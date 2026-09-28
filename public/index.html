@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101c32"><meta name="description" content="EVIE CRM V2: CRM personal y centro de mando. Finanzas, objetivos, entrenamiento, aprendizaje y negocios en un solo lugar.">
+  <title>EVIE CRM V2 — Tu centro de mando</title>
+  <link rel="manifest" href="manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="EVIE"><link rel="apple-touch-icon" href="icons/ivy-192.png">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <!-- Offline-first: no runtime CDN or executable remote content. System fonts are the fallback. -->
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="vendor/lucide.min.js"></script>
+  <link rel="stylesheet" href="v2.css"><link rel="stylesheet" href="pig.css"><link rel="stylesheet" href="neural.css"><link rel="stylesheet" href="neural-home.css"><link rel="stylesheet" href="neural-farm.css"><link rel="stylesheet" href="neural-care.css"><link rel="stylesheet" href="rc.css"><link rel="stylesheet" href="dali-core.css"><link rel="stylesheet" href="form-safety.css"><link rel="stylesheet" href="insight-charts.css"><link rel="stylesheet" href="module-experience.css">
+  <script defer src="vendor/jszip.min.js"></script>
+  <script defer src="account-core.js"></script><script defer src="config.js"></script><script defer src="domain.js"></script>
+  <script defer src="v2-domain.js"></script><script defer src="recurrence.js"></script>
+  <script defer src="pig-model.js"></script><script defer src="pig-events.js"></script><script defer src="farm-feed.js"></script><script defer src="farm-forecast.js"></script><script defer src="farm-inventory-tools.js"></script><script defer src="farm-upgrade.js"></script><script defer src="farm-validation.js"></script><script defer src="pig-insights.js"></script>
+  <script defer src="rc-data.js"></script><script defer src="journal-data.js"></script><script defer src="migrations.js"></script><script defer src="store.js"></script>
+  <script defer src="records.js"></script><script defer src="media-store.js"></script><script defer src="farm-domain.js"></script><script defer src="importer.js"></script>
+  <script defer src="views.js"></script><script defer src="form-safety.js"></script><script defer src="forms.js"></script><script defer src="v2-views.js"></script><script defer src="v2-app.js"></script>
+  <script defer src="neural-farm.js"></script><script defer src="pig-views.js"></script><script defer src="pig-feed-view.js"></script><script defer src="pig-feed-catalog.js"></script><script defer src="pig-reports.js"></script><script defer src="pig-calendar.js"></script><script defer src="neural-care.js"></script><script defer src="pig-forms.js"></script><script defer src="pig-feed-forms.js"></script><script defer src="pig-inventory-forms.js"></script><script defer src="neural-milestones.js"></script><script defer src="pig-care-forms.js"></script><script defer src="pig-app.js"></script><script defer src="neural-signals.js"></script><script defer src="neural-home.js"></script><script defer src="neural-forms.js"></script><script defer src="neural-core.js"></script><script defer src="agenda.js"></script><script defer src="insight-charts.js"></script><script defer src="journal-editor.js"></script><script defer src="journal-view.js"></script><script defer src="context-export.js"></script><script defer src="entity-links.js"></script><script defer src="nutrition.js"></script><script defer src="dali-core.js"></script><script defer src="module-experience.js"></script><script defer src="rc-app.js"></script><script defer src="ivy-state-machine.js"></script><script defer src="ivy-local-tools.js"></script><script defer src="ivy-command-bus.js"></script><script defer src="ivy-audio-reactor.js"></script><script defer src="ivy-voice-browser.js"></script><script defer src="ivy-core-renderer.js"></script><script defer src="ivy-command-surface.js"></script><script defer src="ivy-module-worlds.js"></script><script defer src="ivy-shell.js"></script><script defer src="desktop-agenda.js"></script><script defer src="desktop-voice.js"></script><script defer src="desktop-ui.js"></script><script defer src="pig-hologram.js"></script><script defer src="personalization.js"></script><script defer src="sync-engine.js"></script><script defer src="legacy-migration.js"></script><script defer src="account-ui.js"></script><script defer src="app.js"></script>
+<link rel="stylesheet" href="ivy.css"><link rel="stylesheet" href="ivy-modules.css"><link rel="stylesheet" href="phase3.css"><link rel="stylesheet" href="evie-design.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Saltar al contenido</a>
+  <button id="drawer-backdrop" class="drawer-backdrop" aria-label="Cerrar menú" tabindex="-1"></button>
+  <aside id="sidebar" class="sidebar" aria-label="Barra lateral">
+    <a href="#inicio" class="brand"><img class="brand-logo" src="icon.svg" alt="" width="38" height="38"><span class="brand-word" data-app-name>EVIE CRM V2</span><span class="brand-version">LOCAL</span></a>
+    <div class="workspace-label">TU ESPACIO PERSONAL</div><nav id="main-nav" aria-label="Navegación principal"></nav>
+    <div class="sidebar-bottom"><div class="focus-note"><i data-lucide="orbit"></i><p>Pequeñas acciones.<br><strong>Grandes posibilidades.</strong></p><span>CONSTRUYE TU MEJOR VERSIÓN</span></div>
+    <button class="sidebar-settings" data-action="settings"><i data-lucide="settings-2"></i><span>Configuración</span></button>
+    <a class="sidebar-profile" href="#perfil"><span class="avatar" data-profile-initials>EV</span><span class="profile-text"><strong id="sidebar-name">Mi espacio</strong><small>Mi espacio personal</small></span><i data-lucide="chevrons-up-down"></i></a></div>
+  </aside>
+  <div class="app-shell"><header class="topbar"><div class="breadcrumbs"><button id="menu-toggle" class="icon-button" aria-label="Abrir o contraer menú" aria-expanded="false" aria-controls="sidebar"><i data-lucide="menu"></i></button><span class="breadcrumb-workspace">Mi espacio <span>/</span></span><strong id="page-crumb">Inicio</strong></div><div class="global-clock" aria-label="Hora de Ciudad Guzmán"><time id="global-time"></time><small id="global-date"></small></div><div class="topbar-actions"><button class="search-trigger" data-action="search"><i data-lucide="search"></i><span>Buscar en tu espacio...</span><kbd>Ctrl K</kbd></button><button id="sync-status" type="button" aria-label="Cuenta y estado de sincronización">Modo local</button><span class="topbar-divider"></span><button class="icon-button" data-action="theme" aria-label="Cambiar tema"><i data-lucide="sun-moon"></i></button><button class="icon-button notification-button" data-action="notifications" aria-label="Ver pendientes"><i data-lucide="bell"></i><span id="notification-dot" hidden></span></button><a class="avatar small-avatar" href="#perfil" aria-label="Mi perfil" data-profile-initials>EV</a></div></header>
+  <main id="main-content" tabindex="-1"><div class="loading-state"><span class="spinner"></span>Preparando tu espacio…</div></main>
+  <footer class="app-footer"><span><span class="status-dot"></span> Modo local · Datos en este navegador</span><span data-app-name>EVIE CRM V2</span><span>Hecho para avanzar, a tu ritmo.</span></footer></div>
+  <nav class="mobile-nav" aria-label="Accesos rápidos"><a href="#inicio"><i data-lucide="layout-dashboard"></i><span>Inicio</span></a><a href="#finanzas"><i data-lucide="wallet"></i><span>Finanzas</span></a><button data-action="v2-gym-upload" aria-label="Subir JSON"><i data-lucide="upload"></i></button><a href="#objetivos"><i data-lucide="target"></i><span>Objetivos</span></a><a href="#bitacora"><i data-lucide="book-open"></i><span>Bitácora</span></a></nav>
+  <dialog id="app-dialog" aria-labelledby="dialog-title"><div id="dialog-content"></div></dialog>
+  <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
+  <input type="file" id="import-input" accept="application/json,.json" hidden>
+</body>
+</html>
