@@ -1,0 +1,20 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const browser=await chromium.launch({args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']}),page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],checks=[];
+page.on('pageerror',err=>errors.push(err.message));
+try{
+ await page.goto('http://localhost:3000/index.html?qa=phase3-graphics');await page.waitForFunction(()=>window.DALI_READY);
+ await page.evaluate(()=>{Neural.dismiss();Store.save(s=>{s.preferences.theme='dark';s.preferences.motion='full';s.preferences.motionPaused=false;});UI.section='inicio';App.render();});
+ await page.waitForTimeout(500);assert.equal(await page.evaluate(()=>IvyRenderer.stats().renderer),1);await page.evaluate(()=>IvyRenderer.stop());await page.screenshot({animations:'disabled',path:'evidence/phase3-home-desktop.png'});checks.push('Núcleo procedural activo con screenshot desktop');
+ await page.setViewportSize({width:412,height:915});await page.waitForTimeout(600);await page.evaluate(()=>IvyRenderer.stop());await page.screenshot({animations:'disabled',path:'evidence/phase3-home-mobile.png'});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));checks.push('Núcleo móvil sin overflow');
+ await page.setViewportSize({width:1000,height:800});await page.waitForTimeout(600);await page.evaluate(()=>{UI.section='granja';App.render();});await page.waitForFunction(()=>PigHologram.stats().renderer===1);await page.locator('.pig-hologram').scrollIntoViewIfNeeded();await page.waitForFunction(()=>PigHologram.stats().frames>2);
+ const first=await page.evaluate(()=>PigHologram.stats());assert.ok(first.meshes>=12);assert.equal(await page.locator('.rancho-silhouette').evaluate(el=>el.hasAttribute('hidden')),true);checks.push('Escena WebGL con profundidad y primitivas reales, no imagen 2D');
+ await page.waitForFunction(rotation=>PigHologram.stats().rotation>rotation+.02,first.rotation,{timeout:15000});const moving=await page.evaluate(()=>PigHologram.stats());assert.ok(moving.rotation>first.rotation);await page.screenshot({animations:'disabled',path:'evidence/phase3-pig-desktop.png'});checks.push('Rotación cambia entre frames reales');
+ await page.evaluate(()=>document.querySelector('.rancho-visual').style.transform='translateY(20000px)');await page.waitForFunction(()=>PigHologram.stats().paused);const frozen=await page.evaluate(()=>PigHologram.stats().frames);await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>PigHologram.stats().frames),frozen);checks.push('IntersectionObserver pausa RAF fuera de pantalla');
+ await page.evaluate(()=>document.querySelector('.rancho-visual').style.transform='');await page.waitForFunction(()=>!PigHologram.stats().paused);
+ await page.evaluate(()=>{UI.section='agenda';App.render();});assert.equal(await page.evaluate(()=>PigHologram.stats().renderer),0);assert.equal(await page.locator('.pig-hologram').count(),0);checks.push('Cambiar módulo elimina renderer y canvas');
+ await page.evaluate(()=>{Store.save(s=>s.preferences.motion='reduced');UI.section='granja';App.render();});assert.equal(await page.evaluate(()=>PigHologram.stats().renderer),0);assert.equal(await page.locator('.rancho-silhouette').evaluate(el=>el.hasAttribute('hidden')),false);checks.push('Movimiento reducido usa fallback SVG estático');
+ const manifest=await page.evaluate(async()=>{const files=await(await fetch('project-files.json')).json();return Promise.all(files.filter(f=>f.startsWith('vendor/')||f.startsWith('desktop-')||['phase3.css','pcm-recorder.js','pig-hologram.js'].includes(f)).map(async f=>({file:f,ok:(await fetch(f)).ok})));});assert.ok(manifest.every(x=>x.ok));checks.push('Exportación web incluye nuevos assets locales disponibles');
+ assert.deepEqual(errors,[]);fs.writeFileSync('evidence/phase3-graphics.json',JSON.stringify({date:new Date().toISOString(),passed:checks.length,checks,errors,limits:'SwiftShader software en Linux; no certifica GPU Windows ni apariencia Acrylic.'},null,2));console.log(JSON.stringify({passed:checks.length,errors}));
+}finally{await browser.close();}
