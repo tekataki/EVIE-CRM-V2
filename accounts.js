@@ -85,6 +85,6 @@ export function createAccounts({fetcher=fetch}={}) {
  api.onError((err,c)=>{
   console.error('EVIE_ACCOUNTS_ERROR', err?.stack || err?.message || String(err))
   return jsonError(c,'Servicio temporalmente no disponible. No se han descartado cambios locales.',503)
-})
+ })
  return api
 }
