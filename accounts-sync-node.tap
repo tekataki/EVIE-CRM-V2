@@ -1,0 +1,820 @@
+
+> evie-crm-v2@2.1.0 test:desktop
+> node --max-old-space-size=160 --test --test-concurrency=1 tests/*.test.cjs
+
+TAP version 13
+# Subtest: cross-tab notification invalidates only and never selects an account from storage
+ok 1 - cross-tab notification invalidates only and never selects an account from storage
+  ---
+  duration_ms: 4360.034382
+  type: 'test'
+  ...
+# Subtest: 401 locks account but a revision conflict does not log the user out
+ok 2 - 401 locks account but a revision conflict does not log the user out
+  ---
+  duration_ms: 3.121332
+  type: 'test'
+  ...
+# Subtest: session verification never silently switches to another account
+ok 3 - session verification never silently switches to another account
+  ---
+  duration_ms: 3.125205
+  type: 'test'
+  ...
+# Subtest: Electron adapter preserves HTTP status and respects pre-aborted requests
+ok 4 - Electron adapter preserves HTTP status and respects pre-aborted requests
+  ---
+  duration_ms: 1.584551
+  type: 'test'
+  ...
+# Subtest: restoring an expired session clears the former account identity
+ok 5 - restoring an expired session clears the former account identity
+  ---
+  duration_ms: 2.165729
+  type: 'test'
+  ...
+# Subtest: username canonicalization and strict account namespaces
+ok 6 - username canonicalization and strict account namespaces
+  ---
+  duration_ms: 38.735061
+  type: 'test'
+  ...
+# Subtest: disabled adapter makes no authentication call and does not manufacture a session
+ok 7 - disabled adapter makes no authentication call and does not manufacture a session
+  ---
+  duration_ms: 4.040664
+  type: 'test'
+  ...
+# Subtest: session restore scopes cached data; clear cancels late responses
+ok 8 - session restore scopes cached data; clear cancels late responses
+  ---
+  duration_ms: 5.313673
+  type: 'test'
+  ...
+# Subtest: auth API remains closed without configuration, makes no provider request
+ok 9 - auth API remains closed without configuration, makes no provider request
+  ---
+  duration_ms: 9.245684
+  type: 'test'
+  ...
+# Subtest: AES-GCM session storage is authenticated and not plaintext
+ok 10 - AES-GCM session storage is authenticated and not plaintext
+  ---
+  duration_ms: 48.032991
+  type: 'test'
+  ...
+# Subtest: module preferences retain hidden data and fixed entry routes
+ok 11 - module preferences retain hidden data and fixed entry routes
+  ---
+  duration_ms: 3.068963
+  type: 'test'
+  ...
+# Subtest: offline diff preserves non-UUID IDs and tombstones
+ok 12 - offline diff preserves non-UUID IDs and tombstones
+  ---
+  duration_ms: 2.115279
+  type: 'test'
+  ...
+# Subtest: same-record conflicts never silently discard unsynced local edits
+ok 13 - same-record conflicts never silently discard unsynced local edits
+  ---
+  duration_ms: 1.279144
+  type: 'test'
+  ...
+# Subtest: sync rejects another owner and cancellation prevents late writes
+ok 14 - sync rejects another owner and cancellation prevents late writes
+  ---
+  duration_ms: 1.772039
+  type: 'test'
+  ...
+# Subtest: JSONB key ordering does not create false conflicts or writes
+ok 15 - JSONB key ordering does not create false conflicts or writes
+  ---
+  duration_ms: 1.047461
+  type: 'test'
+  ...
+# Subtest: two devices merge different records and surface a same-record conflict
+ok 16 - two devices merge different records and surface a same-record conflict
+  ---
+  duration_ms: 14.654371
+  type: 'test'
+  ...
+# Subtest: incomplete acknowledgement never clears pending local mutations
+ok 17 - incomplete acknowledgement never clears pending local mutations
+  ---
+  duration_ms: 2.811504
+  type: 'test'
+  ...
+# Subtest: wrong-owner acknowledgement never enters the durable shadow
+ok 18 - wrong-owner acknowledgement never enters the durable shadow
+  ---
+  duration_ms: 3.006562
+  type: 'test'
+  ...
+# Subtest: edit during an in-flight push stays queued after acknowledgement
+ok 19 - edit during an in-flight push stays queued after acknowledgement
+  ---
+  duration_ms: 10.835704
+  type: 'test'
+  ...
+# Subtest: repeating pagination fails closed without replacing the Store
+ok 20 - repeating pagination fails closed without replacing the Store
+  ---
+  duration_ms: 1.725767
+  type: 'test'
+  ...
+# Subtest: SQL rejects SQL NULL, JSON null, empty or malformed mutation batches
+ok 21 - SQL rejects SQL NULL, JSON null, empty or malformed mutation batches
+  ---
+  duration_ms: 24.857017
+  type: 'test'
+  ...
+# Subtest: SQL requires typed identity and safe integer expected revisions
+ok 22 - SQL requires typed identity and safe integer expected revisions
+  ---
+  duration_ms: 21.180813
+  type: 'test'
+  ...
+# Subtest: SQL requires integer transaction cents even when amount is absent or JSON null
+ok 23 - SQL requires integer transaction cents even when amount is absent or JSON null
+  ---
+  duration_ms: 20.222385
+  type: 'test'
+  ...
+# Subtest: SQL state metadata rejects absent or wrong version, profile and preferences shapes
+ok 24 - SQL state metadata rejects absent or wrong version, profile and preferences shapes
+  ---
+  duration_ms: 25.552178
+  type: 'test'
+  ...
+# Subtest: SQL valid metadata keeps a neutral profile and uses the same CAS contract
+ok 25 - SQL valid metadata keeps a neutral profile and uses the same CAS contract
+  ---
+  duration_ms: 20.242867
+  type: 'test'
+  ...
+# Subtest: SQL invalid linked operation rolls back records and metadata together
+ok 26 - SQL invalid linked operation rolls back records and metadata together
+  ---
+  duration_ms: 14.905447
+  type: 'test'
+  ...
+# Subtest: SQL text IDs retain case and the maximum 80-byte identifier
+ok 27 - SQL text IDs retain case and the maximum 80-byte identifier
+  ---
+  duration_ms: 8.609593
+  type: 'test'
+  ...
+# Subtest: SQL constraints reject missing payload identity even for privileged maintenance writes
+ok 28 - SQL constraints reject missing payload identity even for privileged maintenance writes
+  ---
+  duration_ms: 4.345815
+  type: 'test'
+  ...
+# Subtest: Storage migration makes an existing public user-media bucket private
+ok 29 - Storage migration makes an existing public user-media bucket private
+  ---
+  duration_ms: 1.439347
+  type: 'test'
+  ...
+# Subtest: Storage RLS isolates object CRUD even with an unrelated permissive policy
+ok 30 - Storage RLS isolates object CRUD even with an unrelated permissive policy
+  ---
+  duration_ms: 39.644908
+  type: 'test'
+  ...
+# Subtest: Storage RLS rejects traversal, encoded paths and non-image names
+ok 31 - Storage RLS rejects traversal, encoded paths and non-image names
+  ---
+  duration_ms: 10.475463
+  type: 'test'
+  ...
+# Subtest: Storage anonymous requests cannot read or insert user media without blocking other buckets
+ok 32 - Storage anonymous requests cannot read or insert user media without blocking other buckets
+  ---
+  duration_ms: 8.030347
+  type: 'test'
+  ...
+# Subtest: SQL preserves text identity exactly and account B cannot read A
+ok 33 - SQL preserves text identity exactly and account B cannot read A
+  ---
+  duration_ms: 13.898693
+  type: 'test'
+  ...
+# Subtest: SQL RLS forbids owner substitution and anonymous private reads
+ok 34 - SQL RLS forbids owner substitution and anonymous private reads
+  ---
+  duration_ms: 7.648116
+  type: 'test'
+  ...
+# Subtest: SQL CAS makes linked batches atomic and rejects stale writes
+ok 35 - SQL CAS makes linked batches atomic and rejects stale writes
+  ---
+  duration_ms: 7.870081
+  type: 'test'
+  ...
+# Subtest: SQL rejects non-integer cents, invalid IDs and unknown collections
+ok 36 - SQL rejects non-integer cents, invalid IDs and unknown collections
+  ---
+  duration_ms: 8.631821
+  type: 'test'
+  ...
+# Subtest: new SQL profiles contain no owner identity and usernames are unique
+ok 37 - new SQL profiles contain no owner identity and usernames are unique
+  ---
+  duration_ms: 2.931706
+  type: 'test'
+  ...
+# (node:1058) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Hono signup emits only identity and an opaque secure cookie; SQLite stores encrypted tokens
+ok 38 - Hono signup emits only identity and an opaque secure cookie; SQLite stores encrypted tokens
+  ---
+  duration_ms: 233.471814
+  type: 'test'
+  ...
+# Subtest: Hono rejects origin and content-type violations before provider calls
+ok 39 - Hono rejects origin and content-type violations before provider calls
+  ---
+  duration_ms: 11.178293
+  type: 'test'
+  ...
+# Subtest: Auth attempt limit is persisted in SQLite and stores no plaintext IP
+ok 40 - Auth attempt limit is persisted in SQLite and stores no plaintext IP
+  ---
+  duration_ms: 38.93018
+  type: 'test'
+  ...
+# Subtest: Signin rotates the opaque cookie and removes the previous local session
+ok 41 - Signin rotates the opaque cookie and removes the previous local session
+  ---
+  duration_ms: 22.60238
+  type: 'test'
+  ...
+# Subtest: Data requests require both valid cookie and matching X-Evie-User
+ok 42 - Data requests require both valid cookie and matching X-Evie-User
+  ---
+  duration_ms: 32.37322
+  type: 'test'
+  ...
+# Subtest: Refresh encrypts rotated tokens, releases lease and verifies the resulting user
+ok 43 - Refresh encrypts rotated tokens, releases lease and verifies the resulting user
+  ---
+  duration_ms: 31.472691
+  type: 'test'
+  ...
+# Subtest: Concurrent refresh uses a lease and cannot reuse the same refresh token
+ok 44 - Concurrent refresh uses a lease and cannot reuse the same refresh token
+  ---
+  duration_ms: 16.257396
+  type: 'test'
+  ...
+# Subtest: Transient refresh failure preserves the encrypted session and allows retry
+ok 45 - Transient refresh failure preserves the encrypted session and allows retry
+  ---
+  duration_ms: 11.119651
+  type: 'test'
+  ...
+# Subtest: Malformed refresh tokens are never persisted and always release the lease
+ok 46 - Malformed refresh tokens are never persisted and always release the lease
+  ---
+  duration_ms: 7.840087
+  type: 'test'
+  ...
+# Subtest: Rejected refresh revokes the D1 session without exposing provider details
+ok 47 - Rejected refresh revokes the D1 session without exposing provider details
+  ---
+  duration_ms: 7.525266
+  type: 'test'
+  ...
+# Subtest: Malformed provider expiry or token types never create a persisted session
+ok 48 - Malformed provider expiry or token types never create a persisted session
+  ---
+  duration_ms: 12.700483
+  type: 'test'
+  ...
+# Subtest: Provider user mismatch fails closed and never reaches the data RPC
+ok 49 - Provider user mismatch fails closed and never reaches the data RPC
+  ---
+  duration_ms: 8.009792
+  type: 'test'
+  ...
+# Subtest: Local logout revokes only one session; global logout revokes only that owner
+ok 50 - Local logout revokes only one session; global logout revokes only that owner
+  ---
+  duration_ms: 16.520083
+  type: 'test'
+  ...
+# Subtest: Failed global logout preserves sessions and does not report remote success
+ok 51 - Failed global logout preserves sessions and does not report remote success
+  ---
+  duration_ms: 8.138534
+  type: 'test'
+  ...
+# Subtest: Old-tab logout cannot clear the new account cookie or revoke its session
+ok 52 - Old-tab logout cannot clear the new account cookie or revoke its session
+  ---
+  duration_ms: 9.032727
+  type: 'test'
+  ...
+# Subtest: Data payload rejects caller-selected owner and preserves text IDs in RPC forwarding
+ok 53 - Data payload rejects caller-selected owner and preserves text IDs in RPC forwarding
+  ---
+  duration_ms: 7.030554
+  type: 'test'
+  ...
+# Subtest: desktop account transport is disabled without configuration
+ok 54 - desktop account transport is disabled without configuration
+  ---
+  duration_ms: 2.46158
+  type: 'test'
+  ...
+# Subtest: desktop data requests use only the server-verified account; 401 locks it
+ok 55 - desktop data requests use only the server-verified account; 401 locks it
+  ---
+  duration_ms: 56.35957
+  type: 'test'
+  ...
+# Subtest: configured desktop accounts never fall back to the legacy local profile
+ok 56 - configured desktop accounts never fall back to the legacy local profile
+  ---
+  duration_ms: 1.00194
+  type: 'test'
+  ...
+# Subtest: desktop grants and microphone consent are per-user and per-device
+ok 57 - desktop grants and microphone consent are per-user and per-device
+  ---
+  duration_ms: 4.647011
+  type: 'test'
+  ...
+# Subtest: a delayed permission prompt cannot grant access to a different account
+ok 58 - a delayed permission prompt cannot grant access to a different account
+  ---
+  duration_ms: 5.994681
+  type: 'test'
+  ...
+# Subtest: late data responses are cancelled when the desktop account changes
+ok 59 - late data responses are cancelled when the desktop account changes
+  ---
+  duration_ms: 4.120499
+  type: 'test'
+  ...
+# Subtest: registry defines 33 typed capabilities, no generic execution
+ok 60 - registry defines 33 typed capabilities, no generic execution
+  ---
+  duration_ms: 3.285395
+  type: 'test'
+  ...
+# Subtest: strict arguments reject commands, raw paths, coercion and prototype pollution
+ok 61 - strict arguments reject commands, raw paths, coercion and prototype pollution
+  ---
+  duration_ms: 0.779945
+  type: 'test'
+  ...
+# Subtest: HTTPS exact domain, no credentials, subdomains, local protocols or custom ports
+ok 62 - HTTPS exact domain, no credentials, subdomains, local protocols or custom ports
+  ---
+  duration_ms: 0.491219
+  type: 'test'
+  ...
+# Subtest: contracts reject nonobjects, inherited fields and oversized text
+ok 63 - contracts reject nonobjects, inherited fields and oversized text
+  ---
+  duration_ms: 0.508271
+  type: 'test'
+  ...
+# Subtest: rate limit is enforced
+ok 64 - rate limit is enforced
+  ---
+  duration_ms: 0.249843
+  type: 'test'
+  ...
+# Subtest: write only commits after confirmation and cancellation never commits
+ok 65 - write only commits after confirmation and cancellation never commits
+  ---
+  duration_ms: 2.089022
+  type: 'test'
+  ...
+# Subtest: cancelling while confirmation is open invalidates execution
+ok 66 - cancelling while confirmation is open invalidates execution
+  ---
+  duration_ms: 29.889224
+  type: 'test'
+  ...
+# Subtest: read query bypasses confirmation, preserves real result
+ok 67 - read query bypasses confirmation, preserves real result
+  ---
+  duration_ms: 1.14907
+  type: 'test'
+  ...
+# Subtest: malicious tool is rejected before executor
+ok 68 - malicious tool is rejected before executor
+  ---
+  duration_ms: 1.340251
+  type: 'test'
+  ...
+# Subtest: Ollama parser accepts validated deterministic calls, rejects raw execution
+ok 69 - Ollama parser accepts validated deterministic calls, rejects raw execution
+  ---
+  duration_ms: 1.903697
+  type: 'test'
+  ...
+# Subtest: Ollama network stays on loopback with redirects rejected
+ok 70 - Ollama network stays on loopback with redirects rejected
+  ---
+  duration_ms: 1.861303
+  type: 'test'
+  ...
+# Subtest: conversation uses real read result and explicitly selected model
+ok 71 - conversation uses real read result and explicitly selected model
+  ---
+  duration_ms: 95.870337
+  type: 'test'
+  ...
+# Subtest: missing local model is a genuine failure
+ok 72 - missing local model is a genuine failure
+  ---
+  duration_ms: 2.36882
+  type: 'test'
+  ...
+# Subtest: PCM WAV validation rejects fake bytes and sample rates
+ok 73 - PCM WAV validation rejects fake bytes and sample rates
+  ---
+  duration_ms: 1.134773
+  type: 'test'
+  ...
+# Subtest: voice state machine keeps illegal transitions blocked
+ok 74 - voice state machine keeps illegal transitions blocked
+  ---
+  duration_ms: 3.354839
+  type: 'test'
+  ...
+# Subtest: audit omits sensitive free text and argument values
+ok 75 - audit omits sensitive free text and argument values
+  ---
+  duration_ms: 3.738539
+  type: 'test'
+  ...
+# Subtest: legacy migration is explicit and rejects unauthorized and unconfirmed imports
+ok 76 - legacy migration is explicit and rejects unauthorized and unconfirmed imports
+  ---
+  duration_ms: 23.84881
+  type: 'test'
+  ...
+# Subtest: legacy ZIP preserves source bytes, text IDs, media and hashes without modifying source
+ok 77 - legacy ZIP preserves source bytes, text IDs, media and hashes without modifying source
+  ---
+  duration_ms: 35.784535
+  type: 'test'
+  ...
+# Subtest: mutating a preview cannot inject unvalidated records into the import
+ok 78 - mutating a preview cannot inject unvalidated records into the import
+  ---
+  duration_ms: 13.911262
+  type: 'test'
+  ...
+# Subtest: missing legacy media blocks preview without writes
+ok 79 - missing legacy media blocks preview without writes
+  ---
+  duration_ms: 2.456566
+  type: 'test'
+  ...
+# Subtest: changed source or nonempty target blocks migration
+ok 80 - changed source or nonempty target blocks migration
+  ---
+  duration_ms: 4.926373
+  type: 'test'
+  ...
+# Subtest: download failure and backup quota failure never import records or images
+ok 81 - download failure and backup quota failure never import records or images
+  ---
+  duration_ms: 11.3994
+  type: 'test'
+  ...
+# Subtest: failed Store commit removes only newly copied destination images
+ok 82 - failed Store commit removes only newly copied destination images
+  ---
+  duration_ms: 6.450051
+  type: 'test'
+  ...
+# Subtest: account switch during image copy rolls back original scope, never the next account
+ok 83 - account switch during image copy rolls back original scope, never the next account
+  ---
+  duration_ms: 10.666559
+  type: 'test'
+  ...
+# Subtest: destination revision change while copying is never overwritten
+ok 84 - destination revision change while copying is never overwritten
+  ---
+  duration_ms: 11.212907
+  type: 'test'
+  ...
+# Subtest: existing media collision cannot overwrite another destination image
+ok 85 - existing media collision cannot overwrite another destination image
+  ---
+  duration_ms: 6.661901
+  type: 'test'
+  ...
+# Subtest: failed rollback retains recovery journal and blocks repeat import
+ok 86 - failed rollback retains recovery journal and blocks repeat import
+  ---
+  duration_ms: 8.53362
+  type: 'test'
+  ...
+# Subtest: journal quota after successful Store save does not delete imported images or invite retry
+ok 87 - journal quota after successful Store save does not delete imported images or invite retry
+  ---
+  duration_ms: 9.907532
+  type: 'test'
+  ...
+# Subtest: concurrent commit is blocked while download is pending
+ok 88 - concurrent commit is blocked while download is pending
+  ---
+  duration_ms: 13.192029
+  type: 'test'
+  ...
+# Subtest: PWA installation omits credentials and cannot cache private API paths
+ok 89 - PWA installation omits credentials and cannot cache private API paths
+  ---
+  duration_ms: 82.526076
+  type: 'test'
+  ...
+# Subtest: PWA bypasses auth, media, signed URLs, external requests and writes
+ok 90 - PWA bypasses auth, media, signed URLs, external requests and writes
+  ---
+  duration_ms: 1.395584
+  type: 'test'
+  ...
+# Subtest: PWA navigation uses matching versioned HTML and activation preserves unrelated caches
+ok 91 - PWA navigation uses matching versioned HTML and activation preserves unrelated caches
+  ---
+  duration_ms: 3.68545
+  type: 'test'
+  ...
+# Subtest: explicit module wins; scheduling never becomes a payment
+ok 92 - explicit module wins; scheduling never becomes a payment
+  ---
+  duration_ms: 5.009679
+  type: 'test'
+  ...
+# Subtest: money parser stores integer cents, not pesos or binary decimal fractions
+ok 93 - money parser stores integer cents, not pesos or binary decimal fractions
+  ---
+  duration_ms: 0.570868
+  type: 'test'
+  ...
+# Subtest: narrow deterministic commands preserve exact domain and meaning
+ok 94 - narrow deterministic commands preserve exact domain and meaning
+  ---
+  duration_ms: 3.574551
+  type: 'test'
+  ...
+# Subtest: required Finance sentence executes one financial write and announces only verified result
+ok 95 - required Finance sentence executes one financial write and announces only verified result
+  ---
+  duration_ms: 28.239861
+  type: 'test'
+  ...
+# Subtest: required reminder creates only Agenda task, no Finance write
+ok 96 - required reminder creates only Agenda task, no Finance write
+  ---
+  duration_ms: 1.766225
+  type: 'test'
+  ...
+# Subtest: cross-domain model batch is rejected before ANY tool runs
+ok 97 - cross-domain model batch is rejected before ANY tool runs
+  ---
+  duration_ms: 1.059186
+  type: 'test'
+  ...
+# Subtest: failure, duplicate client and unverified output cannot become model success
+ok 98 - failure, duplicate client and unverified output cannot become model success
+  ---
+  duration_ms: 1.057287
+  type: 'test'
+  ...
+# Subtest: duplicate-client clarification preserves the financial proposal but still executes through registry
+ok 99 - duplicate-client clarification preserves the financial proposal but still executes through registry
+  ---
+  duration_ms: 1.258264
+  type: 'test'
+  ...
+# Subtest: never switches automatically to an available fallback model
+ok 100 - never switches automatically to an available fallback model
+  ---
+  duration_ms: 0.906876
+  type: 'test'
+  ...
+# Subtest: ambiguous mutation clarifies without requesting a model or executing tools
+ok 101 - ambiguous mutation clarifies without requesting a model or executing tools
+  ---
+  duration_ms: 0.595596
+  type: 'test'
+  ...
+# Subtest: cancel while model is pending prevents tools
+ok 102 - cancel while model is pending prevents tools
+  ---
+  duration_ms: 22.515372
+  type: 'test'
+  ...
+# Subtest: preparation rejection never opens confirmation or commits
+ok 103 - preparation rejection never opens confirmation or commits
+  ---
+  duration_ms: 0.681836
+  type: 'test'
+  ...
+# Subtest: versioned migration preserves original bytes, apps, grants, AI paths and unknown preferences
+ok 104 - versioned migration preserves original bytes, apps, grants, AI paths and unknown preferences
+  ---
+  duration_ms: 5.535189
+  type: 'test'
+  ...
+# Subtest: malformed and newer settings are not silently reset or overwritten
+ok 105 - malformed and newer settings are not silently reset or overwritten
+  ---
+  duration_ms: 1.417607
+  type: 'test'
+  ...
+# Subtest: microphone consent survives host restart and explicit revocation
+ok 106 - microphone consent survives host restart and explicit revocation
+  ---
+  duration_ms: 1.469475
+  type: 'test'
+  ...
+# Subtest: replacing an authorized identity revokes its old action grants
+ok 107 - replacing an authorized identity revokes its old action grants
+  ---
+  duration_ms: 1.69844
+  type: 'test'
+  ...
+# Subtest: opacity full range and explicit model preference persist
+ok 108 - opacity full range and explicit model preference persist
+  ---
+  duration_ms: 5.783375
+  type: 'test'
+  ...
+# Subtest: CAS conflict after pull fetches reviewable versions without retrying a write
+ok 109 - CAS conflict after pull fetches reviewable versions without retrying a write
+  ---
+  duration_ms: 8.775027
+  type: 'test'
+  ...
+# Subtest: CAS race with identical remote data resolves through readback without a write loop
+ok 110 - CAS race with identical remote data resolves through readback without a write loop
+  ---
+  duration_ms: 5.224282
+  type: 'test'
+  ...
+# Subtest: remote conflict resolution applies nonconflicting linked companions atomically
+ok 111 - remote conflict resolution applies nonconflicting linked companions atomically
+  ---
+  duration_ms: 5.523323
+  type: 'test'
+  ...
+# Subtest: editing while conflict is displayed prevents stale confirmation from discarding that edit
+ok 112 - editing while conflict is displayed prevents stale confirmation from discarding that edit
+  ---
+  duration_ms: 2.977077
+  type: 'test'
+  ...
+# Subtest: old conflict dialog cannot confirm a newer server version
+ok 113 - old conflict dialog cannot confirm a newer server version
+  ---
+  duration_ms: 3.928477
+  type: 'test'
+  ...
+# Subtest: conflict choices wait until all linked conflicts are selected
+ok 114 - conflict choices wait until all linked conflicts are selected
+  ---
+  duration_ms: 3.350514
+  type: 'test'
+  ...
+# Subtest: rollback quota failure never applies the selected remote versions
+ok 115 - rollback quota failure never applies the selected remote versions
+  ---
+  duration_ms: 2.357774
+  type: 'test'
+  ...
+# Subtest: remote revision rollback or changed payload at same revision is rejected
+ok 116 - remote revision rollback or changed payload at same revision is rejected
+  ---
+  duration_ms: 2.815561
+  type: 'test'
+  ...
+# Subtest: cannot resolve during an active fetch or after cancelling the account engine
+ok 117 - cannot resolve during an active fetch or after cancelling the account engine
+  ---
+  duration_ms: 2.675948
+  type: 'test'
+  ...
+# Subtest: diagnostic mic timeout discards without transcription or model dispatch
+ok 118 - diagnostic mic timeout discards without transcription or model dispatch
+  ---
+  duration_ms: 8.171477
+  type: 'test'
+  ...
+# Subtest: synthetic PCM recording encodes valid mono WAV and releases before dispatch
+ok 119 - synthetic PCM recording encodes valid mono WAV and releases before dispatch
+  ---
+  duration_ms: 6.196594
+  type: 'test'
+  ...
+# Subtest: cancel during microphone permission stops late stream without starting recorder
+ok 120 - cancel during microphone permission stops late stream without starting recorder
+  ---
+  duration_ms: 9.412172
+  type: 'test'
+  ...
+# Subtest: cancel ignores late transcription and never sends it to model
+ok 121 - cancel ignores late transcription and never sends it to model
+  ---
+  duration_ms: 5.71817
+  type: 'test'
+  ...
+# Subtest: cancel ignores late TTS and leaves no output AudioContext
+ok 122 - cancel ignores late TTS and leaves no output AudioContext
+  ---
+  duration_ms: 4.51115
+  type: 'test'
+  ...
+# Subtest: VAD requires voice and 1100ms silence; steady ambient never dispatches
+ok 123 - VAD requires voice and 1100ms silence; steady ambient never dispatches
+  ---
+  duration_ms: 145.799931
+  type: 'test'
+  ...
+# Subtest: continuous session sends one utterance then waits for actual TTS end before listening
+ok 124 - continuous session sends one utterance then waits for actual TTS end before listening
+  ---
+  duration_ms: 88.59975
+  type: 'test'
+  ...
+# Subtest: stop during continuous playback resolves pending speech without reopening microphone
+ok 125 - stop during continuous playback resolves pending speech without reopening microphone
+  ---
+  duration_ms: 3.82523
+  type: 'test'
+  ...
+# Subtest: denied session permission stops once with no retry timer
+ok 126 - denied session permission stops once with no retry timer
+  ---
+  duration_ms: 3.60577
+  type: 'test'
+  ...
+# Subtest: desktop state helper retains illegal transition rejection and cancels executing safely
+ok 127 - desktop state helper retains illegal transition rejection and cancels executing safely
+  ---
+  duration_ms: 2.616278
+  type: 'test'
+  ...
+# Subtest: confirmation token is exact, expiring, single-use and cannot move to another action
+ok 128 - confirmation token is exact, expiring, single-use and cannot move to another action
+  ---
+  duration_ms: 3.72683
+  type: 'test'
+  ...
+# Subtest: confirmation cancellation rejects approval and preserves immutable action snapshot
+ok 129 - confirmation cancellation rejects approval and preserves immutable action snapshot
+  ---
+  duration_ms: 0.610164
+  type: 'test'
+  ...
+# Subtest: catalog validates identities; shell, admin, remote, credentials and arbitrary protocols blocked
+ok 130 - catalog validates identities; shell, admin, remote, credentials and arbitrary protocols blocked
+  ---
+  duration_ms: 3.745855
+  type: 'test'
+  ...
+# Subtest: discovery uses fixed helper, deduplicates and never authorizes automatically
+ok 131 - discovery uses fixed helper, deduplicates and never authorizes automatically
+  ---
+  duration_ms: 16.532031
+  type: 'test'
+  ...
+# Subtest: typed windows tools reject injections and draft retains exact recipient and message
+ok 132 - typed windows tools reject injections and draft retains exact recipient and message
+  ---
+  duration_ms: 3.72356
+  type: 'test'
+  ...
+# Subtest: scoped files reject traversal and changed sources; rename is verified without overwrite
+ok 133 - scoped files reject traversal and changed sources; rename is verified without overwrite
+  ---
+  duration_ms: 4.640435
+  type: 'test'
+  ...
+# Subtest: persistent grants are scoped by action, app and trusted URL host
+ok 134 - persistent grants are scoped by action, app and trusted URL host
+  ---
+  duration_ms: 2.183674
+  type: 'test'
+  ...
+1..134
+# tests 134
+# suites 0
+# pass 134
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7793.965915

@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-19T05:49:54.454Z",
+  "passed": 8,
+  "checks": [
+    "Núcleo procedural activo con screenshot desktop",
+    "Núcleo móvil sin overflow",
+    "Escena WebGL con profundidad y primitivas reales, no imagen 2D",
+    "Rotación cambia entre frames reales",
+    "IntersectionObserver pausa RAF fuera de pantalla",
+    "Cambiar módulo elimina renderer y canvas",
+    "Movimiento reducido usa fallback SVG estático",
+    "Exportación web incluye nuevos assets locales disponibles"
+  ],
+  "errors": [],
+  "limits": "SwiftShader software en Linux; no certifica GPU Windows ni apariencia Acrylic."
+}

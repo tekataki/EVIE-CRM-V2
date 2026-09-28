@@ -1,0 +1,2454 @@
+[
+  {
+    "file": ".env.example",
+    "bytes": 254,
+    "sha256": "a74819b4bfeb14c9dfde8d7edbefa6809518abaf2b23c6da87853b4725725990",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# DALI CRM: aplicación estática local. Archivo solo documental.",
+      "# No se lee automáticamente ni configura autenticación/sincronización.",
+      "# Nunca publiques service_role, contraseñas ni secretos.",
+      "# No se necesitan credenciales para usar el modo local."
+    ]
+  },
+  {
+    "file": "ASSET_INVENTORY.md",
+    "bytes": 2880,
+    "sha256": "c8a11bdce1f1ef7d265b3257cfd0cf2011c3e528e370e977334dd24e7114ab26",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# Inventario de assets · avance Neural / RC",
+      "## Incremento del Prompt FINAL",
+      "## Recursos conservados"
+    ]
+  },
+  {
+    "file": "CHANGELOG.md",
+    "bytes": 2886,
+    "sha256": "3a5ca460785b02e0d6f21a57efc85c4a1ee9fe9d33c71dc34d73df9061904454",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# Historial de cambios",
+      "## 3.0.0 · Granja porcina · 2026-09-14",
+      "## 2.0.0 · Evolución local",
+      "### Conservado",
+      "### Migrado",
+      "### Añadido",
+      "### Corregido",
+      "### No terminado"
+    ]
+  },
+  {
+    "file": "CHANGELOG_DALI_V4.md",
+    "bytes": 4489,
+    "sha256": "1e7b5440515f59658173c30d751997a214001a9c0e76e821bf0332e680ea8f68",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# DALI Neural v4 · registro incremental",
+      "## Continuación: Core, seguridad de formularios y contratos",
+      "## Checkpoint inicial del Prompt FINAL",
+      "## Historial Neural previo",
+      "## Integrado",
+      "## No incluido todavía",
+      "## Compatibilidad"
+    ]
+  },
+  {
+    "file": "CHECKLIST.md",
+    "bytes": 9059,
+    "sha256": "a496a482ecd1bfe234dd82861a6814d7dacb639fce6689258b0aeacb7186fbdf",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# Seguimiento DALI CRM · Granja v3",
+      "## Prompt FINAL — estado actual",
+      "## Referencia histórica del incremento Neural previo",
+      "## Implementado",
+      "## Funciones locales todavía pendientes respecto del documento completo",
+      "### Integridad y arquitectura",
+      "### Importador",
+      "### Gimnasio",
+      "### Granja",
+      "### Crecimiento y negocios",
+      "### QA y accesibilidad",
+      "## Integraciones no configuradas"
+    ]
+  },
+  {
+    "file": "DESIGN_SYSTEM.md",
+    "bytes": 4429,
+    "sha256": "8683b65c86dd70d1c19de54402c97f31552a4af2de0cea402c8144bf92747d7a",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# Sistema visual DALI Neural · en desarrollo",
+      "## Dirección",
+      "## Tokens y tipografía",
+      "## Componentes implementados",
+      "## Componentes del incremento RC",
+      "## Movimiento y limpieza",
+      "## Responsive",
+      "## Pendiente"
+    ]
+  },
+  {
+    "file": "MIGRATION_REPORT.md",
+    "bytes": 5349,
+    "sha256": "d2827f3fa82169cc587bb6b6a9c31aec28b61652142c022a82e110e5015d22bd",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# Migración · informe del incremento Neural",
+      "## Situación actual",
+      "## Extensiones compatibles posteriores dentro de esquema 4",
+      "## Referencia histórica: cambios compatibles con el esquema 3",
+      "## Sin modificaciones automáticas",
+      "## Pendiente después de la base 4",
+      "## Entorno"
+    ]
+  },
+  {
+    "file": "QA.md",
+    "bytes": 5653,
+    "sha256": "a945a20458421d14f50752c555af72c4fdc5c101401b6c81146e7cec9f6e02d7",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# QA · DALI CRM",
+      "## Resultado actual del incremento RC",
+      "## Ejecución histórica v3",
+      "### Cobertura base",
+      "### Granja y alimentación",
+      "## Revisión visual actual",
+      "## Límites de esta validación"
+    ]
+  },
+  {
+    "file": "RC_REPORT.md",
+    "bytes": 19895,
+    "sha256": "8c739f75b8b44ee3478020e0af893bbfa1f63961e0e2f25adeef067b9a2be3e2",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# DALI · Informe del incremento Release Candidate",
+      "## Estado vigente tras Core, formularios y revisión de contratos",
+      "### Verificación más reciente",
+      "### Funciones añadidas y límites específicos",
+      "### Evidencia visual reciente",
+      "### Pendientes de implementación, NO bloqueos técnicos",
+      "### Bloqueos de verificación reales",
+      "### Arquitectura y entrega",
+      "## Checkpoint histórico: integración inicial de 97 pruebas",
+      "## Estado",
+      "## Base y verificación",
+      "## Implementado",
+      "### Datos",
+      "### Agenda",
+      "### Bitácora",
+      "### Vínculos",
+      "### Gym / alimentación y despensa",
+      "### Contexto y configuración",
+      "## Capturas realmente verificadas",
+      "## Pendiente del Prompt FINAL",
+      "## Uso y recuperación"
+    ]
+  },
+  {
+    "file": "README.md",
+    "bytes": 29664,
+    "sha256": "89a856e5fe86289a56d0b3ddfe83eb708f72ac069ee4d8c86eff62a80162422a",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# DALI · Neural Interface v4 en desarrollo",
+      "## Incremento actual del Prompt FINAL",
+      "### Modelos, rutas y servicios actuales",
+      "### Próximos pasos y límites",
+      "## Referencia histórica: incremento Neural anterior al Prompt FINAL",
+      "### Implementado sobre los archivos existentes",
+      "### Aún pendiente de v4",
+      "### Pruebas del incremento y próximos pasos",
+      "### Archivos y acceso",
+      "## Abrir y usar",
+      "## Funciones implementadas",
+      "## Rutas funcionales",
+      "## Almacenamiento y modelos",
+      "## Importación y recuperación",
+      "## Estructura técnica",
+      "## Privacidad e integraciones",
+      "## Validación y alcance pendiente",
+      "## Granja v3: operación y alcance verificado",
+      "### Empezar sin datos ficticios",
+      "### Nuevos modelos e importaciones",
+      "### Límites que siguen pendientes",
+      "### Referencias y QA"
+    ]
+  },
+  {
+    "file": "TEST_REPORT.md",
+    "bytes": 9360,
+    "sha256": "576f6a41b711f134aef90ffb44fec2cf937db7dcd43fe0d2dd9706c3af97c0b4",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# DALI Neural v4 · informe de pruebas del incremento",
+      "## Resultado vigente tras Core, formularios y contratos",
+      "## Referencia histórica: resultado inicial del Prompt FINAL",
+      "## Referencia histórica: 77 pruebas del incremento Neural",
+      "## Verificaciones",
+      "## Incidencias encontradas",
+      "## Capturas efectivamente revisadas",
+      "## Formularios reales revisados",
+      "## Pendiente de validación final"
+    ]
+  },
+  {
+    "file": "agenda.js",
+    "bytes": 16028,
+    "sha256": "d28eb118d1ec031fa320ad780adfb6d9701f04d1369e3d049ce6be6423e7999d",
+    "globals": [
+      "Agenda"
+    ],
+    "functions": [
+      "localCandidates",
+      "toTimestamp",
+      "occurrenceTimestamp",
+      "occurrence",
+      "isDone",
+      "complete",
+      "card",
+      "suggestions",
+      "suggestedView",
+      "timeline",
+      "clock",
+      "render",
+      "edit",
+      "saveLinked",
+      "timezoneComponent",
+      "ics"
+    ],
+    "actions": [
+      "rc-agenda-tab"
+    ],
+    "headings": []
+  },
+  {
+    "file": "app.js",
+    "bytes": 28290,
+    "sha256": "982f1cf7c6717e1f1192157d51b6b5bbb9248561482c595eec7cb52524cc6986",
+    "globals": [
+      "UI",
+      "App",
+      "DALI_READY"
+    ],
+    "functions": [
+      "icons",
+      "toast",
+      "openDialog",
+      "closeDialog",
+      "render",
+      "route",
+      "confirmAction",
+      "pending",
+      "quickAdd",
+      "customize",
+      "search",
+      "chooseWorkout",
+      "startWorkout",
+      "tickTimer",
+      "download",
+      "backup",
+      "trash",
+      "beginDictation",
+      "action",
+      "init"
+    ],
+    "actions": [
+      "amount-type",
+      "close-dialog",
+      "search-link",
+      "widget-down",
+      "widget-up"
+    ],
+    "headings": []
+  },
+  {
+    "file": "config.js",
+    "bytes": 3101,
+    "sha256": "b69d4293c6e9dbc753cf401ef7c6aacd30f032cb03a222aba89e29255d199c97",
+    "globals": [
+      "DALI_CONFIG"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "context-export.js",
+    "bytes": 5522,
+    "sha256": "9217d8a38050d717f3c7d9451e644afcfec3594c5b15264479792e3f9e041193",
+    "globals": [
+      "ContextExport"
+    ],
+    "functions": [
+      "build",
+      "open"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "dali-core.css",
+    "bytes": 6388,
+    "sha256": "3ce782f347281b44bf8e095d459f68fedb638d241b9681a0782ba19a58ab6f78",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "dali-core.js",
+    "bytes": 14753,
+    "sha256": "4298ed708d343a6fe5f1e000cb8c70a7327263b68f59c8f8bc64317a52ae265c",
+    "globals": [
+      "DaliCore"
+    ],
+    "functions": [
+      "sales",
+      "select",
+      "refresh",
+      "markup",
+      "close",
+      "open",
+      "showAlerts",
+      "showSales",
+      "settings",
+      "pulse",
+      "dispose"
+    ],
+    "actions": [
+      "core-open",
+      "core-settings",
+      "search-link"
+    ],
+    "headings": []
+  },
+  {
+    "file": "domain.js",
+    "bytes": 3836,
+    "sha256": "52933905c2a8c6a2606f0906ef7e7df0b5f5873a451bd5f48f4d442c67f77dbf",
+    "globals": [
+      "Domain"
+    ],
+    "functions": [
+      "today",
+      "cents",
+      "periodKey",
+      "renewGoals",
+      "learningProgress",
+      "age",
+      "linkedPayment",
+      "validateJournal"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "entity-links.js",
+    "bytes": 8141,
+    "sha256": "355b7ec79f15aa752abcf5cdcb0690c0791c50040c166962f5f72f2a5f16f17c",
+    "globals": [
+      "EntityLinks"
+    ],
+    "functions": [
+      "create",
+      "endpointLink",
+      "focusTarget",
+      "assertChildRemovable",
+      "open",
+      "render",
+      "search",
+      "pickerMarkup",
+      "mountPicker"
+    ],
+    "actions": [
+      "search-link"
+    ],
+    "headings": []
+  },
+  {
+    "file": "farm-domain.js",
+    "bytes": 5962,
+    "sha256": "ff1755dc4df36e521cc691c1a55896b0f93a5ca7639405df084d0d1efbde5e80",
+    "globals": [
+      "Farm"
+    ],
+    "functions": [
+      "event",
+      "revert",
+      "alerts",
+      "metrics"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "farm-feed.js",
+    "bytes": 4380,
+    "sha256": "b4c939a509130689734eb7f0b8f935fb75e41a7fea707b22ad03587ebf9449f0",
+    "globals": [
+      "Feed"
+    ],
+    "functions": [
+      "purchaseMath",
+      "period",
+      "price",
+      "lotBalance",
+      "usable",
+      "stageAt",
+      "ration"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "farm-forecast.js",
+    "bytes": 5702,
+    "sha256": "37b59b5e64a55402db201a61849aa4d2939b403ca66103df3ee96d9797d8c81b",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "farm-inventory-tools.js",
+    "bytes": 1852,
+    "sha256": "17890e9cda0256c6be5d6c17719744cb1b0326edd917c082384dcd27f2b147af",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "farm-upgrade.js",
+    "bytes": 6737,
+    "sha256": "46bbaae3c4ea1702bc31e4eb63698f8cab9fd691b0662402cd6eaba320529a91",
+    "globals": [
+      "FarmUpgrade"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "farm-validation.js",
+    "bytes": 3766,
+    "sha256": "ed592dae6f70af61007d227398e84d3847469792c7adf3dcf1e058da3c8fc9e7",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "form-safety.css",
+    "bytes": 1773,
+    "sha256": "5ee0542135a58d9fd3f350c77e65cad53929bc99cebf030a461c586ea5c31bc0",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "form-safety.js",
+    "bytes": 7018,
+    "sha256": "9dc9c1e8666ef927219f380d1abc0acd98f6a81d83643e9dd2f3b2cad29d850a",
+    "globals": [
+      "FormSafety"
+    ],
+    "functions": [
+      "values",
+      "dirty",
+      "attach",
+      "clean",
+      "dismiss",
+      "request",
+      "release",
+      "replace",
+      "enhance",
+      "wizard"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "forms.js",
+    "bytes": 17726,
+    "sha256": "ddb5c17e8a5d771f6f22802c59054e132f61416bb2364dc19bf39fca424ad17f",
+    "globals": [
+      "Forms"
+    ],
+    "functions": [
+      "field",
+      "select",
+      "area",
+      "form",
+      "edit",
+      "amountStep",
+      "payment",
+      "task",
+      "study",
+      "journal",
+      "profile"
+    ],
+    "actions": [
+      "amount-type",
+      "pad"
+    ],
+    "headings": []
+  },
+  {
+    "file": "icon.svg",
+    "bytes": 282,
+    "sha256": "d43bc3bc328af37201dedc97fe01907402e40908b899018c233337a5f0858e09",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "images/dali-logo.jpg",
+    "bytes": 4123,
+    "sha256": "de2b2a390461f4e86138e192f23b7150d77c1405609145888a678e45ace6dced",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "importer.js",
+    "bytes": 18005,
+    "sha256": "86f99f6f0033add0ee8310c62043dbf5b254ca3ff34dc43b3fdf5e3fa52e3088",
+    "globals": [
+      "Importer"
+    ],
+    "functions": [
+      "parse",
+      "operations",
+      "reference",
+      "routeInto",
+      "preview",
+      "commit",
+      "undo",
+      "example"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "index.html",
+    "bytes": 7201,
+    "sha256": "04ba96fc7f07203539fde4bfc65d7ce377235bf7b997f79d610df03cef255b50",
+    "globals": [],
+    "functions": [],
+    "actions": [
+      "notifications",
+      "search",
+      "settings",
+      "theme",
+      "v2-gym-upload"
+    ],
+    "headings": []
+  },
+  {
+    "file": "insight-charts.css",
+    "bytes": 1123,
+    "sha256": "a0683d9893016be7927964d931815b6590637b878b57439c0daced0758df887f",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "insight-charts.js",
+    "bytes": 2676,
+    "sha256": "17e16db9c1c9aef8cad1d8a4030cc2b7b05a140c0d16db9bed0731b214775282",
+    "globals": [
+      "InsightCharts"
+    ],
+    "functions": [
+      "line",
+      "distribution"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "journal-data.js",
+    "bytes": 8146,
+    "sha256": "616c564a2dedbe287d352d46346f519668d40d620fea066902bbb6e43e320714",
+    "globals": [
+      "JournalData"
+    ],
+    "functions": [
+      "measure",
+      "validate",
+      "operation",
+      "normalize",
+      "statistics",
+      "association",
+      "describePairs",
+      "crossAssociation"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "journal-editor.js",
+    "bytes": 9503,
+    "sha256": "fc09b0f3bbe50dd1115ac7db9abdf5dd237b78c82be62bb259c32d4fb61a5d68",
+    "globals": [
+      "JournalEditor"
+    ],
+    "functions": [
+      "open"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "journal-view.js",
+    "bytes": 11602,
+    "sha256": "862b5bcafb7dfd24650337c86c81f1231964c0a3bb0645ef2d6242cb7c6c2200",
+    "globals": [
+      "JournalView"
+    ],
+    "functions": [
+      "reflection",
+      "controls",
+      "render",
+      "patterns",
+      "crossPatterns",
+      "review",
+      "decorateUpload"
+    ],
+    "actions": [
+      "rc-journal-day"
+    ],
+    "headings": []
+  },
+  {
+    "file": "media-store.js",
+    "bytes": 3396,
+    "sha256": "57fb3d8c43b1eebca05678aa11544edfaf4b45770afbf19a5aae1f3c9fca1b83",
+    "globals": [
+      "MediaStore"
+    ],
+    "functions": [
+      "db",
+      "access",
+      "prepare",
+      "save",
+      "release",
+      "hydrate",
+      "clean"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "migrations.js",
+    "bytes": 3648,
+    "sha256": "87cf5552073a77493b19f1d08097ea9a1e0c5eabc5b237d2502e9945e5df19b6",
+    "globals": [
+      "Migrations"
+    ],
+    "functions": [
+      "migrateLegacy",
+      "migrate"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "module-experience.css",
+    "bytes": 5630,
+    "sha256": "90dcdbcfdd10f16aed12c5a2f18597c7452f9a0ce679ffdd85705e2330c4eba0",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "module-experience.js",
+    "bytes": 15077,
+    "sha256": "1e88aa4cd44b5a3072d45bd6f8e44dcbc6f2f76e12cf50b7bff9581b593a9e15",
+    "globals": [
+      "NeuralModules"
+    ],
+    "functions": [
+      "daily",
+      "chart",
+      "decorate",
+      "action"
+    ],
+    "actions": [
+      "toggle-goal"
+    ],
+    "headings": []
+  },
+  {
+    "file": "neural-care.css",
+    "bytes": 3281,
+    "sha256": "35608f0c0ad1cb2471f69d9df976d53bb8d192847eb1b460421f958e938cdb06",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural-care.js",
+    "bytes": 11813,
+    "sha256": "c1b2115762e3591d06789d409b12c1301563b460a1c2200375e97a6f025fa657",
+    "globals": [
+      "NeuralCare"
+    ],
+    "functions": [
+      "optional",
+      "animal",
+      "health",
+      "setFollowup",
+      "healthView"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural-core.js",
+    "bytes": 7319,
+    "sha256": "7c5440f66b1d2328c1c3f3d7862045a3c73217adae2abcddcf8d1d3f4cdc8951",
+    "globals": [
+      "Neural"
+    ],
+    "functions": [
+      "clock",
+      "tick",
+      "dispose",
+      "orb",
+      "draw",
+      "dismiss",
+      "welcome",
+      "beforeRender",
+      "afterRender",
+      "action"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural-farm.css",
+    "bytes": 8859,
+    "sha256": "ae6dee138027180a72b42a30605e4d9df8795eee822f4c1e2f91bb578bfd9f0e",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural-farm.js",
+    "bytes": 10585,
+    "sha256": "819cc758caac717ef744bb0ce1bc8715354d5d98ab67bc738466ba9ece0e36ef",
+    "globals": [
+      "NeuralFarm"
+    ],
+    "functions": [
+      "silhouette",
+      "hero",
+      "actionButton",
+      "card",
+      "cards",
+      "feedChart"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural-forms.js",
+    "bytes": 2167,
+    "sha256": "cae2953f6342b39abea29bbf94638f937d12da24bb2942697722ba0ba6481a2a",
+    "globals": [
+      "NeuralForms"
+    ],
+    "functions": [
+      "translate",
+      "enhance"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural-home.css",
+    "bytes": 5665,
+    "sha256": "5efe7ec952ddcbbb8c32cccfd93142a9a9107a953d7c42d9ef58f16c1775adf0",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural-home.js",
+    "bytes": 3706,
+    "sha256": "243b89b70a020bfe723d681577dc7d866922f028d3d9524bbbb2fa98b4a8fd80",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural-milestones.js",
+    "bytes": 4513,
+    "sha256": "a6d17ed387d1cb8e9689658f155a93100c84af0e147495a56ae8c08c1656d392",
+    "globals": [
+      "NeuralMilestones"
+    ],
+    "functions": [
+      "row",
+      "html",
+      "mount",
+      "read",
+      "preview"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural-signals.js",
+    "bytes": 1735,
+    "sha256": "25162e97dd97dcbd81de5ab1eb1c7553de6b2fb15d5ecf6c7ddded0449e5f70e",
+    "globals": [
+      "NeuralSignals"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "neural.css",
+    "bytes": 10759,
+    "sha256": "ee9bf75ddfdfe6f73bf12812d0e36142ba52d7c2358b3c63ece8206f8e2daa2c",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "nutrition.js",
+    "bytes": 8896,
+    "sha256": "3d94ed4b3299ea55789b9a3742250aad28b5725fb0b530808e1d871ebffa29a8",
+    "globals": [
+      "Nutrition"
+    ],
+    "functions": [
+      "render",
+      "editDay",
+      "editPantry",
+      "groceryList",
+      "expense",
+      "reverseExpense"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-app.js",
+    "bytes": 5235,
+    "sha256": "c9568c519a5edfe8070a7448970f3a3be6a69a8b1ef5cac95579cc8c328dde1f",
+    "globals": [
+      "PigApp"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-calendar.js",
+    "bytes": 3019,
+    "sha256": "8a5e2432880d87973d189ac353c42b1d36e249e7da014fe65229df90791e03ca",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-care-forms.js",
+    "bytes": 3484,
+    "sha256": "6da6b707bb0120540137c5d2055a6dcdb7df73b7553a31b12147e8461f76d149",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-events.js",
+    "bytes": 5297,
+    "sha256": "ef9ec0520eb88930ae630b783e7a2c1e27fa6ab777ff2aa6cba9bc32aebe4a27",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-feed-catalog.js",
+    "bytes": 4022,
+    "sha256": "65400e35ee83d87d63aa474c5e4a375f28ffaa41779120629626522f0b2d5ba7",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-feed-forms.js",
+    "bytes": 3296,
+    "sha256": "ee0b5d9d2c38fd108fd80d205bfa405c183376211b9383b7477d6134fa08df9f",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-feed-view.js",
+    "bytes": 3713,
+    "sha256": "73584fd14a904a3af573dc07de546c377a3a3ac001b923f083f10746b2b736e3",
+    "globals": [
+      "PigFeedView"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-forms.js",
+    "bytes": 2860,
+    "sha256": "346d6d1c11d2fd823e7965b12e28c1e70ceeaba87fab9b7ed11b6e71ede20ac1",
+    "globals": [
+      "PigForms"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-insights.js",
+    "bytes": 3519,
+    "sha256": "b87de0c812a9460c0c0ff694d7c1ac6de11920ad186969e5929066330d985d54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-inventory-forms.js",
+    "bytes": 3212,
+    "sha256": "f73aa395ffc024cdbcab2c1af26f7f3625a295a6d510a4ea86bd5a5697877545",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-model.js",
+    "bytes": 5480,
+    "sha256": "77264f7e6ecf5a3ffb54c251851dfa10e3a2f66c93b5a0327f6eee7e99ef57f7",
+    "globals": [
+      "Pig"
+    ],
+    "functions": [
+      "timeline",
+      "derive",
+      "allowed",
+      "capacity"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-reports.js",
+    "bytes": 3218,
+    "sha256": "bb45b8089b95ccee53a7ea28444abdec365c6c1d7ec96d4ababe39bf19b0214b",
+    "globals": [
+      "PigReports"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig-views.js",
+    "bytes": 6765,
+    "sha256": "a7e97a8e0238c3af634ba754354e8dcee389d615e3f3efd76926f94dc87a03f6",
+    "globals": [
+      "PigViews"
+    ],
+    "functions": [
+      "actions",
+      "cards",
+      "detail",
+      "render"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "pig.css",
+    "bytes": 1751,
+    "sha256": "ac935bf1ff3efcda87aa6864421545f296585feb9961d6cc102efd4b92bda8c1",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "project-files.json",
+    "bytes": 2957,
+    "sha256": "23b27df507ebff7d576710acdc6305bb83ac694d66942973ef1691f297b5f37f",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "rc-app.js",
+    "bytes": 9944,
+    "sha256": "16f669cf17d1d54b03d9f7b6ca7056fe0ac71065bd563747f78a9fb84f4981da",
+    "globals": [
+      "RCApp"
+    ],
+    "functions": [
+      "afterRender",
+      "action"
+    ],
+    "actions": [
+      "rc-links"
+    ],
+    "headings": []
+  },
+  {
+    "file": "rc-data.js",
+    "bytes": 12703,
+    "sha256": "ddc079c57b3bfbfe0c3f50358c82915f12cdc9072d05165ae9c96cdef198a019",
+    "globals": [
+      "RCData"
+    ],
+    "functions": [
+      "migrate",
+      "defaults",
+      "endpointKey",
+      "resolveEndpoint",
+      "validate",
+      "completeAgenda",
+      "groceryExpense",
+      "reverseGroceryExpense",
+      "nutritionRevision"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "rc.css",
+    "bytes": 4876,
+    "sha256": "58602435c703e227387ae4ccd7e65d0030f6b0a0876df7664b33321b0c064e2f",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "records.js",
+    "bytes": 8678,
+    "sha256": "8d61de0d5e8cd4d07089ed0afab96268cfe4f6026cf62976b7f940ca813d7a01",
+    "globals": [
+      "Records"
+    ],
+    "functions": [
+      "defaults",
+      "normalize"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "recurrence.js",
+    "bytes": 3445,
+    "sha256": "52801ae316f66b51e8481b9cca4624f95e943fa0e6bccd8567158f351e2ec330",
+    "globals": [
+      "Recurrence"
+    ],
+    "functions": [
+      "validate",
+      "latest",
+      "renew"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "reference/app-v1.txt",
+    "bytes": 26018,
+    "sha256": "c51ff7026ac56abddbea2605cee4c4281c885206811b060b7f91f24c578411ab",
+    "globals": [
+      "UI",
+      "App",
+      "DALI_READY"
+    ],
+    "functions": [
+      "icons",
+      "toast",
+      "openDialog",
+      "closeDialog",
+      "render",
+      "route",
+      "confirmAction",
+      "pending",
+      "quickAdd",
+      "customize",
+      "search",
+      "chooseWorkout",
+      "startWorkout",
+      "tickTimer",
+      "download",
+      "backup",
+      "trash",
+      "beginDictation",
+      "action",
+      "init"
+    ],
+    "actions": [
+      "amount-type",
+      "close-dialog",
+      "search-link",
+      "widget-down",
+      "widget-up"
+    ],
+    "headings": []
+  },
+  {
+    "file": "reference/feed-board-wide.jpg",
+    "bytes": 136279,
+    "sha256": "eb3200b7b3f19f26fc8dfd6ce5eae84c8d5321622d845736dbd9f886bcaee6a4",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "reference/store-v1.txt",
+    "bytes": 9251,
+    "sha256": "3350c96410e966100333f3b1341902812fc44abf3d61c654838adbb99aac4444",
+    "globals": [
+      "Store"
+    ],
+    "functions": [
+      "record",
+      "initial",
+      "init",
+      "validate",
+      "save",
+      "put",
+      "remove",
+      "merge"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "reference/v3-app.js.txt",
+    "bytes": 26908,
+    "sha256": "2c175206964608a548b36c46118e7395429f82567ebce69c56928e434dda3834",
+    "globals": [
+      "UI",
+      "App",
+      "DALI_READY"
+    ],
+    "functions": [
+      "icons",
+      "toast",
+      "openDialog",
+      "closeDialog",
+      "render",
+      "route",
+      "confirmAction",
+      "pending",
+      "quickAdd",
+      "customize",
+      "search",
+      "chooseWorkout",
+      "startWorkout",
+      "tickTimer",
+      "download",
+      "backup",
+      "trash",
+      "beginDictation",
+      "action",
+      "init"
+    ],
+    "actions": [
+      "amount-type",
+      "close-dialog",
+      "search-link",
+      "widget-down",
+      "widget-up"
+    ],
+    "headings": []
+  },
+  {
+    "file": "reference/v3-index.html.txt",
+    "bytes": 5742,
+    "sha256": "22a00292c673f56d1d7a768be13e5727cd3fba799b9582c0d32777b0bb55ff68",
+    "globals": [],
+    "functions": [],
+    "actions": [
+      "notifications",
+      "search",
+      "settings",
+      "theme",
+      "v2-gym-upload"
+    ],
+    "headings": []
+  },
+  {
+    "file": "reference/views-v1.txt",
+    "bytes": 37031,
+    "sha256": "1980b60384c4767a53500b74a42615bc6f56bfb52a3e211ac106e8425cdb72a8",
+    "globals": [
+      "Views"
+    ],
+    "functions": [
+      "periodTransactions",
+      "totals",
+      "bank",
+      "panelHeader",
+      "chart",
+      "goalRows",
+      "widgets",
+      "home",
+      "tabs",
+      "finance",
+      "goals",
+      "soma",
+      "paymentRows",
+      "gym",
+      "learning",
+      "journal",
+      "profile",
+      "notFound"
+    ],
+    "actions": [
+      "${action}",
+      "${a}",
+      "complete-set",
+      "delete",
+      "deliverable",
+      "edit",
+      "edit-task",
+      "revert-payment",
+      "task-goal",
+      "toggle-goal",
+      "toggle-task"
+    ],
+    "headings": []
+  },
+  {
+    "file": "requirements-farm.md",
+    "bytes": 42326,
+    "sha256": "bfaec32d65009516a934e4d64e348488ec71517f4ce63cac69896404f969e5f0",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# PROMPT DE IMPLEMENTACIÓN — EVOLUCIÓN DEL MÓDULO GRANJA PORCINA DE DALI",
+      "## Instrucción principal",
+      "## 1. Material adjunto y orden de autoridad",
+      "## 2. Restricciones técnicas no negociables",
+      "## 3. Alcance del producto",
+      "## 4. Dirección visual y experiencia de uso",
+      "## 5. Arquitectura de la sección Granja",
+      "### 5.1 Resumen",
+      "### 5.2 Cerdos",
+      "### 5.3 Reproducción",
+      "### 5.4 Camadas",
+      "### 5.5 Calendario y pendientes",
+      "### 5.6 Salud",
+      "## 6. Ciclo reproductivo correcto e incorporación de “Celo”",
+      "### 6.1 Estados",
+      "### 6.2 Eventos obligatorios",
+      "### 6.3 Registrar celo",
+      "### 6.4 Registrar servicio/monta",
+      "### 6.5 Revisión de gestación y retorno a celo",
+      "### 6.6 Gestación, preparto, parto y lactancia",
+      "### 6.7 Botones contextuales por estado",
+      "## 7. Módulo de Alimentación",
+      "### 7.1 Etapas alimenticias",
+      "### 7.2 Periodos y transición de etapas",
+      "### 7.3 Fórmulas exactas",
+      "### 7.4 Pantalla de Alimentación",
+      "### 7.5 Medición real y mejora continua",
+      "### 7.6 Inventario y precios",
+      "## 8. Catálogo inicial leído de las fotografías",
+      "### Línea tradicional — harina",
+      "### Línea Hi-Magra — harina",
+      "### Cerdos en pellet",
+      "## 9. Ejemplos de control matemático obligatorios",
+      "### Caso A — semana",
+      "### Caso B — quincena",
+      "### Caso C — 30 días",
+      "### Caso D — inventario arrastrado",
+      "### Caso E — etapas mixtas",
+      "## 10. Métricas para maximizar la operación sin inventar conclusiones",
+      "### Reproducción",
+      "### Alimentación y costos",
+      "### Capacidad de maternidad",
+      "### Selección de las mejores reproductoras",
+      "## 11. Modelo de datos y dominio",
+      "### Animal mínimo",
+      "### Ajustes mínimos",
+      "## 12. Migración y protección de datos",
+      "## 13. Integraciones dentro de DALI",
+      "### Inicio",
+      "### Finanzas",
+      "### Objetivos y pendientes",
+      "### Upload JSON",
+      "## 14. Seguridad, accesibilidad y confiabilidad",
+      "## 15. Pruebas y criterios de aceptación",
+      "### Reproducción",
+      "### Alimentación",
+      "### Datos y aplicación",
+      "## 16. Fuentes técnicas y límites de las recomendaciones",
+      "## 17. Entrega obligatoria"
+    ]
+  },
+  {
+    "file": "requirements-rc.md",
+    "bytes": 60039,
+    "sha256": "fa05c89aa6bac54f399f67e534e59185898d299fab1e6687a33ba17c029200bd",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# DALI — Release Candidate Master Implementation Prompt for Genspark / GPT-6 Astra",
+      "## Files that must be attached with this prompt",
+      "## ROLE",
+      "## ONE-SENTENCE PRODUCT DEFINITION",
+      "## LANGUAGE, LOCALE, AND USER",
+      "# 1. NON-NEGOTIABLE RULES",
+      "## 1.1 Evolve the existing application; do not replace it",
+      "## 1.2 Data integrity is more important than visual polish",
+      "## 1.3 Preserve verified behavior",
+      "## 1.4 Keep deployment and external services out of this phase",
+      "## 1.5 Product honesty",
+      "# 2. CURRENT BASELINE YOU MUST RESPECT",
+      "# 3. SCREENSHOT AUDIT AND REQUIRED RESPONSE",
+      "# 4. VISUAL NORTH STAR",
+      "## 4.1 Design-system requirements",
+      "## 4.2 Motion system",
+      "## 4.3 Images and visual assets",
+      "# 5. GLOBAL SHELL AND RESPONSIVE BEHAVIOR",
+      "## 5.1 Header",
+      "## 5.2 Desktop navigation",
+      "## 5.3 Mobile navigation",
+      "## 5.4 Forms and overlays",
+      "# 6. THE DALI CORE — LARGE INTERACTIVE ORB",
+      "## 6.1 Scale and composition",
+      "## 6.2 It must be a real control",
+      "## 6.3 State colors and meaning",
+      "## 6.4 Deterministic status engine",
+      "# 7. PERSONAL JOURNAL + PERSONAL STATISTICS REDESIGN",
+      "## 7.1 Intended workflow",
+      "## 7.2 New dedicated JSON format",
+      "## 7.3 Embedded “copy instructions” button",
+      "## 7.4 Journal UX and charts",
+      "## 7.5 Sensitive-data presentation",
+      "# 8. NEW AGENDA MODULE — THE ONLY NEW TOP-LEVEL SECTION",
+      "## 8.1 Agenda purpose",
+      "## 8.2 Data model",
+      "## 8.3 Agenda UX",
+      "## 8.4 Calendar interoperability without a fake API",
+      "# 9. SCHEMA VERSION 4 AND CROSS-MODULE LINKS",
+      "## 9.1 New/extended state",
+      "## 9.2 `entityLinks`",
+      "## 9.3 Importer extension",
+      "# 10. GYM: ANALYTICS, NUTRITION, AND PANTRY",
+      "## 10.1 Training analytics",
+      "## 10.2 Nutrition",
+      "## 10.3 Pantry and shopping",
+      "# 11. MODULE-BY-MODULE EXPERIENCE UPGRADE",
+      "## 11.1 Home",
+      "## 11.2 Finance",
+      "## 11.3 Objectives",
+      "## 11.4 SOMA",
+      "## 11.5 Learning",
+      "## 11.6 Farm — pigs only",
+      "## 11.7 Books",
+      "## 11.8 ALVENTO",
+      "## 11.9 Content",
+      "## 11.10 Vision Board",
+      "## 11.11 Upload",
+      "## 11.12 Profile and Settings",
+      "# 12. DALI CONTEXT EXPORT FOR CHATGPT",
+      "# 13. CHARTS AND DATA VISUALIZATION",
+      "# 14. OPTIONAL ORIGINAL ASSET BRIEFS",
+      "# 15. ACCESSIBILITY AND INTERACTION QUALITY",
+      "# 16. PERFORMANCE AND RELIABILITY",
+      "# 17. IMPLEMENTATION PHASES",
+      "## Phase 0 — Audit and safety checkpoint",
+      "## Phase 1 — Data foundation",
+      "## Phase 2 — Global design and motion",
+      "## Phase 3 — Primary workflows",
+      "## Phase 4 — Route-by-route visual upgrade",
+      "## Phase 5 — QA and documentation",
+      "# 18. REQUIRED TESTS",
+      "## Data and migration",
+      "## Journal",
+      "## Agenda and links",
+      "## DALI Core",
+      "## Nutrition and finance linkage",
+      "## Regression and presentation",
+      "# 19. VISUAL QA MATRIX",
+      "# 20. DEFINITION OF DONE",
+      "# 21. FINAL HANDOFF FORMAT"
+    ]
+  },
+  {
+    "file": "requirements-v2.md",
+    "bytes": 58921,
+    "sha256": "2cac5c1a3a50d99ce5944ddb7e507929e25133fbc2074dfefeb6f60aa21c81ca",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# PROMPT MAESTRO DE EVOLUCIÓN — DALI CRM v2",
+      "## Instrucción principal",
+      "## 0. Resultado obligatorio",
+      "## 1. Archivos adjuntos y orden de autoridad",
+      "## 2. Protocolo obligatorio antes de modificar código",
+      "## 3. Restricciones técnicas vinculantes",
+      "## 4. Lo que ya existe y no debe romperse",
+      "## 5. Arquitectura de navegación",
+      "### Grupo principal",
+      "### Grupo de herramientas, visualmente separado",
+      "### Grupo de cuenta, al final",
+      "## 6. Sistema de datos, migración y persistencia",
+      "### 6.1 Migración",
+      "### 6.2 Colecciones",
+      "### 6.3 Fechas, hora y moneda",
+      "### 6.4 Imágenes y archivos",
+      "### 6.5 Backend opcional",
+      "## 7. Importador JSON universal — sección “Subir”",
+      "### 7.1 Objetivo",
+      "### 7.2 Interfaz",
+      "### 7.3 Formatos aceptados",
+      "### 7.4 Contrato general",
+      "### 7.5 Módulos y entidades permitidos",
+      "### 7.6 Seguridad e integridad",
+      "### 7.7 Idempotencia y deshacer",
+      "### 7.8 Plantilla general que DALI debe permitir copiar",
+      "## 8. Inicio — saludo, reloj y centro de mando",
+      "## 9. Finanzas — conservar y corregir",
+      "### 9.1 Tarjeta bancaria rectangular en móvil",
+      "### 9.2 Un solo libro mayor",
+      "## 10. Gimnasio — analítica importada desde Symmetry",
+      "### 10.1 Cambio de propósito",
+      "### 10.2 Vistas",
+      "### 10.3 Rangos reales de Symmetry",
+      "### 10.4 Contrato de entrenamiento",
+      "### 10.5 Plantilla que DALI debe permitir copiar para ChatGPT",
+      "## 11. Granja — gestión porcina hoy, multiespecie después",
+      "### 11.1 Principio de diseño",
+      "### 11.2 Contexto personal configurable",
+      "### 11.3 Modelo animal",
+      "### 11.4 Eventos y ciclo reproductivo",
+      "### 11.5 Pantallas",
+      "### 11.6 Métricas correctas",
+      "### 11.7 Integraciones internas",
+      "## 12. Aprendizaje — rutas completas mediante JSON",
+      "### 12.1 Flujo",
+      "### 12.2 Siete niveles",
+      "### 12.3 Contrato de ruta",
+      "### 12.4 Reglas de calidad",
+      "### 12.5 Plantilla para ChatGPT",
+      "## 13. Libros",
+      "### 13.1 Estados",
+      "### 13.2 Campos",
+      "## 14. ALVENTO — marca de ropa por drops",
+      "### 14.1 Entidades",
+      "### 14.2 Panel de drop",
+      "### 14.3 Contexto ALVENTO",
+      "### 14.4 Integración financiera",
+      "## 15. Contenido — ideas y producción de videos",
+      "### 15.1 Bandeja de ideas",
+      "### 15.2 Ficha de producción",
+      "### 15.3 Series y cadencia",
+      "### 15.4 Métricas tras publicar",
+      "## 16. Vision Board — metas visuales",
+      "## 17. Mi perfil",
+      "## 18. Objetivos, SOMA y Bitácora — conservar y conectar",
+      "### 18.1 Objetivos",
+      "### 18.2 SOMA",
+      "### 18.3 Bitácora personal",
+      "## 19. Diseño visual y responsive",
+      "### Escritorio",
+      "### Tablet",
+      "### Móvil",
+      "## 20. Rendimiento, privacidad y robustez",
+      "## 21. Contratos y archivos de esquema",
+      "## 22. Implementación por fases sin abandonar trabajo",
+      "### Fase 0 — seguridad",
+      "### Fase 1 — infraestructura transversal",
+      "### Fase 2 — correcciones y gimnasio",
+      "### Fase 3 — Granja",
+      "### Fase 4 — crecimiento personal",
+      "### Fase 5 — negocios y creación",
+      "### Fase 6 — endurecimiento",
+      "## 23. Pruebas obligatorias",
+      "### 23.1 Migración y datos",
+      "### 23.2 Importador",
+      "### 23.3 Gimnasio",
+      "### 23.4 Granja",
+      "### 23.5 Otros módulos",
+      "### 23.6 Visual y accesibilidad",
+      "## 24. Criterios de aceptación por módulo",
+      "## 25. Entrega final esperada",
+      "## 26. Lista final de “no hacer”",
+      "## 27. Decisión de producto que debe guiar todo"
+    ]
+  },
+  {
+    "file": "requirements-v4.md",
+    "bytes": 54680,
+    "sha256": "6f51afa1c9f56e0b26475959b7164fdee4605ae389bce6c59256247fabb71c09",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# PROMPT MAESTRO DE REDISEÑO E IMPLEMENTACIÓN",
+      "## DALI NEURAL INTERFACE v4 — Genspark + GPT-6 Astra",
+      "## 0. MISIÓN",
+      "### Resultado emocional obligatorio",
+      "### Resultado técnico obligatorio",
+      "## 1. MATERIAL ADJUNTO Y ORDEN DE AUTORIDAD",
+      "## 2. PROTOCOLO OBLIGATORIO ANTES DE EDITAR",
+      "## 3. RESTRICCIONES TÉCNICAS NO NEGOCIABLES",
+      "### Debes conservar ese stack",
+      "### Librerías permitidas para esta actualización",
+      "### Supabase no se implementa todavía",
+      "## 4. PRINCIPIOS QUE GOBIERNAN TODO EL REDISEÑO",
+      "### 4.1 No destruir para “mejorar”",
+      "### 4.2 Creatividad con jerarquía",
+      "### 4.3 Lo vacío también debe estar diseñado",
+      "### 4.4 Todo en español",
+      "### 4.5 Datos honestos",
+      "## 5. CONCEPTO VISUAL: “DALI NEURAL INTERFACE”",
+      "### 5.1 Sensación",
+      "### 5.2 Paleta base sugerida",
+      "### 5.3 Superficies y profundidad",
+      "### 5.4 Tipografía",
+      "### 5.5 Identidad original por módulo",
+      "## 6. SISTEMA DE MOVIMIENTO",
+      "### A. Movimiento ambiental",
+      "### B. Movimiento de navegación",
+      "### C. Retroalimentación",
+      "### Reglas de ingeniería de movimiento",
+      "## 7. SHELL GLOBAL Y ENCABEZADO",
+      "### 7.1 Reloj global grande",
+      "### 7.2 Sidebar y navegación móvil",
+      "### 7.3 Dock de acciones contextuales",
+      "### 7.4 Búsqueda y paleta de comandos",
+      "## 8. NUEVO SISTEMA DE FORMULARIOS: RÁPIDO, VISUAL Y SIN ABURRIR",
+      "### 8.1 Dos niveles",
+      "### 8.2 Wizards para flujos complejos",
+      "### 8.3 Controles visuales",
+      "### 8.4 Bottom sheets y modales",
+      "### 8.5 Validación",
+      "## 9. INICIO — EXPERIENCIA “WELCOME, BOSS” Y CENTRO DE MANDO",
+      "### 9.1 Entrada cinematográfica por sesión",
+      "### 9.2 Héroe JARVIS original",
+      "### 9.3 Contenido útil debajo",
+      "## 10. CONEXIONES ENTRE MÓDULOS",
+      "### 10.1 Modelo de enlaces",
+      "### 10.2 Enlaces prioritarios",
+      "### 10.3 Actividad derivada",
+      "## 11. ESENCIA VISUAL Y MEJORAS POR MÓDULO",
+      "### 11.1 Finanzas",
+      "### 11.2 Gimnasio",
+      "### 11.3 Objetivos",
+      "### 11.4 SOMA",
+      "### 11.5 Aprendizaje",
+      "### 11.6 Bitácora personal",
+      "### 11.7 Libros",
+      "### 11.8 ALVENTO",
+      "### 11.9 Contenido",
+      "### 11.10 Vision Board",
+      "### 11.11 Subir",
+      "### 11.12 Perfil y Configuración",
+      "## 12. GRANJA — REDISEÑO PROFUNDO Y FUNCIONAL",
+      "### 12.1 Alcance",
+      "### 12.2 Identidad visual",
+      "### 12.3 Héroe de Granja",
+      "### 12.4 Navegación interna",
+      "### 12.5 Tarjetas de animales",
+      "### 12.6 Agregar cerdo — flujo simplificado",
+      "### 12.7 Acciones reproductivas",
+      "### 12.8 Salud — formulario visual",
+      "### 12.9 Camadas, agenda y rendimiento",
+      "### 12.10 Ajustes",
+      "## 13. GRANJA → COMIDA: CALCULADOR, INVENTARIO Y PRECIOS",
+      "### 13.1 Objetivo de la pantalla",
+      "### 13.2 Composición visual",
+      "### 13.3 Reglas de cálculo",
+      "### 13.4 Control histórico de ejemplo, no recomendación",
+      "### 13.5 Catálogo MAFORNU ya existente — conservar",
+      "### 13.6 Nuevas referencias de la fotografía del 16/09/2026",
+      "### 13.7 Registrar compra",
+      "## 14. IMÁGENES Y RECURSOS VISUALES",
+      "### 14.1 Política de imágenes",
+      "### 14.2 Recursos originales que puedes crear",
+      "### 14.3 ALVENTO",
+      "## 15. RESPONSIVE: MÓVIL Y COMPUTADORA SON PRIMERA CLASE",
+      "## 16. ACCESIBILIDAD, PRIVACIDAD Y SEGURIDAD",
+      "## 17. MIGRACIÓN Y PROTECCIÓN DE DATOS",
+      "## 18. ORDEN DE IMPLEMENTACIÓN",
+      "### Fase 1 — Base visual global",
+      "### Fase 2 — Inicio",
+      "### Fase 3 — Granja prioritaria",
+      "### Fase 4 — Módulos restantes",
+      "### Fase 5 — Conexiones y QA",
+      "## 19. PRUEBAS OBLIGATORIAS",
+      "### 19.1 Datos y regresión",
+      "### 19.2 Movimiento y navegación",
+      "### 19.3 Reloj",
+      "### 19.4 Formularios",
+      "### 19.5 Granja",
+      "### 19.6 Comida",
+      "### 19.7 Responsive y visual",
+      "## 20. CRITERIOS DE ACEPTACIÓN VISUAL",
+      "## 21. ENTREGA FINAL OBLIGATORIA",
+      "## 22. REFERENCIAS TÉCNICAS Y DE DIRECCIÓN",
+      "## 23. ORDEN FINAL"
+    ]
+  },
+  {
+    "file": "requirements.txt",
+    "bytes": 33637,
+    "sha256": "556a8b16b9c82f02cbc003f24dabe38f595c62f363ee2a8b44dfae4fe76859b9",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": [
+      "# PROMPT MAESTRO — DALI OS\r",
+      "## Instrucción principal\r",
+      "## 1. Protocolo obligatorio antes de programar\r",
+      "### Stack técnico obligatorio\r",
+      "## 2. Identidad del producto\r",
+      "### Concepto visual\r",
+      "### Sistema visual\r",
+      "### Accesibilidad\r",
+      "## 3. Responsive real: móvil, tablet y PC\r",
+      "### PC, desde aproximadamente 1024 px\r",
+      "### Tablet, aproximadamente 768–1023 px\r",
+      "### Móvil, desde 360 px\r",
+      "## 4. Navegación y arquitectura de información\r",
+      "### Inicio — centro de mando\r",
+      "## 5. Módulo Finanzas\r",
+      "### Encabezado y resumen\r",
+      "### Movimientos\r",
+      "### Pagos pendientes personales\r",
+      "### Préstamos activos\r",
+      "## 6. Módulo Gimnasio\r",
+      "### Panel principal\r",
+      "### Rutinas y sesiones\r",
+      "### Progreso corporal\r",
+      "## 7. Módulo Objetivos\r",
+      "### Funciones\r",
+      "### Regla crítica de reinicio\r",
+      "## 8. Módulo SOMA\r",
+      "### Pipeline de clientes\r",
+      "### Ficha individual de cliente\r",
+      "### Integración SOMA ↔ Finanzas\r",
+      "## 9. Módulo Aprendizaje\r",
+      "### Panel de aprendizaje\r",
+      "### Crear una habilidad\r",
+      "### Estructura de cada habilidad\r",
+      "### Cálculo de progreso\r",
+      "### Ruta inicial: Ventas para SOMA\r",
+      "### Integraciones\r",
+      "## 10. Módulo Bitácora personal\r",
+      "### Flujo principal\r",
+      "### Estructura generada\r",
+      "### Historial e insights\r",
+      "## 11. Módulo Mi perfil\r",
+      "### Diseño\r",
+      "### Datos iniciales editables\r",
+      "### Resumen personal\r",
+      "## 12. Datos, autenticación y seguridad\r",
+      "## 13. Reglas de producto y calidad\r",
+      "### Funcionalidad\r",
+      "### Ingeniería\r",
+      "### Pruebas obligatorias\r",
+      "### QA visual y responsive\r",
+      "## 14. Orden recomendado de implementación\r",
+      "## 15. Criterios de aceptación final\r",
+      "## 16. Entrega esperada\r"
+    ]
+  },
+  {
+    "file": "review-animal.html",
+    "bytes": 319,
+    "sha256": "9df0a11db4f44154330cf68aaea2062bc201f8a95023298ebd781ad47facedc5",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-care-open.js",
+    "bytes": 957,
+    "sha256": "9d085c5fd0a7f0184b82607792d14ab8e1e63dfbf2de924d0040b9333790dcc4",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-care-start.js",
+    "bytes": 866,
+    "sha256": "65b8e6b0bbac1983b331c66a12498c907501040b27726dc44cb74e4d756bbbc8",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-dark.html",
+    "bytes": 875,
+    "sha256": "2e051d7e27573276af0ee546c4a5bc692fae26288ca38100c4a787220edbb53a",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-farm-key.js",
+    "bytes": 203,
+    "sha256": "18fef33d2500470273ce7d780a0a614d63da302e38834a75a5e6deec7fc114bc",
+    "globals": [
+      "FARM_REVIEW_FEED",
+      "DALI_CONFIG"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-farm-start.js",
+    "bytes": 1491,
+    "sha256": "f445ed5400793ced8ad0cf2f9bf0bfbea296b35390c591d7e8ffc7cf1ad1c978",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-farm.html",
+    "bytes": 1004,
+    "sha256": "ea06ac2006b0fda62965246964a261a83c69906e4e36124a296e44d0ce40f1ae",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-feed.html",
+    "bytes": 1004,
+    "sha256": "ea06ac2006b0fda62965246964a261a83c69906e4e36124a296e44d0ce40f1ae",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-health.html",
+    "bytes": 319,
+    "sha256": "9df0a11db4f44154330cf68aaea2062bc201f8a95023298ebd781ad47facedc5",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-milestones.html",
+    "bytes": 319,
+    "sha256": "9df0a11db4f44154330cf68aaea2062bc201f8a95023298ebd781ad47facedc5",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-agenda.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-agendaDay.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-alvento.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-books.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-care-dark.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-care.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-content.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-context.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-core-attention.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-core-dark.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-core-urgent-dark.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-core.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-finance.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-form-review.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-form.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-goals.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-gym.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-import.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-journal.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-journalCalendar.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-journalEditor-dark.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-journalEditor.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-nutrition.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-open.js",
+    "bytes": 7588,
+    "sha256": "4d3bb9fd007df722bc67762b51d4239c85b543c5263c673228285f868d40335b",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-soma.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-start.js",
+    "bytes": 781,
+    "sha256": "f222dafd5d22357e0fbcafb49d7f82ba3520ccaab7ecc662348d46ea1561cfed",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-stats.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-rc-vision.html",
+    "bytes": 314,
+    "sha256": "16280a4c32dd6201c648b9d579b26c20c630130ba975a55614265b504d4bff54",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-setup.js",
+    "bytes": 165,
+    "sha256": "4a104946e150a477c6cf1b1cef94c853aab7e7a6796db3abc2b6ac013663dcb2",
+    "globals": [
+      "DALI_CONFIG"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "review-start.js",
+    "bytes": 186,
+    "sha256": "f319495807a4cebaad0c8266b7be65a4bc6a785b076bd7c6e21a5d1fa087e577",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "samples/farm-feed.json",
+    "bytes": 788,
+    "sha256": "3837cf33d66ae0a9c099c27b368357308bfe6ea2beedfd7f6f9733d697d6836c",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "samples/general.json",
+    "bytes": 610,
+    "sha256": "e7bc8b6047952284de473d5ceb82dcf92f2378cb45675b030336ef7211584ec5",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "samples/gym-partial.json",
+    "bytes": 1052,
+    "sha256": "54e08095910fd4bcff795c673be0fead43b0024bfa03b3d04b297bce6f7bc56c",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "samples/invalid.json",
+    "bytes": 114,
+    "sha256": "ebb7270eb8b25a0fa0352bbd7826587bff6617f1f45702b2d76198f49bf93e51",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "samples/journal-entry-example.json",
+    "bytes": 1126,
+    "sha256": "805e8da5cb22a3400e1c773eb68f139419c4c0056e5b9dcf8f4f87b98109f777",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "schemas/dali.crm.import.schema.json",
+    "bytes": 4060,
+    "sha256": "98c6aab7cf798f8b48513595e042ec5eb64f8924df5e69dccd46e13830bb070e",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "schemas/dali.gym.session.schema.json",
+    "bytes": 1698,
+    "sha256": "b797edef518f3d0a1e0762936499608f3b8c2bba2fa2271a22e8a3819825e810",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "schemas/dali.journal.entry.schema.json",
+    "bytes": 3567,
+    "sha256": "69da5b5809be1fad8c56740573cbe7d618a01588ea4969a7da1c7223b5b9c1c0",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "schemas/dali.learning.route.schema.json",
+    "bytes": 1800,
+    "sha256": "b14e2a8387e6bf203a0e217e7cb84b7024e05faff40f7fdbc12998f4f72acbca",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "store.js",
+    "bytes": 10482,
+    "sha256": "db2de18137f81220461e60f4fff1f67c82c1a25c8eeda1a1586c295bde9973ed",
+    "globals": [
+      "Store"
+    ],
+    "functions": [
+      "record",
+      "initial",
+      "init",
+      "validate",
+      "save",
+      "put",
+      "remove",
+      "merge"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "styles.css",
+    "bytes": 34995,
+    "sha256": "b4a8f7c62e94ab9412d743eef21a118809ed17ba4841eb940e3f3263b651f3c6",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "tests-catalog.js",
+    "bytes": 4262,
+    "sha256": "c803d3ca7be1d7c8d0aee21c43dcc258d32b0979f42e07ab9ebbd2aea17a7f3e",
+    "globals": [
+      "runCatalogTests"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "tests-core.js",
+    "bytes": 7129,
+    "sha256": "d3e6962b15cdcbedd6cae39ce28f876eeac7a947717cd7d426dfd46f7e8aef0e",
+    "globals": [
+      "runCoreTests"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "tests-farm-integration.js",
+    "bytes": 6312,
+    "sha256": "e9135354e391de34614cf4717a11ac07703407393ad226bc263347be07594e44",
+    "globals": [
+      "runFarmIntegrationTests"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "tests-farm.js",
+    "bytes": 7424,
+    "sha256": "553562a3458ea911dd6228c90536a4f5fde1120d1f81a5d3f76d2ef32ef423cd",
+    "globals": [
+      "runFarmTests"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "tests-forms.js",
+    "bytes": 4495,
+    "sha256": "04a6640fb33a8f6653f124c758fd800548ccb7b4d316c1f3bc19670674135df3",
+    "globals": [
+      "runFormSafetyTests"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "tests-insights.js",
+    "bytes": 12001,
+    "sha256": "2784a700374ec986dcfb3538cd70092161e681a237fbdac80d837ee5cacf0b4a",
+    "globals": [
+      "runInsightTests"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "tests-modules.js",
+    "bytes": 8168,
+    "sha256": "9d1df02777788ff0e1c651abdf959a64e5a0640b2dfe644c9ca29f5569a31fb8",
+    "globals": [
+      "runModuleTests"
+    ],
+    "functions": [],
+    "actions": [
+      "add-metric"
+    ],
+    "headings": []
+  },
+  {
+    "file": "tests-neural.js",
+    "bytes": 10396,
+    "sha256": "0645297adc0593483be3bd76de096ff2689ed8dd17c3b15ee3e7415b74be2bd4",
+    "globals": [
+      "runNeuralTests"
+    ],
+    "functions": [],
+    "actions": [
+      "close-dialog"
+    ],
+    "headings": []
+  },
+  {
+    "file": "tests-rc.js",
+    "bytes": 12725,
+    "sha256": "1542850a1aa4439e25defebb3da275dcc6b7e63fd7f91c3517eb0ed248983e98",
+    "globals": [
+      "runRCTests"
+    ],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "tests-ui.js",
+    "bytes": 9520,
+    "sha256": "4340d5856b54d5ed190961bc601feea804437b4c4bf9a846739656c5bb3a4010",
+    "globals": [
+      "runUITests"
+    ],
+    "functions": [],
+    "actions": [
+      "close-dialog"
+    ],
+    "headings": []
+  },
+  {
+    "file": "tests.html",
+    "bytes": 1339,
+    "sha256": "3e6786a4f2ccb4a37bd0cfacad257d64aed6070aa55450f4111f9b996fae2f98",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "tests.js",
+    "bytes": 10069,
+    "sha256": "47717bb6b7ce69a564c1c02e3a855444dd88969d8c58b4ced7fbe51657ce5aab",
+    "globals": [
+      "QA_RESULTS"
+    ],
+    "functions": [
+      "test"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "v2-app.js",
+    "bytes": 26296,
+    "sha256": "d32f4bba9ccab67aad1a31c028a09fd95cfda0f9267e73bd5c0623cd736de84d",
+    "globals": [
+      "V2App"
+    ],
+    "functions": [
+      "recordForm",
+      "photo",
+      "farmEvent",
+      "farmSettings",
+      "importHistory",
+      "zipBackup",
+      "zipRestore",
+      "sale",
+      "action",
+      "clock",
+      "afterRender",
+      "init"
+    ],
+    "actions": [
+      "v2-commit-json"
+    ],
+    "headings": []
+  },
+  {
+    "file": "v2-domain.js",
+    "bytes": 10954,
+    "sha256": "84a0a78854e5486df236c2cb2244e6bf6feaed813ba0da3f7ca2360ed053d0d7",
+    "globals": [
+      "V2Domain"
+    ],
+    "functions": [
+      "safeTree",
+      "rank",
+      "gym",
+      "muscleSets",
+      "validate",
+      "stock"
+    ],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "v2-views.js",
+    "bytes": 36897,
+    "sha256": "e06d421dd0bd4cea0719155fa85014ada613f0659634812437c9dd484bd4f7b7",
+    "globals": [
+      "V2Views"
+    ],
+    "functions": [
+      "card",
+      "home",
+      "gym",
+      "bodySvg",
+      "farm",
+      "library",
+      "genericDetail",
+      "alvento",
+      "content",
+      "vision",
+      "upload",
+      "profile",
+      "settings"
+    ],
+    "actions": [
+      "choose-workout",
+      "v2-edit",
+      "v2-muscle",
+      "v2-shot-toggle"
+    ],
+    "headings": []
+  },
+  {
+    "file": "v2.css",
+    "bytes": 8997,
+    "sha256": "5e99f1311a12f9354cf36e12ffaaa8532e1f36a4b18515a5b83966ec8ee51300",
+    "globals": [],
+    "functions": [],
+    "actions": [],
+    "headings": []
+  },
+  {
+    "file": "views.js",
+    "bytes": 37137,
+    "sha256": "4cfeec7ac04604d5358d46e5eb3a39038c609ef536d045593edfb9e3398f0b9a",
+    "globals": [
+      "Views"
+    ],
+    "functions": [
+      "periodTransactions",
+      "totals",
+      "bank",
+      "panelHeader",
+      "chart",
+      "goalRows",
+      "widgets",
+      "home",
+      "tabs",
+      "finance",
+      "goals",
+      "soma",
+      "paymentRows",
+      "gym",
+      "learning",
+      "journal",
+      "profile",
+      "notFound"
+    ],
+    "actions": [
+      "${action}",
+      "${a}",
+      "complete-set",
+      "delete",
+      "deliverable",
+      "edit",
+      "edit-task",
+      "revert-payment",
+      "task-goal",
+      "toggle-goal",
+      "toggle-task"
+    ],
+    "headings": []
+  }
+]

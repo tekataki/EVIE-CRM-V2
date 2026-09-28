@@ -1,0 +1,310 @@
+TAP version 13
+# Subtest: registry defines 33 typed capabilities, no generic execution
+ok 1 - registry defines 33 typed capabilities, no generic execution
+  ---
+  duration_ms: 6.59336
+  type: 'test'
+  ...
+# Subtest: strict arguments reject commands, raw paths, coercion and prototype pollution
+ok 2 - strict arguments reject commands, raw paths, coercion and prototype pollution
+  ---
+  duration_ms: 1.398787
+  type: 'test'
+  ...
+# Subtest: HTTPS exact domain, no credentials, subdomains, local protocols or custom ports
+ok 3 - HTTPS exact domain, no credentials, subdomains, local protocols or custom ports
+  ---
+  duration_ms: 3.035746
+  type: 'test'
+  ...
+# Subtest: contracts reject nonobjects, inherited fields and oversized text
+ok 4 - contracts reject nonobjects, inherited fields and oversized text
+  ---
+  duration_ms: 0.908555
+  type: 'test'
+  ...
+# Subtest: rate limit is enforced
+ok 5 - rate limit is enforced
+  ---
+  duration_ms: 0.674733
+  type: 'test'
+  ...
+# Subtest: write only commits after confirmation and cancellation never commits
+ok 6 - write only commits after confirmation and cancellation never commits
+  ---
+  duration_ms: 2.642201
+  type: 'test'
+  ...
+# Subtest: cancelling while confirmation is open invalidates execution
+ok 7 - cancelling while confirmation is open invalidates execution
+  ---
+  duration_ms: 20.602672
+  type: 'test'
+  ...
+# Subtest: read query bypasses confirmation, preserves real result
+ok 8 - read query bypasses confirmation, preserves real result
+  ---
+  duration_ms: 0.70313
+  type: 'test'
+  ...
+# Subtest: malicious tool is rejected before executor
+ok 9 - malicious tool is rejected before executor
+  ---
+  duration_ms: 1.104481
+  type: 'test'
+  ...
+# Subtest: Ollama parser accepts validated deterministic calls, rejects raw execution
+ok 10 - Ollama parser accepts validated deterministic calls, rejects raw execution
+  ---
+  duration_ms: 1.480512
+  type: 'test'
+  ...
+# Subtest: Ollama network stays on loopback with redirects rejected
+ok 11 - Ollama network stays on loopback with redirects rejected
+  ---
+  duration_ms: 1.330027
+  type: 'test'
+  ...
+# Subtest: conversation uses real read result and explicitly selected model
+ok 12 - conversation uses real read result and explicitly selected model
+  ---
+  duration_ms: 142.04881
+  type: 'test'
+  ...
+# Subtest: missing local model is a genuine failure
+ok 13 - missing local model is a genuine failure
+  ---
+  duration_ms: 3.304875
+  type: 'test'
+  ...
+# Subtest: PCM WAV validation rejects fake bytes and sample rates
+ok 14 - PCM WAV validation rejects fake bytes and sample rates
+  ---
+  duration_ms: 2.052174
+  type: 'test'
+  ...
+# Subtest: voice state machine keeps illegal transitions blocked
+ok 15 - voice state machine keeps illegal transitions blocked
+  ---
+  duration_ms: 4.645052
+  type: 'test'
+  ...
+# Subtest: audit omits sensitive free text and argument values
+ok 16 - audit omits sensitive free text and argument values
+  ---
+  duration_ms: 9.081111
+  type: 'test'
+  ...
+# Subtest: explicit module wins; scheduling never becomes a payment
+ok 17 - explicit module wins; scheduling never becomes a payment
+  ---
+  duration_ms: 6.883714
+  type: 'test'
+  ...
+# Subtest: money parser stores integer cents, not pesos or binary decimal fractions
+ok 18 - money parser stores integer cents, not pesos or binary decimal fractions
+  ---
+  duration_ms: 0.820438
+  type: 'test'
+  ...
+# Subtest: narrow deterministic commands preserve exact domain and meaning
+ok 19 - narrow deterministic commands preserve exact domain and meaning
+  ---
+  duration_ms: 5.356463
+  type: 'test'
+  ...
+# Subtest: required Finance sentence executes one financial write and announces only verified result
+ok 20 - required Finance sentence executes one financial write and announces only verified result
+  ---
+  duration_ms: 37.842546
+  type: 'test'
+  ...
+# Subtest: required reminder creates only Agenda task, no Finance write
+ok 21 - required reminder creates only Agenda task, no Finance write
+  ---
+  duration_ms: 4.009987
+  type: 'test'
+  ...
+# Subtest: cross-domain model batch is rejected before ANY tool runs
+ok 22 - cross-domain model batch is rejected before ANY tool runs
+  ---
+  duration_ms: 2.846434
+  type: 'test'
+  ...
+# Subtest: failure, duplicate client and unverified output cannot become model success
+ok 23 - failure, duplicate client and unverified output cannot become model success
+  ---
+  duration_ms: 2.952347
+  type: 'test'
+  ...
+# Subtest: duplicate-client clarification preserves the financial proposal but still executes through registry
+ok 24 - duplicate-client clarification preserves the financial proposal but still executes through registry
+  ---
+  duration_ms: 4.338575
+  type: 'test'
+  ...
+# Subtest: never switches automatically to an available fallback model
+ok 25 - never switches automatically to an available fallback model
+  ---
+  duration_ms: 2.808187
+  type: 'test'
+  ...
+# Subtest: ambiguous mutation clarifies without requesting a model or executing tools
+ok 26 - ambiguous mutation clarifies without requesting a model or executing tools
+  ---
+  duration_ms: 1.668976
+  type: 'test'
+  ...
+# Subtest: cancel while model is pending prevents tools
+ok 27 - cancel while model is pending prevents tools
+  ---
+  duration_ms: 33.415874
+  type: 'test'
+  ...
+# Subtest: preparation rejection never opens confirmation or commits
+ok 28 - preparation rejection never opens confirmation or commits
+  ---
+  duration_ms: 1.500955
+  type: 'test'
+  ...
+# Subtest: versioned migration preserves original bytes, apps, grants, AI paths and unknown preferences
+ok 29 - versioned migration preserves original bytes, apps, grants, AI paths and unknown preferences
+  ---
+  duration_ms: 6.269959
+  type: 'test'
+  ...
+# Subtest: malformed and newer settings are not silently reset or overwritten
+ok 30 - malformed and newer settings are not silently reset or overwritten
+  ---
+  duration_ms: 1.972957
+  type: 'test'
+  ...
+# Subtest: microphone consent survives host restart and explicit revocation
+ok 31 - microphone consent survives host restart and explicit revocation
+  ---
+  duration_ms: 2.186133
+  type: 'test'
+  ...
+# Subtest: replacing an authorized identity revokes its old action grants
+ok 32 - replacing an authorized identity revokes its old action grants
+  ---
+  duration_ms: 2.056208
+  type: 'test'
+  ...
+# Subtest: opacity full range and explicit model preference persist
+ok 33 - opacity full range and explicit model preference persist
+  ---
+  duration_ms: 4.506092
+  type: 'test'
+  ...
+# Subtest: diagnostic mic timeout discards without transcription or model dispatch
+ok 34 - diagnostic mic timeout discards without transcription or model dispatch
+  ---
+  duration_ms: 7.137955
+  type: 'test'
+  ...
+# Subtest: synthetic PCM recording encodes valid mono WAV and releases before dispatch
+ok 35 - synthetic PCM recording encodes valid mono WAV and releases before dispatch
+  ---
+  duration_ms: 5.804241
+  type: 'test'
+  ...
+# Subtest: cancel during microphone permission stops late stream without starting recorder
+ok 36 - cancel during microphone permission stops late stream without starting recorder
+  ---
+  duration_ms: 7.558505
+  type: 'test'
+  ...
+# Subtest: cancel ignores late transcription and never sends it to model
+ok 37 - cancel ignores late transcription and never sends it to model
+  ---
+  duration_ms: 4.663844
+  type: 'test'
+  ...
+# Subtest: cancel ignores late TTS and leaves no output AudioContext
+ok 38 - cancel ignores late TTS and leaves no output AudioContext
+  ---
+  duration_ms: 2.972867
+  type: 'test'
+  ...
+# Subtest: VAD requires voice and 1100ms silence; steady ambient never dispatches
+ok 39 - VAD requires voice and 1100ms silence; steady ambient never dispatches
+  ---
+  duration_ms: 168.671926
+  type: 'test'
+  ...
+# Subtest: continuous session sends one utterance then waits for actual TTS end before listening
+ok 40 - continuous session sends one utterance then waits for actual TTS end before listening
+  ---
+  duration_ms: 112.291802
+  type: 'test'
+  ...
+# Subtest: stop during continuous playback resolves pending speech without reopening microphone
+ok 41 - stop during continuous playback resolves pending speech without reopening microphone
+  ---
+  duration_ms: 6.921565
+  type: 'test'
+  ...
+# Subtest: denied session permission stops once with no retry timer
+ok 42 - denied session permission stops once with no retry timer
+  ---
+  duration_ms: 6.665537
+  type: 'test'
+  ...
+# Subtest: desktop state helper retains illegal transition rejection and cancels executing safely
+ok 43 - desktop state helper retains illegal transition rejection and cancels executing safely
+  ---
+  duration_ms: 4.661851
+  type: 'test'
+  ...
+# Subtest: confirmation token is exact, expiring, single-use and cannot move to another action
+ok 44 - confirmation token is exact, expiring, single-use and cannot move to another action
+  ---
+  duration_ms: 4.010337
+  type: 'test'
+  ...
+# Subtest: confirmation cancellation rejects approval and preserves immutable action snapshot
+ok 45 - confirmation cancellation rejects approval and preserves immutable action snapshot
+  ---
+  duration_ms: 0.777775
+  type: 'test'
+  ...
+# Subtest: catalog validates identities; shell, admin, remote, credentials and arbitrary protocols blocked
+ok 46 - catalog validates identities; shell, admin, remote, credentials and arbitrary protocols blocked
+  ---
+  duration_ms: 4.731514
+  type: 'test'
+  ...
+# Subtest: discovery uses fixed helper, deduplicates and never authorizes automatically
+ok 47 - discovery uses fixed helper, deduplicates and never authorizes automatically
+  ---
+  duration_ms: 40.764354
+  type: 'test'
+  ...
+# Subtest: typed windows tools reject injections and draft retains exact recipient and message
+ok 48 - typed windows tools reject injections and draft retains exact recipient and message
+  ---
+  duration_ms: 5.643828
+  type: 'test'
+  ...
+# Subtest: scoped files reject traversal and changed sources; rename is verified without overwrite
+ok 49 - scoped files reject traversal and changed sources; rename is verified without overwrite
+  ---
+  duration_ms: 6.958736
+  type: 'test'
+  ...
+# Subtest: persistent grants are scoped by action, app and trusted URL host
+ok 50 - persistent grants are scoped by action, app and trusted URL host
+  ---
+  duration_ms: 0.50474
+  type: 'test'
+  ...
+1..50
+# tests 50
+# suites 0
+# pass 50
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1473.055093

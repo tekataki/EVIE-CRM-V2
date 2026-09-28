@@ -1,0 +1,17 @@
+
+> evie-crm-v2@2.1.0 prebuild
+> node scripts/build-shell.mjs
+
+EVIE PWA: 97 static assets; no API or private responses cached.
+
+> evie-crm-v2@2.1.0 build
+> vite build
+
+vite v8.2.2 building ssr environment for production...
+transforming...
+✓ 45 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/_worker.js  34.75 kB │ gzip: 13.71 kB
+
+✓ built in 141ms

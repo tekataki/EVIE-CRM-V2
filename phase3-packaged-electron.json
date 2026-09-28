@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-19T05:58:44.756Z",
+  "platform": "linux",
+  "passed": 16,
+  "checks": [
+    "Origen desktop estable y Node no expuesto",
+    "IPC y lectura real de Agenda",
+    "Herramienta no autorizada rechazada",
+    "IPC rechaza argumentos inválidos",
+    "Rechazo nativo no escribe",
+    "Alta por bridge con confirmación IPC simulada en QA",
+    "Reprogramación verificada por bridge",
+    "Confirmación de un solo uso rechaza repetición",
+    "Finanzas real en centavos por bridge y confirmación",
+    "Sin configuración automática",
+    "Recarga conserva registro desktop",
+    "Configuración desktop renderiza",
+    "Consulta desde idle alcanza success sin transición inválida",
+    "Acceso legado abre conversación local, no dictado cloud",
+    "AudioWorklet y analyser reciben micrófono sintético real de Chromium",
+    "Detener libera micrófono y RAF"
+  ],
+  "errors": [],
+  "packaged": true,
+  "limits": "Confirmaciones IPC automatizadas y micrófono sintético Chromium; sin hardware, Windows, Whisper, SAPI ni Ollama reales."
+}
