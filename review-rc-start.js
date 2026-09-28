@@ -1,0 +1,3 @@
+'use strict';
+// QA launcher only: loads the real index, at the actual browser viewport.
+(async()=>{const scenario=location.pathname.split('/').at(-1).replace('review-rc-','').replace('.html','');history.replaceState(null,'',location.pathname+'?qa=rc-visual-'+scenario+'#inicio');try{const response=await fetch('index.html');if(!response.ok)throw new Error('No se pudo cargar la aplicación.');const documentSource=new DOMParser().parseFromString(await response.text(),'text/html'),script=documentSource.createElement('script');script.src='review-rc-open.js';script.defer=true;documentSource.head.append(script);document.open();document.write('<!doctype html>'+documentSource.documentElement.outerHTML);document.close();}catch(error){document.body.textContent=error.message;}})();
