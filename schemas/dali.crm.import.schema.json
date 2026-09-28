@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dali.crm.import.schema.json",
+  "title": "DALI CRM Import 2.0",
+  "type": "object",
+  "required": ["format", "schema_version", "import_id", "timezone", "operations"],
+  "properties": {
+    "format": {"const": "dali.crm.import"},
+    "schema_version": {"const": "2.0"},
+    "import_id": {"type": "string", "format": "uuid"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "timezone": {"const": "America/Mexico_City"},
+    "atomic": {"type": "boolean", "default": true},
+    "source": {"type": "object"},
+    "operations": {
+      "type": "array", "minItems": 1, "maxItems": 500,
+      "items": {
+        "type": "object",
+        "required": ["operation_id", "module", "entity", "action", "dedupe_key", "payload"],
+        "properties": {
+          "operation_id": {"type": "string", "minLength": 1, "maxLength": 200},
+          "module": {"enum": ["finance", "objectives", "soma", "journal", "gym", "learning", "farm", "books", "alvento", "content", "vision", "profile", "agenda", "system"]},
+          "entity": {"enum": ["transaction", "bill", "loan", "payment", "goal", "client", "deliverable", "installment", "note", "entry", "session", "body_metric", "imported_rank", "skill", "route", "activity", "study_session", "animal", "event", "litter", "health_record", "setting", "task", "feed_product", "feed_price", "feed_rule", "feed_opening", "feed_purchase", "feed_consumption", "book", "drop", "product", "milestone", "content_item", "shot", "metric_snapshot", "vision_item", "profile_patch", "time_block", "reminder", "nutrition_day", "pantry_item", "grocery_run", "entity_link"]},
+          "action": {"enum": ["upsert", "create", "update"]},
+          "dedupe_key": {"type": "string", "minLength": 1, "maxLength": 250},
+          "needs_confirmation": {"type": "boolean"},
+          "payload": {"type": "object"}
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {"module": {"const": "system"}, "entity": {"const": "entity_link"}},
+              "required": ["module", "entity"]
+            },
+            "then": {"properties": {"payload": {"$ref": "#/$defs/entityLink"}}}
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "recordId": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[a-zA-Z0-9-]{1,80}$"},
+        {"type": "object", "required": ["$ref"], "properties": {"$ref": {"type": "string", "minLength": 1}}, "additionalProperties": false}
+      ]
+    },
+    "endpoint": {
+      "type": "object", "required": ["collection", "id"],
+      "properties": {
+        "collection": {"type": "string"},
+        "id": {"$ref": "#/$defs/recordId"},
+        "child": {
+          "type": "object", "required": ["collection", "id"],
+          "properties": {
+            "collection": {"enum": ["tasks", "deliverables", "shots"]},
+            "id": {"$ref": "#/$defs/recordId"}
+          }
+        }
+      }
+    },
+    "entityLink": {
+      "type": "object", "required": ["source", "target"],
+      "properties": {
+        "source": {"$ref": "#/$defs/endpoint"},
+        "target": {"$ref": "#/$defs/endpoint"},
+        "relation": {"enum": ["related", "supports", "scheduled_for", "purchase_expense"]}
+      }
+    }
+  },
+  "description": "Nested endpoints use child.collection and child.id; only skills/tasks, clients/deliverables and contentItems/shots are supported. IDs, including child IDs, may reference an operation with {$ref: operation_id}; forward references are allowed. Runtime validates exact parent-child membership. Envelope schema. Runtime importer additionally checks module/entity pairs, references, money, dates, enums and full state. Operational amount fields use positive MXN pesos, converted once. Farm feed fields with _cents and _g suffixes explicitly use integer MXN cents and grams and are never converted. Purchases and consumption use domain adapters; raw lot or movement insertion is not allowed. References use an object with $ref equal to operation_id. All batches are atomic."
+}

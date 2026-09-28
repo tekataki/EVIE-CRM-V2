@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101c32"><meta name="description" content="DALI: CRM personal y centro de mando. Finanzas, objetivos, entrenamiento, aprendizaje y negocios en un solo lugar.">
+  <title>DALI OS — Tu centro de mando</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;650;700;750;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.13"></script>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="v2.css"><link rel="stylesheet" href="pig.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script defer src="config.js"></script><script defer src="domain.js"></script>
+  <script defer src="v2-domain.js"></script><script defer src="recurrence.js"></script>
+  <script defer src="pig-model.js"></script><script defer src="pig-events.js"></script><script defer src="farm-feed.js"></script><script defer src="farm-forecast.js"></script><script defer src="farm-inventory-tools.js"></script><script defer src="farm-upgrade.js"></script><script defer src="farm-validation.js"></script><script defer src="pig-insights.js"></script>
+  <script defer src="migrations.js"></script><script defer src="store.js"></script>
+  <script defer src="records.js"></script><script defer src="media-store.js"></script><script defer src="farm-domain.js"></script><script defer src="importer.js"></script>
+  <script defer src="views.js"></script><script defer src="forms.js"></script><script defer src="v2-views.js"></script><script defer src="v2-app.js"></script>
+  <script defer src="pig-views.js"></script><script defer src="pig-feed-view.js"></script><script defer src="pig-feed-catalog.js"></script><script defer src="pig-reports.js"></script><script defer src="pig-calendar.js"></script><script defer src="pig-forms.js"></script><script defer src="pig-feed-forms.js"></script><script defer src="pig-inventory-forms.js"></script><script defer src="pig-care-forms.js"></script><script defer src="pig-app.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Saltar al contenido</a>
+  <button id="drawer-backdrop" class="drawer-backdrop" aria-label="Cerrar menú" tabindex="-1"></button>
+  <aside id="sidebar" class="sidebar" aria-label="Barra lateral">
+    <a href="#inicio" class="brand"><span class="brand-symbol">d<span>:</span></span><span class="brand-word" data-app-name>DALI OS</span><span class="brand-version">/ 02</span></a>
+    <div class="workspace-label">TU ESPACIO PERSONAL</div><nav id="main-nav" aria-label="Navegación principal"></nav>
+    <div class="sidebar-bottom"><div class="focus-note"><i data-lucide="orbit"></i><p>Pequeñas acciones.<br><strong>Grandes posibilidades.</strong></p><span>CONSTRUYE TU MEJOR VERSIÓN</span></div>
+    <button class="sidebar-settings" data-action="settings"><i data-lucide="settings-2"></i><span>Configuración</span></button>
+    <a class="sidebar-profile" href="#perfil"><span class="avatar">D</span><span class="profile-text"><strong id="sidebar-name">Dali Medina</strong><small>Mi espacio personal</small></span><i data-lucide="chevrons-up-down"></i></a></div>
+  </aside>
+  <div class="app-shell"><header class="topbar"><div class="breadcrumbs"><button id="menu-toggle" class="icon-button" aria-label="Abrir o contraer menú" aria-expanded="false" aria-controls="sidebar"><i data-lucide="menu"></i></button><span class="breadcrumb-workspace">Mi espacio <span>/</span></span><strong id="page-crumb">Inicio</strong></div><div class="topbar-actions"><button class="search-trigger" data-action="search"><i data-lucide="search"></i><span>Buscar en tu espacio...</span><kbd>⌘ K</kbd></button><span class="topbar-divider"></span><button class="icon-button" data-action="theme" aria-label="Cambiar tema"><i data-lucide="sun-moon"></i></button><button class="icon-button notification-button" data-action="notifications" aria-label="Ver pendientes"><i data-lucide="bell"></i><span id="notification-dot" hidden></span></button><a class="avatar small-avatar" href="#perfil" aria-label="Mi perfil">D</a></div></header>
+  <main id="main-content" tabindex="-1"><div class="loading-state"><span class="spinner"></span>Preparando tu espacio…</div></main>
+  <footer class="app-footer"><span><span class="status-dot"></span> Modo local · Datos en este navegador</span><span data-app-name>DALI OS</span><span>Hecho para avanzar, a tu ritmo.</span></footer></div>
+  <nav class="mobile-nav" aria-label="Accesos rápidos"><a href="#inicio"><i data-lucide="layout-dashboard"></i><span>Inicio</span></a><a href="#finanzas"><i data-lucide="wallet"></i><span>Finanzas</span></a><button data-action="v2-gym-upload" aria-label="Subir JSON"><i data-lucide="upload"></i></button><a href="#objetivos"><i data-lucide="target"></i><span>Objetivos</span></a><a href="#bitacora"><i data-lucide="book-open"></i><span>Bitácora</span></a></nav>
+  <dialog id="app-dialog" aria-labelledby="dialog-title"><div id="dialog-content"></div></dialog>
+  <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
+  <input type="file" id="import-input" accept="application/json,.json" hidden>
+</body>
+</html>

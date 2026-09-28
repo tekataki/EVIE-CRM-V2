@@ -1,0 +1,8 @@
+{
+ "format":"dali.crm.import","schema_version":"2.0","import_id":"da300000-0000-4000-8000-000000000001","timezone":"America/Mexico_City","atomic":true,
+ "source":{"kind":"example_only"},
+ "operations":[
+  {"operation_id":"product","module":"farm","entity":"feed_product","action":"upsert","dedupe_key":"example:feed:product","needs_confirmation":true,"payload":{"name":"EJEMPLO · revisar producto real","bag_weight_g":40000,"active":false,"requires_compliance_review":false}},
+  {"operation_id":"price","module":"farm","entity":"feed_price","action":"upsert","dedupe_key":"example:feed:price:2026-09-13","needs_confirmation":true,"payload":{"product_id":{"$ref":"product"},"price_cents":28800,"currency":"MXN","effective_date":"2026-09-13","status":"reference_needs_confirmation"}}
+ ]
+}
