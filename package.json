@@ -15,7 +15,7 @@
     "dev:desktop": "electron-forge start",
     "make:win": "electron-forge make --platform=win32 --arch=x64",
     "test:desktop": "node --max-old-space-size=160 --test --test-concurrency=1 tests/*.test.cjs",
-    "prebuild": "node scripts/build-shell.mjs",
+    "prebuild": "node --check src/accounts.js",
     "build": "vite build",
     "test": "npm run test:desktop && node tools/run-suite.mjs evidence/final-suite.json && npm run test:phase3",
     "test:phase3": "node tools/test-phase3-browser.mjs",
