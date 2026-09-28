@@ -41,7 +41,7 @@ export function createAccounts({fetcher=fetch}={}) {
   await next()
  })
  async function remote(c,path,{method='GET',body,access,headers={}}={}){
-  const r=await fetcher(c.env.SUPABASE_URL.replace(/\/$/,'')+path,{method,redirect:'error',headers:{apikey:c.env.SUPABASE_PUBLISHABLE_KEY,...(access?{Authorization:'Bearer '+access}:{}),...(body===undefined?{}:{'Content-Type':'application/json'}),...headers},...(body===undefined?{}:{body:typeof body==='string'?body:JSON.stringify(body)}),signal:AbortSignal.timeout(20000)})
+  const r=await fetcher(c.env.SUPABASE_URL.replace(/\/$/,'')+path,{method,redirect:'manual',headers:{apikey:c.env.SUPABASE_PUBLISHABLE_KEY,...(access?{Authorization:'Bearer '+access}:{}),...(body===undefined?{}:{'Content-Type':'application/json'}),...headers},...(body===undefined?{}:{body:typeof body==='string'?body:JSON.stringify(body)}),signal:AbortSignal.timeout(20000)})
   return r
  }
  async function auth(c){
