@@ -1,0 +1,3 @@
+'use strict';
+const fs=require('node:fs');const path=require('node:path');
+module.exports=function audit(dir){const file=path.join(dir,'tool-audit.jsonl');return (name,args,decision,result)=>{try{if(fs.existsSync(file)&&fs.statSync(file).size>1048576)fs.renameSync(file,file+'.previous');fs.appendFileSync(file,JSON.stringify({at:new Date().toISOString(),tool:name,argumentNames:Object.keys(args||{}).filter(k=>!['__proto__','constructor','prototype'].includes(k)),decision,ok:result?.ok===true,errorCode:result?.ok===false?'TOOL_FAILED':null})+'\n',{mode:0o600});}catch{/* No raw errors or arguments in console. */}};};

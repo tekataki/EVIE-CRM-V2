@@ -1,0 +1,5 @@
+'use strict';
+const {spawn}=require('node:child_process');const children=new Set();
+function run(file,args,{timeout=45000,input,limit=2*1024*1024}={}){return new Promise((resolve,reject)=>{const child=spawn(file,args,{shell:false,windowsHide:true,stdio:['pipe','pipe','pipe']});children.add(child);let out='',err='',settled=false;const finish=(error)=>{if(settled)return;settled=true;clearTimeout(timer);children.delete(child);error?reject(error):resolve(out);};const timer=setTimeout(()=>{child.kill();finish(Error('Tiempo de proceso local agotado.'));},timeout);child.stdout.on('data',d=>{out+=d;if(out.length>limit){child.kill();finish(Error('Salida local demasiado grande.'));}});child.stderr.on('data',d=>{err+=d;if(err.length>limit){child.kill();finish(Error('Error local demasiado grande.'));}});child.on('error',()=>finish(Error('No se pudo iniciar el componente local. Revisa Diagnóstico.')));child.on('close',code=>finish(code===0?null:Error('Componente local falló ('+code+'). Revisa instalación y modelo.')));child.stdin.on('error',()=>{});child.stdin.end(input);});}
+function stop(){for(const c of children)c.kill();children.clear();}
+module.exports={run,stop};
