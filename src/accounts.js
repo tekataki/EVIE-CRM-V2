@@ -65,7 +65,7 @@ export function createAccounts({fetcher=fetch}={}) {
   const domain=c.env.EVIE_AUTH_DOMAIN||'accounts.evie.local';if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain))return jsonError(c,'Dominio de cuentas no válido.',503)
   const body={email:data.username+'@'+domain,password:data.password,...(signup?{data:{username:data.username}}:{})}
   const r=await remote(c,signup?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{method:'POST',body});data.password='';body.password=''
-  if(!r.ok)return jsonError(c,signup?'No se pudo crear la cuenta. Prueba otro usuario.':'Usuario o contraseña no válidos.',signup?400:401)
+  if(!r.ok){const providerError=await r.text();console.error('SUPABASE_AUTH_REJECTED',r.status,providerError);return jsonError(c,signup?'No se pudo crear la cuenta. Prueba otro usuario.':'Usuario o contraseña no válidos.',signup?400:401)}
   const result=await r.json();if(!UUID.test(result.user?.id))return jsonError(c,'No se pudo abrir sesión. Revisa la configuración de cuentas.',409)
   let verifiedTokens;try{verifiedTokens=providerTokens(result)}catch{return jsonError(c,'No se pudo abrir sesión. Revisa la configuración de cuentas.',409)}
   const sid=[...crypto.getRandomValues(new Uint8Array(32))].map(x=>x.toString(16).padStart(2,'0')).join(''),expires=Date.now()+30*86400000
