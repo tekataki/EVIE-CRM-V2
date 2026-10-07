@@ -10,8 +10,8 @@ const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222
 async function fixture(t){
  const {createAccounts,seal,unseal,digest}=await import('../src/accounts.js');
  const db=new DatabaseSync(':memory:');t.after(()=>db.close());
- db.exec(fs.readFileSync(path.join(__dirname,'../migrations/d1/0001_auth_sessions.sql'),'utf8'));
- const binding={prepare(sql){return {bind(...args){return {first:async()=>db.prepare(sql).get(...args)||null,run:async()=>{const r=db.prepare(sql).run(...args);return {success:true,meta:{changes:Number(r.changes)}};}};}};}};
+ for(const m of ['0001_auth_sessions.sql','0002_invites_usage.sql'])db.exec(fs.readFileSync(path.join(__dirname,'../migrations/d1',m),'utf8'));
+ const binding={prepare(sql){return {bind(...args){return {all:async()=>({results:db.prepare(sql).all(...args)}),first:async()=>db.prepare(sql).get(...args)||null,run:async()=>{const r=db.prepare(sql).run(...args);return {success:true,meta:{changes:Number(r.changes)}};}};}};}};
  const env={EVIE_ACCOUNTS_ENABLED:'true',AUTH_DB:binding,SUPABASE_URL:'https://provider.invalid',SUPABASE_PUBLISHABLE_KEY:'test-only-public-key',EVIE_SESSION_KEY:Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64')};
  const calls=[],tokens=new Map();let counter=0;
  const provider={hook:null,reply(owner=A){counter++;const access='test-only-access-'+counter,refresh='test-only-refresh-'+counter;tokens.set(access,owner);tokens.set(refresh,owner);return {user:{id:owner},access_token:access,refresh_token:refresh,expires_in:3600};}};
@@ -32,19 +32,19 @@ async function fixture(t){
  return {db,env,api,request,login,calls,provider,sessions,expire,seal,unseal,digest};
 }
 test('Hono signup emits only identity and an opaque secure cookie; SQLite stores encrypted tokens',async t=>{
- const f=await fixture(t),r=await f.request('/auth/signup',{method:'POST',body:{username:' DÁLÍ ',password:'synthetic-password'}});
- assert.equal(r.status,200);assert.deepEqual(await r.json(),{user:{id:A,username:'dali'}});const cookie=r.headers.get('set-cookie');for(const flag of ['HttpOnly','Secure','SameSite=Strict','Path=/'])assert.ok(cookie.includes(flag));assert.match(cookie,/^__Host-evie-session=[0-9a-f]{64};/);assert.match(r.headers.get('cache-control'),/no-store/);
+ const f=await fixture(t);f.env.EVIE_BOOTSTRAP_TOKEN='bootstrap-test-token';const r=await f.request('/auth/signup',{method:'POST',body:{username:' DÁLÍ ',password:'synthetic-password',invite:'bootstrap-test-token'}});
+ assert.equal(r.status,200);assert.deepEqual(await r.json(),{user:{id:A,username:'dali',role:'owner'}});const cookie=r.headers.get('set-cookie');for(const flag of ['HttpOnly','Secure','SameSite=Strict','Path=/'])assert.ok(cookie.includes(flag));assert.match(cookie,/^__Host-evie-session=[0-9a-f]{64};/);assert.match(r.headers.get('cache-control'),/no-store/);
  const row=f.sessions()[0],sid=cookie.split(';')[0].split('=')[1];assert.equal(row.id,await f.digest(sid));assert.ok(!row.tokens.includes('test-only'));assert.equal(row.owner_id,A);assert.equal(f.calls[0].body.email,'dali@accounts.evie.local');assert.deepEqual(f.calls[0].body.data,{username:'dali'});
 });
 test('Hono rejects origin and content-type violations before provider calls',async t=>{
  const f=await fixture(t);for(const headers of [{Origin:'https://evil.invalid'},{'X-Evie-Request':''},{'Content-Type':'text/plain'}]){const r=await f.request('/auth/signin',{method:'POST',body:{username:'owner-a',password:'synthetic-password'},headers});assert.ok([403,415].includes(r.status));}assert.equal(f.calls.length,0);assert.equal(f.sessions().length,0);
 });
 test('Auth attempt limit is persisted in SQLite and stores no plaintext IP',async t=>{
- const f=await fixture(t);f.provider.hook=()=>Response.json({error:'sensitive-provider-detail'},{status:400});for(let i=0;i<10;i++)assert.equal((await f.request('/auth/signin',{method:'POST',body:{username:'owner-a',password:'synthetic-password'},headers:{'CF-Connecting-IP':'192.0.2.12'}})).status,401);
- const r=await f.request('/auth/signin',{method:'POST',body:{username:'owner-a',password:'synthetic-password'},headers:{'CF-Connecting-IP':'192.0.2.12'}});assert.equal(r.status,429);assert.equal(f.calls.length,10);const row=f.db.prepare('select * from auth_attempts').get();assert.match(row.id,/^[0-9a-f]{64}$/);assert.ok(!JSON.stringify(row).includes('192.0.2.12'));
+ const f=await fixture(t);f.provider.hook=()=>Response.json({error:'sensitive-provider-detail'},{status:400});for(let i=0;i<8;i++)assert.equal((await f.request('/auth/signin',{method:'POST',body:{username:'owner-a',password:'synthetic-password'},headers:{'CF-Connecting-IP':'192.0.2.12'}})).status,401);
+ const r=await f.request('/auth/signin',{method:'POST',body:{username:'owner-a',password:'synthetic-password'},headers:{'CF-Connecting-IP':'192.0.2.12'}});assert.equal(r.status,429);assert.equal(f.calls.length,8);assert.ok(!JSON.stringify(f.db.prepare('select * from auth_attempts').all()).includes('owner-a'));const row=f.db.prepare('select * from auth_attempts').get();assert.match(row.id,/^[0-9a-f]{64}$/);assert.ok(!JSON.stringify(row).includes('192.0.2.12'));
 });
 test('Signin rotates the opaque cookie and removes the previous local session',async t=>{
- const f=await fixture(t),first=await f.login(),second=await f.login('owner-a',first);assert.notEqual(first,second);assert.equal(f.sessions().length,1);assert.deepEqual(await(await f.request('/auth/session',{cookie:first})).json(),{user:null});assert.deepEqual(await(await f.request('/auth/session',{cookie:second})).json(),{user:{id:A,username:'owner-a'}});
+ const f=await fixture(t),first=await f.login(),second=await f.login('owner-a',first);assert.notEqual(first,second);assert.equal(f.sessions().length,1);assert.deepEqual(await(await f.request('/auth/session',{cookie:first})).json(),{user:null});assert.deepEqual(await(await f.request('/auth/session',{cookie:second})).json(),{user:{id:A,username:'owner-a',role:'member'}});
 });
 test('Data requests require both valid cookie and matching X-Evie-User',async t=>{
  const f=await fixture(t),cookie=await f.login();for(const args of [{},{cookie},{cookie,user:B}])assert.equal((await f.request('/data/pull',{method:'POST',body:{after:''},...args})).status,401);
@@ -88,4 +88,37 @@ test('Old-tab logout cannot clear the new account cookie or revoke its session',
 test('Data payload rejects caller-selected owner and preserves text IDs in RPC forwarding',async t=>{
  const f=await fixture(t),cookie=await f.login(),change={collection:'transactions',record_id:'Legacy-AbC-01',expected_revision:0,payload:{id:'Legacy-AbC-01',amount:12345}};
  assert.equal((await f.request('/data/push',{method:'POST',body:{changes:[change],owner_id:B},cookie,user:A})).status,400);const r=await f.request('/data/push',{method:'POST',body:{changes:[change]},cookie,user:A});assert.equal(r.status,200);assert.equal((await r.json()).rows[0].record_id,'Legacy-AbC-01');const rpc=f.calls.find(c=>c.url.endsWith('/evie_apply'));assert.deepEqual(rpc.body,{changes:[change]});assert.equal(rpc.options.redirect,'manual');
+});
+
+test('Signup is invite-only; invite codes are single use, hashed and owner-issued',async t=>{
+ const f=await fixture(t);
+ let r=await f.request('/auth/signup',{method:'POST',body:{username:'stranger',password:'synthetic-password'}});assert.equal(r.status,403);assert.equal(f.calls.length,0);
+ f.env.EVIE_BOOTSTRAP_TOKEN='bootstrap-test-token';
+ r=await f.request('/auth/signup',{method:'POST',body:{username:'owner-a',password:'synthetic-password',invite:'bootstrap-test-token'}});assert.equal(r.status,200);const ownerCookie=r.headers.get('set-cookie').split(';')[0];
+ r=await f.request('/auth/signup',{method:'POST',body:{username:'other',password:'synthetic-password',invite:'bootstrap-test-token'}});assert.equal(r.status,403);
+ r=await f.request('/auth/invites',{method:'POST',body:{label:'Hermano'},cookie:ownerCookie,user:A});assert.equal(r.status,200);const {code}=await r.json();assert.match(code,/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+ assert.ok(!JSON.stringify(f.db.prepare('select * from auth_invites').all()).includes(code));
+ r=await f.request('/auth/signup',{method:'POST',body:{username:'owner-b',password:'synthetic-password',invite:code.toLowerCase()}});assert.equal(r.status,200);const member=await r.json();assert.equal(member.user.role,'member');const memberCookie=r.headers.get('set-cookie').split(';')[0];
+ r=await f.request('/auth/signup',{method:'POST',body:{username:'owner-c',password:'synthetic-password',invite:code}});assert.equal(r.status,403);
+ r=await f.request('/auth/invites',{method:'POST',body:{},cookie:memberCookie,user:B});assert.equal(r.status,403);
+ r=await f.request('/auth/members',{cookie:ownerCookie,user:A});const list=await r.json();assert.equal(list.members.length,2);
+});
+test('Provider rejection releases the invite; expired invites are rejected',async t=>{
+ const f=await fixture(t);f.env.EVIE_BOOTSTRAP_TOKEN='bootstrap-test-token';
+ let r=await f.request('/auth/signup',{method:'POST',body:{username:'owner-a',password:'synthetic-password',invite:'bootstrap-test-token'}});const cookie=r.headers.get('set-cookie').split(';')[0];
+ const {code}=await(await f.request('/auth/invites',{method:'POST',body:{},cookie,user:A})).json();
+ f.provider.hook=call=>call.url.endsWith('/signup')?Response.json({error_code:'user_already_exists'},{status:422}):null;
+ r=await f.request('/auth/signup',{method:'POST',body:{username:'owner-b',password:'synthetic-password',invite:code}});assert.equal(r.status,409);assert.match((await r.json()).error,/en uso/);
+ f.provider.hook=null;f.db.prepare('update auth_invites set expires_at=1').run();
+ r=await f.request('/auth/signup',{method:'POST',body:{username:'owner-b',password:'synthetic-password',invite:code}});assert.equal(r.status,403);
+});
+test('Signup with email confirmation on returns actionable 409, never a fake session',async t=>{
+ const f=await fixture(t);f.env.EVIE_BOOTSTRAP_TOKEN='bootstrap-test-token';f.provider.hook=call=>call.url.endsWith('/signup')?Response.json({id:A,email:'x'}):null;
+ const r=await f.request('/auth/signup',{method:'POST',body:{username:'owner-a',password:'synthetic-password',invite:'bootstrap-test-token'}});assert.equal(r.status,409);assert.match((await r.json()).error,/Confirm email/);assert.equal(f.sessions().length,0);
+});
+test('Service-role admin creation confirms synthetic email, then signs in',async t=>{
+ const f=await fixture(t);f.env.EVIE_BOOTSTRAP_TOKEN='bootstrap-test-token';f.env.SUPABASE_SERVICE_ROLE_KEY='test-only-service';
+ f.provider.hook=call=>call.url.endsWith('/admin/users')?Response.json({id:A}):null;
+ const r=await f.request('/auth/signup',{method:'POST',body:{username:'owner-a',password:'synthetic-password',invite:'bootstrap-test-token'}});assert.equal(r.status,200);
+ assert.equal(f.calls.find(c=>c.url.endsWith('/admin/users')).body.email_confirm,true);assert.ok(f.calls.some(c=>c.url.includes('grant_type=password')));
 });
