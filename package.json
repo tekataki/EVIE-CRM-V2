@@ -14,8 +14,8 @@
     "dev:web": "vite",
     "dev:desktop": "electron-forge start",
     "make:win": "electron-forge make --platform=win32 --arch=x64",
-    "test:desktop": "node --max-old-space-size=160 --test --test-concurrency=1 tests/*.test.cjs",
-    "prebuild": "node --check src/accounts.js",
+    "test:desktop": "node --max-old-space-size=256 --test --test-concurrency=1 tests/*.test.cjs",
+    "prebuild": "node --check src/accounts.js && node scripts/build-shell.mjs",
     "build": "vite build",
     "test": "npm run test:desktop && node tools/run-suite.mjs evidence/final-suite.json && npm run test:phase3",
     "test:phase3": "node tools/test-phase3-browser.mjs",
@@ -24,7 +24,10 @@
     "test:update-ui": "node tools/test-update-ui.mjs",
     "preview": "wrangler pages dev",
     "deploy": "npm run build && wrangler pages deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "test:privacy": "node tools/check-privacy.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply evie-auth --local",
+    "dev:sandbox": "wrangler pages dev dist --d1=AUTH_DB=evie-auth --local --ip 0.0.0.0 --port 3000"
   },
   "overrides": {
     "@electron/packager": "20.3.0",

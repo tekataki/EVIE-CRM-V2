@@ -3,39 +3,14 @@
   "name": "webapp",
   "compatibility_date": "2026-09-08",
   "pages_build_output_dir": "./dist",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
-"d1_databases": [
-  {
-    "binding": "AUTH_DB",
-    "database_name": "evie-auth",
-    "database_id": "e1f12462-ef1a-4bd0-b197-61e89e1edf18"
-  }
-]
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
-  //   }
-  // ],
-  // "ai": {
-  //   "binding": "AI"
-  // }
+  "compatibility_flags": ["nodejs_compat"],
+  // D1: sesiones, intentos, invitaciones y contadores de uso de IA.
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "evie-auth",
+      "database_id": "e1f12462-ef1a-4bd0-b197-61e89e1edf18",
+      "migrations_dir": "migrations/d1"
+    }
+  ]
 }
