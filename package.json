@@ -47,6 +47,7 @@
     "@hono/vite-build": "^1.11.1",
     "@hono/vite-dev-server": "^0.26.1",
     "electron": "^41.10.7",
+    "gsap": "^3.15.0",
     "jszip": "^3.10.1",
     "lucide": "^0.468.0",
     "playwright": "^1.63.0",
