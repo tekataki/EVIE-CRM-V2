@@ -108,3 +108,4 @@ html.evie-ui:not([data-desktop=true]) #ivy-voice-dock{display:none!important}
 #account-gate .account-submit{padding:13px;font-size:15px}#account-gate .account-secondary{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
 @media(prefers-reduced-motion:reduce){#evie-backdrop i,.gate-aurora i,.evie-orb-button,.evie-orb-core{animation:none!important}}
 html[data-motion=reduced] #evie-backdrop i{animation:none}
+html.evie-ui .mobile-nav .evie-orb-button{border-radius:50%!important;padding:0!important;flex:0 0 58px!important;width:58px!important;height:58px!important;min-width:58px}
