@@ -35,7 +35,7 @@ window.DesktopVoice=(()=>{
  async function beginSession(){await stop();sessionActive=true;await start({continuous:true});}
  async function resumeSession(ticket){if(sessionActive&&ticket===sessionEpoch)await start({continuous:true});}
  async function start({diagnostic:testing=false,continuous=false,confirmationToken:confirmToken=null}={}){
-  if(!window.evieDesktop)throw Error('Voz completamente local disponible en EVIE Desktop. En web puedes escribir comandos a Ivy.');
+  if(!window.evieDesktop)throw Error('Voz completamente local disponible en EVIE Desktop. En web puedes escribir comandos a EVIE.');
   const ticket=++epoch;mode='opening';chunks=[];await release();if(ticket!==epoch)return;
   diagnostic=testing;confirmationToken=confirmToken;vad=continuous?createVAD():null;state('listening');
   try{

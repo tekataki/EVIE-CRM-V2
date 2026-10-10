@@ -5,7 +5,7 @@ window.IvyVoice=(()=>{
  function stop(){session++;active=false;clearTimeout(timeout);timeout=null;if(recognition){recognition.onend=null;recognition.onresult=null;recognition.onerror=null;try{recognition.abort();}catch{}recognition=null;}IvyAudio.stop('voice');if('speechSynthesis' in window)speechSynthesis.cancel();outputEnvelope=0;if(IvyState.get().phase!=='awaiting_confirmation'&&IvyState.get().phase!=='executing')reset();}
  async function listen({consent=false,onTranscript=()=>{},onFinal=()=>{},onError=()=>{}}={}){
   stop();const ticket=session,Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!Speech){onError('Micrófono no disponible para dictado en este navegador. Puedes escribir a Ivy.');return false;}
+  if(!Speech){onError('Micrófono no disponible para dictado en este navegador. Puedes escribir a EVIE.');return false;}
   if(consent!==true){onError('Necesitas aceptar el procesamiento de voz antes de dictar.');return false;}
   try{await IvyAudio.start('voice',true);if(ticket!==session||!IvyAudio.stats().owners.includes('voice'))return false;recognition=new Speech();recognition.lang='es-MX';recognition.continuous=false;recognition.interimResults=true;let finalText='';
    recognition.onstart=()=>{if(ticket!==session)return;active=true;IvyState.transition('listening','Micrófono activo');};

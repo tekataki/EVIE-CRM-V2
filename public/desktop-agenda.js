@@ -38,7 +38,7 @@ window.LocalAgendaProvider=(()=>{
   if(name==='crm.navigate'){assert(DALI_CONFIG.sections.some(s=>s.route===args.route),'Ruta no permitida.');return propose({name,route:args.route,preview:{provider:'LocalAgendaProvider',route:args.route}});}
   const allowedFields=['id','title','date','time','minutes','notes',...(name==='crm.update_task'?['done']:[])];for(const k of Object.keys(args))assert(allowedFields.includes(k),'Campo no permitido.');
   const create=name==='crm.create_event'||name==='crm.create_task',remove=name==='crm.delete_event',original=create?null:Store.list('agendaItems').find(r=>r.id===args.id);assert(create||original,'Selecciona un registro existente por ID.');
-  if(original)assert(!original.recurrence,'Edita las repeticiones desde el formulario de Agenda; Ivy no reprograma una serie entera.');
+  if(original)assert(!original.recurrence,'Edita las repeticiones desde el formulario de Agenda; EVIE no reprograma una serie entera.');
   const now=new Date().toISOString(),next=create?Store.record({...RCData.defaults('agendaItems'),kind:name.endsWith('event')?'event':'task',source:'ivy-local-confirmed'}):structuredClone(original);
   if(remove)next.deleted_at=now;
   else{
