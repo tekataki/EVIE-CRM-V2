@@ -122,3 +122,13 @@ test('Service-role admin creation confirms synthetic email, then signs in',async
  const r=await f.request('/auth/signup',{method:'POST',body:{username:'owner-a',password:'synthetic-password',invite:'bootstrap-test-token'}});assert.equal(r.status,200);
  assert.equal(f.calls.find(c=>c.url.endsWith('/admin/users')).body.email_confirm,true);assert.ok(f.calls.some(c=>c.url.includes('grant_type=password')));
 });
+test('upgrades an old D1 (only 0001 applied) automatically: signup with bootstrap works',async()=>{
+ const {DatabaseSync}=require('node:sqlite');const fs=require('node:fs');const path=require('node:path');const {createAccounts}=await import('../src/accounts.js');
+ const db=new DatabaseSync(':memory:');db.exec(fs.readFileSync(path.join(__dirname,'../migrations/d1/0001_auth_sessions.sql'),'utf8'));
+ const binding={prepare(sql){return {bind(...a){return {all:async()=>({results:db.prepare(sql).all(...a)}),first:async()=>db.prepare(sql).get(...a)||null,run:async()=>{const r=db.prepare(sql).run(...a);return {success:true,meta:{changes:Number(r.changes)}};}};}};}};
+ const U='33333333-3333-4333-8333-333333333333';
+ const fetcher=async(url)=>{url=String(url);if(url.includes('/auth/v1/signup')||url.includes('grant_type=password'))return Response.json({user:{id:U},access_token:'a',refresh_token:'r',expires_in:3600});if(url.endsWith('/auth/v1/user'))return Response.json({id:U});throw Error('unexpected '+url);};
+ const env={EVIE_ACCOUNTS_ENABLED:'true',AUTH_DB:binding,SUPABASE_URL:'https://provider.invalid',SUPABASE_PUBLISHABLE_KEY:'k',EVIE_SESSION_KEY:Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64'),EVIE_BOOTSTRAP_TOKEN:'boot-123456'};
+ const r=await createAccounts({fetcher}).request('https://evie.test/auth/signup',{method:'POST',headers:{Origin:'https://evie.test','X-Evie-Request':'1','Content-Type':'application/json'},body:JSON.stringify({username:'dueno',password:'synthetic-password',invite:'boot-123456'})},env);
+ const j=await r.json();require('node:assert/strict').equal(r.status,200,JSON.stringify(j));require('node:assert/strict').equal(j.user.role,'owner');
+ require('node:assert/strict').ok(db.prepare("SELECT name FROM sqlite_master WHERE name='provider_tokens'").get());db.close();});

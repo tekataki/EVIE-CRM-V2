@@ -25,6 +25,17 @@ function providerTokens(result) {
 const cookie='__Host-evie-session'
 const jsonError=(c,message,status=400)=>c.json({error:message},status)
 
+
+// Self-healing schema: idempotent CREATE IF NOT EXISTS for tables added after 0001 (same SQL as
+// migrations/d1/0002 and 0003). Lets an existing deployment upgrade without a manual migration.
+const SCHEMA=["CREATE TABLE IF NOT EXISTS auth_accounts (owner_id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner','member')), created_at INTEGER NOT NULL)",
+ "CREATE TABLE IF NOT EXISTS auth_invites (id TEXT PRIMARY KEY, created_by TEXT NOT NULL, label TEXT NOT NULL DEFAULT '', expires_at INTEGER NOT NULL, used_at INTEGER, used_by TEXT)",
+ "CREATE TABLE IF NOT EXISTS ai_usage (owner_id TEXT NOT NULL, day TEXT NOT NULL, kind TEXT NOT NULL, amount INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (owner_id, day, kind))",
+ "CREATE TABLE IF NOT EXISTS provider_tokens (owner_id TEXT NOT NULL, provider TEXT NOT NULL CHECK (provider IN ('google_calendar')), tokens TEXT NOT NULL, scopes TEXT NOT NULL, created_at INTEGER NOT NULL, last_ok INTEGER, error TEXT, PRIMARY KEY (owner_id, provider))",
+ "CREATE TABLE IF NOT EXISTS oauth_states (state TEXT PRIMARY KEY, owner_id TEXT NOT NULL, provider TEXT NOT NULL, verifier TEXT NOT NULL, expires_at INTEGER NOT NULL)",
+ "CREATE INDEX IF NOT EXISTS idx_oauth_states_exp ON oauth_states(expires_at)"]
+const schemaReady=new WeakMap()
+export function ensureSchema(db){if(!db)return Promise.resolve();let p=schemaReady.get(db);if(!p){p=(async()=>{for(const sql of SCHEMA)await db.prepare(sql).bind().run()})().catch(e=>{schemaReady.delete(db);throw e});schemaReady.set(db,p)}return p}
 export function createAccounts({fetcher=fetch}={}) {
  const api=new Hono()
  api.use('*',async(c,next)=>{const max=c.req.path.endsWith('/data/push')?16*1024*1024:c.req.path.endsWith('/ai/stt')?4*1024*1024:256*1024;return bodyLimit({maxSize:max,onError:c=>jsonError(c,'La solicitud supera el límite.',413)})(c,next)})
@@ -40,6 +51,7 @@ export function createAccounts({fetcher=fetch}={}) {
    if(c.req.header('X-Evie-Request')!=='1'||origin!==expected)return jsonError(c,'Solicitud no autorizada.',403)
    if(!c.req.path.endsWith('/ai/stt')&&!c.req.header('Content-Type')?.startsWith('application/json'))return jsonError(c,'Usa JSON.',415)
   }
+  await ensureSchema(env.AUTH_DB)
   await next()
  })
  async function remote(c,path,{method='GET',body,access,headers={}}={}){
