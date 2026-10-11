@@ -269,3 +269,13 @@ html.evie-ui .evie-status-row{margin:10px 0}
 #account-gate .button.primary{background:linear-gradient(135deg,#dfe6ff,#a9bcff)!important;color:#0b1020!important;border:0!important;min-height:48px}
 #account-gate .password-control{display:flex;gap:8px}#account-gate .password-control input{flex:1;min-width:0}
 #account-gate .account-secondary .button{width:100%}
+
+/* Home core v2.3.1 — single EVIE neural renderer, square, centered; no legacy sphere/rings. */
+html.evie-ui #neural-home-hero .neural-orb{display:grid!important;place-items:center!important;overflow:visible}
+html.evie-ui #neural-home-hero .dali-core-control{position:relative;width:min(100%,62vh,760px)!important;height:auto!important;aspect-ratio:1/1!important;max-width:100%!important;margin:auto;padding:0;border-radius:50%!important;background:none!important;box-shadow:none!important;border:0!important;overflow:visible}
+html.evie-ui #neural-home-hero .dali-core-control::before,html.evie-ui #neural-home-hero .dali-core-control::after{content:none!important;display:none!important}
+html.evie-ui #neural-home-hero #neural-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;-webkit-mask-image:radial-gradient(circle at 50% 50%,#000 58%,transparent 71%);mask-image:radial-gradient(circle at 50% 50%,#000 58%,transparent 71%)}
+html.evie-ui #neural-home-hero .dali-core-control:focus-visible{outline:2px solid rgba(160,190,255,.9);outline-offset:4px}
+html.evie-ui #neural-home-hero .orb-coordinate{position:absolute;left:0;right:0;text-align:center;z-index:3;pointer-events:none}
+html.evie-ui #neural-home-hero .coordinate-top{top:2%}html.evie-ui #neural-home-hero .coordinate-bottom{bottom:2%}
+@media(max-width:767px){html.evie-ui #neural-home-hero .neural-orb{height:auto!important;min-height:0!important;margin:8px auto 16px!important}html.evie-ui #neural-home-hero .dali-core-control{width:min(86vw,360px)!important}}

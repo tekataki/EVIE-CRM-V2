@@ -3,7 +3,7 @@
    Canvas 2D only (no WebGL) so it runs on any phone. Reacts to the assistant state
    (documentElement.dataset.evie = idle|listening|thinking|speaking) and to mic/voice level. */
 window.EvieNeural=(()=>{
- let canvas=null,ctx=null,raf=null,nodes=[],edges=[],pulses=[],w=0,h=0,dpr=1,t0=0,visible=true,ro=null,io=null,ptr={x:0,y:0,tx:0,ty:0},mic=0,out=0,energy=.2,ab=null;
+ let canvas=null,ctx=null,raf=null,nodes=[],edges=[],pulses=[],w=0,h=0,dpr=1,t0=0,visible=true,ro=null,io=null,mo=null,ptr={x:0,y:0,tx:0,ty:0},mic=0,out=0,energy=.2,ab=null;
  const palettes={
   idle:{a:[150,180,255],b:[190,160,255]},
   listening:{a:[110,231,255],b:[140,170,255]},
@@ -25,7 +25,7 @@ window.EvieNeural=(()=>{
  function size(){if(!canvas)return;const r=canvas.getBoundingClientRect();dpr=Math.min(2,devicePixelRatio||1);w=Math.max(1,r.width);h=Math.max(1,r.height);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
  const mix=(a,b,k)=>a.map((v,i)=>v+(b[i]-v)*k);
  function frame(now){
-  raf=null;if(!canvas?.isConnected){stop();return;}
+  raf=null;if(!canvas?.isConnected){stop();return;}if(document.hidden)return;
   const light=document.documentElement.dataset.theme==='light';const t=(now-t0)/1000,p=phase(),base=palettes[p]||palettes.idle,pal=light?{a:base.a.map(v=>v*.45),b:base.b.map(v=>v*.5)}:base;
   col.a=mix(col.a,pal.a,.04);col.b=mix(col.b,pal.b,.04);
   const target=({idle:.18,listening:.45,thinking:.75,speaking:.55,error:.3}[p]||.2)+mic*1.4+out*1.2;
@@ -59,18 +59,25 @@ window.EvieNeural=(()=>{
   const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.1);glow.addColorStop(0,`rgba(${col.a[0]|0},${col.a[1]|0},${col.a[2]|0},${.05+energy*.08})`);glow.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
   ctx.globalCompositeOperation='source-over';
   mic*=.9;out*=.9;
-  if(visible&&!document.hidden&&!reduced())raf=requestAnimationFrame(frame);
+  if(raf===null&&visible&&!document.hidden&&!reduced())raf=requestAnimationFrame(frame);
  }
- function kick(){if(raf===null&&canvas&&visible&&!document.hidden)raf=requestAnimationFrame(frame);}
+ // Exactly one loop: kick() never schedules a second frame; reduced/paused draws one static frame without RAF.
+ function kick(){if(!canvas||!canvas.isConnected||document.hidden||!visible)return;if(reduced()){if(raf!==null){cancelAnimationFrame(raf);raf=null;}frame(performance.now());return;}if(raf===null)raf=requestAnimationFrame(frame);}
+ function pause(){if(raf!==null)cancelAnimationFrame(raf);raf=null;}
  function mount(el){
   if(!el)return false;if(el===canvas){kick();return true;}stop();canvas=el;try{ctx=canvas.getContext('2d');}catch{ctx=null;}if(!ctx)return false;
   canvas.dataset.renderer='evie';canvas.parentElement?.setAttribute('data-renderer','evie');build();size();t0=performance.now();ab=new AbortController();
   ro=new ResizeObserver(()=>{size();if(reduced())frame(performance.now());});ro.observe(canvas);
-  io=new IntersectionObserver(([en])=>{visible=en.isIntersecting;kick();});io.observe(canvas);
+  io=new IntersectionObserver(([en])=>{visible=en.isIntersecting;if(visible)kick();else pause();});io.observe(canvas);
+  mo=new MutationObserver(()=>kick());mo.observe(document.documentElement,{attributes:true,attributeFilter:['data-motion','data-paused','data-theme']});
   addEventListener('pointermove',ev=>{ptr.tx=(ev.clientX/innerWidth-.5);ptr.ty=(ev.clientY/innerHeight-.5);if(reduced())return;kick();},{signal:ab.signal,passive:true});
-  document.addEventListener('visibilitychange',kick,{signal:ab.signal});
-  frame(performance.now());if(reduced())frame(performance.now());return true;
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();else kick();},{signal:ab.signal});
+  canvas.addEventListener('contextlost',ev=>{ev.preventDefault();pause();canvas.parentElement?.setAttribute('data-renderer','css-fallback');},{signal:ab.signal});
+  canvas.addEventListener('contextrestored',()=>{canvas.parentElement?.setAttribute('data-renderer','evie');size();kick();},{signal:ab.signal});
+  addEventListener('pagehide',pause,{signal:ab.signal});
+  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',kick,{signal:ab.signal});
+  kick();return true;
  }
- function stop(){if(raf!==null)cancelAnimationFrame(raf);raf=null;ro?.disconnect();io?.disconnect();ab?.abort();ro=io=ab=null;canvas=null;ctx=null;}
- return Object.freeze({mount,stop,kick,setMic:v=>{mic=Math.max(mic,Math.min(1,+v||0));kick();},setOut:v=>{out=Math.max(out,Math.min(1,+v||0));kick();},stats:()=>({mounted:!!canvas,raf:raf!==null,nodes:nodes.length,edges:edges.length,energy})});
+ function stop(){pause();ro?.disconnect();io?.disconnect();mo?.disconnect();ab?.abort();ro=io=mo=ab=null;if(canvas)delete canvas.dataset.renderer;canvas=null;ctx=null;visible=true;}
+ return Object.freeze({mount,stop,kick,setMic:v=>{mic=Math.max(mic,Math.min(1,+v||0));kick();},setOut:v=>{out=Math.max(out,Math.min(1,+v||0));kick();},stats:()=>({mounted:!!canvas,renderer:canvas?1:0,raf:raf!==null,observers:(ro?1:0)+(io?1:0)+(mo?1:0),nodes:nodes.length,edges:edges.length,energy})});
 })();
