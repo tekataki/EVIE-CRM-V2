@@ -109,7 +109,7 @@ window.EvieAssistant=(()=>{
   async function record(t){set('arming');let stream;
    try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});}
    catch(e){return fail('mic',['NotAllowedError','SecurityError'].includes(e?.name)?'Necesito permiso de micrófono. Actívalo en los ajustes del navegador, o escríbeme.':'No pude abrir el micrófono. Puedes escribirme.',t.id);}
-   if(!alive(t.id)){stream.getTracks().forEach(x=>x.stop());return;}
+   if(!alive(t.id)||document.hidden){stream.getTracks().forEach(x=>x.stop());if(alive(t.id))set('idle');return;}
    const type=pickType();let mr;try{mr=new MediaRecorder(stream,type?{mimeType:type}:{});}catch{try{mr=new MediaRecorder(stream);}catch{stream.getTracks().forEach(x=>x.stop());return fail('mic','Este navegador no puede grabar audio aquí. Escríbeme abajo.',t.id);}}
    const chunks=[],started=performance.now();let heard=false,quietSince=null,raf=null,src=null,an=null,buf=null,vadOk=false,floor=null,flat=0,done=false,discard=false;
    try{if(ctx){if(ctx.state!=='running')await ctx.resume().catch(()=>{});if(ctx.state==='running'){src=ctx.createMediaStreamSource(stream);an=ctx.createAnalyser();an.fftSize=1024;src.connect(an);buf=new Uint8Array(an.fftSize);vadOk=true;}}}catch{vadOk=false;}
@@ -150,10 +150,12 @@ window.EvieAssistant=(()=>{
    if(!apple&&ctx&&ctx.state==='running'&&!routed){try{const s=ctx.createMediaElementSource(player),an=ctx.createAnalyser();an.fftSize=256;s.connect(an);an.connect(ctx.destination);routed=an;}catch{routed=null;}}
    if(routed&&ctx.state!=='running')await ctx.resume().catch(()=>{});
    player.src=last.url;set('speaking');
-   try{await player.play();}catch(e){if(!alive(t.id))return;note('play',e?.name);last.pending=true;set('blocked');append('evie','');return;}
-   last.pending=false;
+   // Listen for the end BEFORE play(): short clips (or errors) can finish before play() resolves.
+   let finish;const ended=new Promise(r=>{const end=()=>{player.removeEventListener('ended',end);player.removeEventListener('error',end);player.removeEventListener('pause',end);clearTimeout(cap);r();};const cap=setTimeout(end,Math.max(15000,(last.text.length*110)+8000));finish=end;player.addEventListener('ended',end);player.addEventListener('error',end);});
+   try{await player.play();}catch(e){finish();if(!alive(t.id))return;note('play',e?.name);last.pending=true;set('blocked');append('evie','');return;}
+   last.pending=false;if(!player.ended)player.addEventListener('pause',finish,{once:true});else finish();
    if(routed){const b=new Uint8Array(routed.frequencyBinCount);const loop=()=>{if(player.paused||!alive(t.id))return;routed.getByteFrequencyData(b);let s=0;for(const v of b)s+=v;const lv=s/b.length/160;EvieNeural?.setOut(lv);EvieFX?.mic(lv);requestAnimationFrame(loop);};loop();}else simulate();
-   await new Promise(r=>{const end=()=>{player.removeEventListener('ended',end);player.removeEventListener('error',end);player.removeEventListener('pause',end);clearTimeout(cap);r();};const cap=setTimeout(end,Math.max(15000,(last.text.length*110)+8000));player.addEventListener('ended',end);player.addEventListener('error',end);player.addEventListener('pause',end);});
+   await ended;
    clearInterval(simTimer);simTimer=null;EvieFX?.mic(0);if(alive(t.id)&&state==='speaking')set('idle');}
   async function browserSpeak(text,t){if(!('speechSynthesis' in window))return;set('speaking');simulate();
    await new Promise(r=>{const u=new SpeechSynthesisUtterance(text);u.lang='es-MX';u.rate=1.03;const vs=speechSynthesis.getVoices(),v=vs.find(v=>/es[-_](MX|US|419)/i.test(v.lang))||vs.find(v=>/^es/i.test(v.lang));if(v)u.voice=v;u.onend=u.onerror=()=>r();speechSynthesis.speak(u);setTimeout(r,Math.min(30000,text.length*90+2000));});
@@ -168,7 +170,7 @@ window.EvieAssistant=(()=>{
    return browserSpeak(text,t);}
   function replay(){if(!last?.url)return;const t={id:++turn,signal:(ctl=new AbortController()).signal};unlock();playLast(t,true);}
   function syncReplay(){const show=state==='blocked'&&!!last?.url;document.querySelectorAll('[data-evie=replay]').forEach(b=>{b.hidden=!show;});}
-  function onHide(){if(rec){rec.stop(true);note('lifecycle','hidden-rec');set('idle');}
+  function onHide(){if(state==='arming'){turn++;set('idle');}if(rec){rec.stop(true);note('lifecycle','hidden-rec');set('idle');}
    if(state==='speaking'&&last?.url){try{player.pause();}catch{}last.pending=true;turn++;set('blocked');}
    else if(['transcribing','thinking','synthesizing'].includes(state)){/* keep the request; playback will need a tap if iOS blocks it */}}
   document.addEventListener('visibilitychange',()=>{if(document.hidden)onHide();});addEventListener('pagehide',onHide);
@@ -207,7 +209,7 @@ window.EvieAssistant=(()=>{
  // Deep link / PWA shortcut: /#inicio?evie=listen or ?evie=1
  function fromUrl(){const q=new URLSearchParams(location.search);if(q.get('evie')==='listen'||q.get('evie')==='1'){history.replaceState(null,'',location.pathname+location.hash);setTimeout(()=>open(true),400);}}
  setPhase('idle');
- return Object.freeze({open,close,ask,listen,syncInline,tools,tryLocal,Wake,fromUrl,pref,stopSpeaking,replay:()=>Voice.replay(),stats:()=>({panel:!!panel,busy,history:history.length,draft:!!draft,wake:!!clapOff,voice:Voice.stats()})});
+ return Object.freeze({open,close,ask,listen,syncInline,tools,tryLocal,Wake,fromUrl,pref,stopSpeaking,replay:()=>Voice.replay(),reset(){Voice.stop();history=[];inlineLast={you:'',evie:''};draft=null;habitDraft=null;if(panel){panel.remove();panel=null;}},stats:()=>({panel:!!panel,busy,history:history.length,draft:!!draft,wake:!!clapOff,voice:Voice.stats()})});
 })();
 
 /* ---------- Modes: "activa el modo X" ---------- */
