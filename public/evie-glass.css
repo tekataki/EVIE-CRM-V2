@@ -264,3 +264,8 @@ html.evie-ui .evie-status-row{margin:10px 0}
 :root[data-theme=light].evie-ui .evie-subs p{text-shadow:none}
 :root[data-theme=light].evie-ui .evie-msg.evie,:root[data-theme=light].evie-ui .evm-col,:root[data-theme=light].evie-ui .ev-checklist li{background:rgba(255,255,255,.6)}
 :root[data-theme=light].evie-ui .evm-acc.credit{color:#fff}
+/* login: secondary buttons readable on glass */
+#account-gate .button:not(.primary){background:rgba(255,255,255,.08)!important;color:var(--g-text)!important;border:1px solid var(--g-line)!important;min-height:44px}
+#account-gate .button.primary{background:linear-gradient(135deg,#dfe6ff,#a9bcff)!important;color:#0b1020!important;border:0!important;min-height:48px}
+#account-gate .password-control{display:flex;gap:8px}#account-gate .password-control input{flex:1;min-width:0}
+#account-gate .account-secondary .button{width:100%}
