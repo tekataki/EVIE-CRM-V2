@@ -11,6 +11,7 @@ window.DALI_CONFIG = Object.freeze({
     {route:'agenda',label:'Agenda',icon:'calendar-days',group:'principal',searchTerms:['hoy','pendientes','semana'],mobilePriority:0},
     {route:'finanzas',label:'Finanzas',icon:'wallet',group:'principal',searchTerms:['dinero','pagos'],mobilePriority:2},
     {route:'gimnasio',label:'Salud y gym',icon:'dumbbell',group:'principal',searchTerms:['gimnasio','symmetry','entrenamientos','calorias','nutricion'],mobilePriority:0},
+    {route:'habitos',label:'Hábitos',icon:'repeat',group:'principal',searchTerms:['habitos','rutina','racha','constancia'],mobilePriority:0},
     {route:'objetivos',label:'Objetivos',icon:'target',group:'principal',searchTerms:['tareas','metas'],mobilePriority:4},
     {route:'negocios',label:'Negocios',icon:'briefcase-business',group:'principal',searchTerms:['negocio','empresas','soma','alvento','granja','emprendimientos'],mobilePriority:3},
     {route:'soma',label:'SOMA · Clientes',icon:'handshake',group:'negocios',searchTerms:['clientes','soma','ventas'],mobilePriority:0},
@@ -21,6 +22,8 @@ window.DALI_CONFIG = Object.freeze({
     {route:'alvento',label:'ALVENTO',icon:'shirt',group:'negocios',searchTerms:['drops','ropa'],mobilePriority:0},
     {route:'contenido',label:'Contenido',icon:'clapperboard',group:'negocios',searchTerms:['videos','youtube'],mobilePriority:0},
     {route:'vision',label:'Vision Board',icon:'image',group:'principal',searchTerms:['aspiraciones','collage'],mobilePriority:0},
+    {route:'tendencias',label:'Tendencias',icon:'chart-scatter',group:'principal',searchTerms:['insights','estadisticas','horas','analisis'],mobilePriority:0},
+    {route:'logros',label:'Logros',icon:'trophy',group:'principal',searchTerms:['insignias','premios','medallas'],mobilePriority:0},
     {route:'subir',label:'Subir',icon:'upload',group:'herramientas',searchTerms:['importar','json','chatgpt'],mobilePriority:3},
     {route:'perfil',label:'Mi perfil',icon:'user-round',group:'cuenta',searchTerms:['identidad','foto'],mobilePriority:0},
     {route:'configuracion',label:'Configuración',icon:'settings-2',group:'cuenta',searchTerms:['respaldo','exportar','tema'],mobilePriority:0}
