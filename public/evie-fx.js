@@ -2,15 +2,18 @@
 /* Motion layer (GSAP 3, local vendor). Everything degrades to no-op without GSAP or with reduced motion. */
 window.EvieFX=(()=>{
  const g=()=>window.gsap,reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.dataset.motion==='reduced'||document.documentElement.dataset.paused==='true';
- let lastRoute=null,lightRaf=null;
+ let lastRoute=null,lightRaf=null,splashTpl=null;
  // Soft white light that follows the pointer behind the glass.
  addEventListener('pointermove',ev=>{if(lightRaf)return;lightRaf=requestAnimationFrame(()=>{lightRaf=null;const r=document.documentElement;r.style.setProperty('--mx',(ev.clientX/innerWidth*100).toFixed(1)+'%');r.style.setProperty('--my',(ev.clientY/innerHeight*100).toFixed(1)+'%');});},{passive:true});
  // Tactile press feedback for every button/link.
  document.addEventListener('pointerdown',ev=>{const el=ev.target.closest('.button,.icon-button,.nav-item,.mobile-nav a,.mobile-nav button,.evie-chip,.evm-card');if(!el||reduced()||!g())return;g().fromTo(el,{scale:1},{scale:.96,duration:.08,yoyo:true,repeat:1,ease:'power1.out',clearProps:'scale'});},{passive:true});
- function splash(){
-  const el=document.getElementById('evie-splash');if(!el)return Promise.resolve();
+ function splash({force=false}={}){
+  let el=document.getElementById('evie-splash');
+  if(el&&!splashTpl)splashTpl=el.outerHTML;
+  if(!el&&force&&splashTpl){document.body.insertAdjacentHTML('beforeend',splashTpl);el=document.getElementById('evie-splash');}
+  if(!el)return Promise.resolve();
   let seen=false;try{seen=sessionStorage.getItem('evie-splash')==='1';sessionStorage.setItem('evie-splash','1');}catch{}
-  if(seen||reduced()||!g()){el.remove();return Promise.resolve();}
+  if((seen&&!force)||reduced()||!g()){el.remove();return Promise.resolve();}
   return new Promise(done=>{const G=g(),finish=()=>{if(!el.isConnected)return done();G.to(el,{opacity:0,duration:.45,ease:'power2.inOut',onComplete:()=>{el.remove();done();}});};
    el.addEventListener('click',finish,{once:true});setTimeout(finish,3800);
    const tl=G.timeline({onComplete:()=>setTimeout(finish,250)});
