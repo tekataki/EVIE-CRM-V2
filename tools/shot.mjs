@@ -10,7 +10,7 @@ page.on('pageerror', (e) => errors.push('PAGE ' + e.message))
 page.on('console', (m) => { if (m.type() === 'error') errors.push('CONSOLE ' + m.text()) })
 await page.goto('http://localhost:3000/index.html?qa=shots')
 await page.waitForFunction(() => window.DALI_READY, null, { timeout: 15000 })
-await page.evaluate((theme) => { try { Neural.dismiss() } catch {} Store.save((s) => { s.preferences.theme = theme; s.preferences.evieModulesChosen = true }); document.getElementById('evie-splash')?.remove() }, theme)
+await page.evaluate((theme) => { try { Neural.dismiss() } catch {} Store.save((s) => { s.preferences.theme = theme; s.preferences.evieModulesChosen = true }); document.getElementById('evie-splash')?.remove(); App.render() }, theme)
 for (const r of routes) {
   await page.evaluate((r) => { location.hash = r }, r)
   await page.waitForTimeout(1400)

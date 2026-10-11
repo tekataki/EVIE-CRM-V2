@@ -256,3 +256,11 @@ li.done>.ev-check,li.bought>.ev-check{background:#7ff0c8;border-color:#7ff0c8;co
 .ev-conn.ok{border-color:rgba(127,240,200,.35)}.ev-conn.err{border-color:rgba(255,125,138,.45)}.ev-conn.muted{opacity:.75}
 .tag.warn{border-color:#ffd36e;color:#ffd36e}.tag.err{border-color:#ff7d8a;color:#ff7d8a}
 .ev-conn-group{margin:14px 0 8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--g-muted)}
+html.evie-ui .evie-composer #evie-stage-input,html.evie-ui .evie-composer input{background:transparent!important;border:0!important;box-shadow:none!important;color:var(--g-text)!important}
+html.evie-ui #evie-settings,html.evie-ui .evm-accounts,html.evie-ui .ev-shop,html.evie-ui .evm-calories,html.evie-ui .evm-emotions,html.evie-ui .evm-prompts{padding:clamp(16px,4vw,24px)!important}
+html.evie-ui .evie-status-row{margin:10px 0}
+/* light theme parity */
+:root[data-theme=light].evie-ui{color-scheme:light}
+:root[data-theme=light].evie-ui .evie-subs p{text-shadow:none}
+:root[data-theme=light].evie-ui .evie-msg.evie,:root[data-theme=light].evie-ui .evm-col,:root[data-theme=light].evie-ui .ev-checklist li{background:rgba(255,255,255,.6)}
+:root[data-theme=light].evie-ui .evm-acc.credit{color:#fff}

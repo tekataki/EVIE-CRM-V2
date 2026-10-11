@@ -26,13 +26,13 @@ window.EvieNeural=(()=>{
  const mix=(a,b,k)=>a.map((v,i)=>v+(b[i]-v)*k);
  function frame(now){
   raf=null;if(!canvas?.isConnected){stop();return;}
-  const t=(now-t0)/1000,p=phase(),pal=palettes[p]||palettes.idle;
+  const light=document.documentElement.dataset.theme==='light';const t=(now-t0)/1000,p=phase(),base=palettes[p]||palettes.idle,pal=light?{a:base.a.map(v=>v*.45),b:base.b.map(v=>v*.5)}:base;
   col.a=mix(col.a,pal.a,.04);col.b=mix(col.b,pal.b,.04);
   const target=({idle:.18,listening:.45,thinking:.75,speaking:.55,error:.3}[p]||.2)+mic*1.4+out*1.2;
   energy+=(Math.min(1.6,target)-energy)*.07;
   ptr.x+=(ptr.tx-ptr.x)*.05;ptr.y+=(ptr.ty-ptr.y)*.05;
   // fade previous frame -> light trails, keeps transparency of the glass behind
-  ctx.globalCompositeOperation='destination-out';ctx.fillStyle=`rgba(0,0,0,${reduced()?1:.22})`;ctx.fillRect(0,0,w,h);ctx.globalCompositeOperation='lighter';
+  ctx.globalCompositeOperation='destination-out';ctx.fillStyle=`rgba(0,0,0,${reduced()?1:.22})`;ctx.fillRect(0,0,w,h);ctx.globalCompositeOperation=light?'source-over':'lighter';
   const cx=w/2,cy=h/2,R=Math.min(w,h)*.33*(1+energy*.06+Math.sin(t*1.3)*.012),rotY=t*(.12+energy*.25)+ptr.x*.6,rotX=Math.sin(t*.2)*.25+ptr.y*.4;
   const cy1=Math.cos(rotY),sy1=Math.sin(rotY),cx1=Math.cos(rotX),sx1=Math.sin(rotX);
   const P=nodes.map(nd=>{let {x,y,z}=nd;if(nd.sat){const a=nd.s+t*.35;x=Math.cos(a)*1.45;z=Math.sin(a)*1.45;}
@@ -49,12 +49,12 @@ window.EvieNeural=(()=>{
   if(!reduced()&&Math.random()<.08+energy*.35&&pulses.length<40)pulses.push({e:edges[(Math.random()*edges.length)|0],k:0,v:.008+Math.random()*.02+energy*.02});
   for(const s of pulses){s.k+=s.v;const a=P[s.e[0]],b=P[s.e[1]],k=s.k,mx=(a.x+b.x)/2+(cy-(a.y+b.y)/2)*.18*Math.sin(t*.6+s.e[2]*6),my=(a.y+b.y)/2+((a.x+b.x)/2-cx)*.18*Math.cos(t*.5+s.e[2]*6);
    const x=(1-k)**2*a.x+2*(1-k)*k*mx+k*k*b.x,y=(1-k)**2*a.y+2*(1-k)*k*my+k*k*b.y,g=ctx.createRadialGradient(x,y,0,x,y,6);
-   g.addColorStop(0,`rgba(255,255,255,.95)`);g.addColorStop(.4,`rgba(${col.a[0]|0},${col.a[1]|0},${col.a[2]|0},.5)`);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(x-6,y-6,12,12);}
+   g.addColorStop(0,light?'rgba(60,70,200,.9)':'rgba(255,255,255,.95)');g.addColorStop(.4,`rgba(${col.a[0]|0},${col.a[1]|0},${col.a[2]|0},.5)`);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(x-6,y-6,12,12);}
   pulses=pulses.filter(s=>s.k<1);
   // nodes
   for(let i=0;i<P.length;i++){const p=P[i],nd=nodes[i],depth=(2-p.z)/3,r=nd.size*p.f*(nd.hub?1.6:1)*(1+Math.sin(t*2+nd.s)*.2*energy);
    const c=nd.hub?col.b:col.a;ctx.fillStyle=`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${Math.min(1,.25+depth*.7)})`;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.4,r),0,7);ctx.fill();
-   if(nd.hub&&depth>.5){ctx.fillStyle=`rgba(255,255,255,${.12*depth*(1+energy)})`;ctx.beginPath();ctx.arc(p.x,p.y,r*3.2,0,7);ctx.fill();}}
+   if(nd.hub&&depth>.5){ctx.fillStyle=light?`rgba(80,90,210,${.10*depth*(1+energy)})`:`rgba(255,255,255,${.12*depth*(1+energy)})`;ctx.beginPath();ctx.arc(p.x,p.y,r*3.2,0,7);ctx.fill();}}
   // core glow
   const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.1);glow.addColorStop(0,`rgba(${col.a[0]|0},${col.a[1]|0},${col.a[2]|0},${.05+energy*.08})`);glow.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
   ctx.globalCompositeOperation='source-over';
