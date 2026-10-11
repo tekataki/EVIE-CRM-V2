@@ -1,6 +1,6 @@
 'use strict';
 window.DALI_CONFIG = Object.freeze({
-  name:'EVIE CRM V2', assistant:'EVIE', version:'2.2.0', locale:'es-MX', timezone:'America/Mexico_City', currency:'MXN',
+  name:'EVIE CRM V2', assistant:'EVIE', credit:'Created by Alejandro Dali', version:'2.2.0', locale:'es-MX', timezone:'America/Mexico_City', currency:'MXN',
   get storageKey(){return window.EvieAccounts?EvieAccounts.storageKey():(new URLSearchParams(location.search).has('qa')?'dali-os-qa-'+new URLSearchParams(location.search).get('qa').replace(/[^a-zA-Z0-9-]/g,'').slice(0,50):'dali-os-local-v1');},
   categories:['Ventas','Clientes','Reembolso','Inversión','Gasolina','Comida','Gimnasio','Escuela','Personal','Alimento','Veterinario','Producción','Otro'],
   stages:['Prospecto','Contactado','Interesado','Diagnóstico','Propuesta','Negociación','Cliente activo','Entrega','Completado','Pausado','Perdido'],

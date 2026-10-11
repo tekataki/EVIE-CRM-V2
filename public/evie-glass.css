@@ -109,3 +109,98 @@ html.evie-ui:not([data-desktop=true]) #ivy-voice-dock{display:none!important}
 @media(prefers-reduced-motion:reduce){#evie-backdrop i,.gate-aurora i,.evie-orb-button,.evie-orb-core{animation:none!important}}
 html[data-motion=reduced] #evie-backdrop i{animation:none}
 html.evie-ui .mobile-nav .evie-orb-button{border-radius:50%!important;padding:0!important;flex:0 0 58px!important;width:58px!important;height:58px!important;min-width:58px}
+
+/* ===================== v2.3 · design system fixes ===================== */
+:root{--sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--fs-xs:12px;--fs-sm:13.5px;--fs-md:15px;--tap:44px;--dock-gap:12px}
+/* Toolbars: never squeeze buttons into letter-by-letter columns */
+html.evie-ui .toolbar .button,html.evie-ui .toolbar>a.button{flex:0 1 auto;min-width:max-content;white-space:nowrap;min-height:var(--tap);font-size:var(--fs-sm)}
+html.evie-ui .journal-tools{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}
+html.evie-ui .journal-tools>.button{width:100%;min-width:0;white-space:normal;text-align:center;line-height:1.25;padding:10px 14px}
+html.evie-ui .journal-tools>.button:first-child{grid-column:1/-1;background:linear-gradient(135deg,#dfe6ff,#a9bcff);color:#0b1020;border:0}
+@media(max-width:520px){html.evie-ui .toolbar{gap:8px}html.evie-ui .toolbar>.button,html.evie-ui .toolbar>a.button{flex:1 1 calc(50% - 8px);min-width:0;white-space:normal;line-height:1.25;text-align:center;padding:8px 12px}}
+/* Dialogs: bottom sheet on phones, one column, sticky header + footer above safe area */
+html.evie-ui dialog#app-dialog{padding:0;overflow:hidden;display:none;flex-direction:column}
+html.evie-ui dialog#app-dialog[open]{display:flex}
+html.evie-ui #dialog-content{display:flex;flex-direction:column;min-height:0;max-height:inherit;flex:1}
+html.evie-ui .dialog-header{position:sticky;top:0;z-index:3;padding:18px 20px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--g-line);background:rgba(var(--g-rgb),.96)!important}
+html.evie-ui .dialog-header h2{font-size:clamp(18px,4.6vw,22px);line-height:1.2;margin:0}
+html.evie-ui .dialog-body{overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 20px 0;flex:1;min-height:0}
+html.evie-ui .form-footer{position:sticky;bottom:0;z-index:3;display:flex!important;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin:16px -20px 0;padding:12px 20px calc(12px + env(safe-area-inset-bottom));background:rgba(var(--g-rgb),.97)!important;border-top:1px solid var(--g-line)}
+html.evie-ui .form-footer .button{flex:1 1 auto;min-width:0;white-space:normal;line-height:1.2;min-height:var(--tap)}
+html.evie-ui .form-footer .button.primary{flex:1.4 1 auto}
+html.evie-ui .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+html.evie-ui .form-grid>.full,html.evie-ui .form-grid>.form-footer,html.evie-ui .form-grid>p,html.evie-ui .form-grid>fieldset,html.evie-ui .form-grid>details{grid-column:1/-1}
+html.evie-ui .dialog-body label{font-size:var(--fs-sm);color:var(--g-muted);display:flex;flex-direction:column;gap:6px;min-width:0}
+html.evie-ui .dialog-body :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea){width:100%;min-height:var(--tap);font-size:16px;border-radius:14px;border:1px solid var(--g-line);background:rgba(255,255,255,.06)!important;color:var(--g-text)!important;padding:10px 14px}
+:root[data-theme=light] html.evie-ui .dialog-body :is(input,select,textarea){background:rgba(255,255,255,.75)!important}
+@media(max-width:600px){
+ html.evie-ui dialog#app-dialog{width:100%;max-width:100%;margin:auto 0 0;border-radius:24px 24px 0 0;max-height:min(92dvh,calc(100dvh - 12px));border-bottom:0}
+ html.evie-ui .form-grid{grid-template-columns:1fr!important}
+ html.evie-ui .form-footer{justify-content:stretch}
+}
+/* Mobile dock: perfectly centered orb */
+@media(max-width:1023px){
+ html.evie-ui .mobile-nav{display:grid!important;grid-template-columns:repeat(var(--nav-cols,6),minmax(0,1fr));align-items:center;justify-items:center;padding:0 4px;left:max(var(--dock-gap),env(safe-area-inset-left));right:max(var(--dock-gap),env(safe-area-inset-right))}
+ html.evie-ui .mobile-nav>a{width:100%;min-height:var(--tap)}
+ html.evie-ui .mobile-nav .evie-orb-button{grid-column:var(--orb-col,4);grid-row:1;justify-self:center;margin:-30px 0 0!important}
+ html.evie-ui main{padding-bottom:calc(var(--nav-h) + 56px + env(safe-area-inset-bottom))!important}
+ html.evie-ui .app-footer{margin-bottom:calc(var(--nav-h) + 20px + env(safe-area-inset-bottom))}
+ /* simplified header */
+ html.evie-ui .topbar{min-height:60px;padding:8px 12px;gap:8px;flex-wrap:nowrap}
+ html.evie-ui .topbar .breadcrumb-workspace,html.evie-ui .topbar .global-clock,html.evie-ui .topbar .search-trigger span,html.evie-ui .topbar .search-trigger kbd,html.evie-ui .topbar-divider,html.evie-ui .topbar .ivy-rail-toggle,html.evie-ui .topbar .ivy-pause,html.evie-ui .topbar .notification-button{display:none!important}
+ html.evie-ui .topbar-actions{flex-wrap:nowrap;gap:6px;margin-left:auto}
+ html.evie-ui #sync-status{max-width:96px;font-size:11px;padding:6px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ html.evie-ui .topbar .icon-button,html.evie-ui .search-trigger{min-width:var(--tap);min-height:var(--tap)}
+}
+@media(max-width:360px){html.evie-ui #sync-status{display:none}}
+@media(max-width:1023px) and (orientation:landscape) and (max-height:500px){:root{--nav-h:60px}html.evie-ui .mobile-nav>a span{display:none}}
+/* Creator credit */
+.evie-credit{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--g-muted);opacity:.8;white-space:nowrap}
+.evie-credit strong{color:var(--g-text);font-weight:600}
+.sidebar .evie-credit{display:block;padding:10px 6px 14px;text-align:center}
+@media(max-width:1023px){.topbar .evie-credit{display:none}#evie-credit-mobile{display:block;text-align:center;margin:8px 0 0}}
+@media(min-width:1024px){#evie-credit-mobile{display:none}}
+.splash-credit{margin:22px 0 0;font-size:clamp(15px,3.8vw,20px);letter-spacing:.22em;text-transform:uppercase;color:#dfe6ff}
+.splash-credit b{font-weight:700;color:#fff}
+/* Glass everywhere (with solid fallback) */
+html.evie-ui :is(.neural-hero,.rancho-hero,.rancho-rail,.alvento-editorial,.next-actions,.client-card,.module-hero,.insight-card,.chart-card,table,.record-row,.task-row,.widget,.summary-grid>*,.search-result,.empty-state,.notice){background:rgba(var(--g-rgb),var(--g-a))!important;border-color:var(--g-line)!important;color:var(--g-text)}
+html.evie-ui .neural-hero{background:transparent!important;border:0!important;box-shadow:none!important}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){:root{--g-a:.96}}
+/* Desktop: dominant neural core */
+@media(min-width:1024px){
+ html.evie-ui .neural-hero{display:grid!important;grid-template-columns:minmax(260px,.75fr) minmax(0,1.6fr);grid-template-rows:auto 1fr auto;align-items:center;min-height:min(78vh,820px)!important;gap:0 24px}
+ html.evie-ui .neural-hero-copy{grid-column:1;grid-row:1/3;align-self:center;text-align:left}
+ html.evie-ui .neural-hero .neural-orb{grid-column:2;grid-row:1/3;height:min(70vh,760px)!important;min-height:520px!important;width:100%}
+ html.evie-ui .neural-hero .dali-core-control{width:100%!important;height:100%!important;aspect-ratio:auto!important;max-width:none!important}
+ html.evie-ui .neural-hero .hero-bottom{grid-column:1/-1;grid-row:3}
+ html.evie-ui .neural-hero-copy h1{font-size:clamp(40px,4.4vw,68px);letter-spacing:-.03em}
+}
+/* Inline composer + subtitles under the core */
+.evie-stage{display:flex;flex-direction:column;align-items:center;gap:12px;margin:0 auto 18px;max-width:640px;width:100%;padding:0 4px}
+.evie-subs{min-height:3.2em;text-align:center;display:flex;flex-direction:column;gap:6px;width:100%}
+.evie-subs p{margin:0;line-height:1.45;max-width:58ch;margin-inline:auto;text-shadow:0 1px 12px rgba(0,0,0,.55)}
+.evie-subs .you{color:var(--g-muted);font-size:var(--fs-sm)}
+.evie-subs .you::before{content:"Tú · ";opacity:.7}
+.evie-subs .evie{color:var(--g-text);font-size:clamp(16px,2.2vw,19px);font-weight:500}
+.evie-subs .status{font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--g-accent)}
+.evie-composer{display:flex;align-items:center;gap:6px;width:100%;padding:6px;border-radius:999px;background:rgba(var(--g-rgb),.55);border:1px solid var(--g-line);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:inset 0 1px 0 var(--g-hi)}
+.evie-composer input{flex:1;min-width:0;border:0;background:transparent;color:var(--g-text);font-size:16px;padding:10px 12px;outline:0}
+.evie-composer:focus-within{border-color:var(--g-accent)}
+.evie-composer .icon-button{min-width:var(--tap);min-height:var(--tap);border-radius:50%}
+.evie-composer .evie-send{background:linear-gradient(135deg,#dfe6ff,#a9bcff);color:#0b1020}
+html[data-evie=listening] .evie-composer .evie-mic{background:#7ff0c8;color:#0b1020}
+.evie-stage-links{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-size:var(--fs-xs)}
+.evie-stage-links button{background:none;border:0;color:var(--g-muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:32px}
+.evie-stage .evie-draft{width:100%}
+/* v2.3b refinements */
+html.evie-ui .form-footer{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr))}
+html.evie-ui .form-footer .button{white-space:nowrap;padding:0 12px;font-size:var(--fs-sm)}
+html.evie-ui .form-footer .button.primary{order:3}
+@media(max-width:600px){html.evie-ui .form-footer{grid-template-columns:1fr 1fr}html.evie-ui .form-footer .button.primary{grid-column:1/-1;order:-1}}
+html.evie-ui .evie-composer input{background:transparent!important;border:0!important;box-shadow:none!important}
+@media(min-width:1024px){
+ html.evie-ui .neural-hero{min-height:min(66vh,720px)!important}
+ html.evie-ui .neural-hero .neural-orb{height:min(60vh,680px)!important;min-height:460px!important}
+ html.evie-ui .evie-stage{margin-top:-28px;position:relative;z-index:2}
+}
+html.evie-ui .mobile-nav>a span{font-size:11px}

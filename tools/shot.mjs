@@ -14,6 +14,8 @@ await page.evaluate((theme) => { try { Neural.dismiss() } catch {} Store.save((s
 for (const r of routes) {
   await page.evaluate((r) => { location.hash = r }, r)
   await page.waitForTimeout(1400)
+  if (process.env.ACTION) { await page.evaluate((a) => { const b = document.querySelector('[data-action="' + a + '"]'); b && b.click() }, process.env.ACTION); await page.waitForTimeout(700) }
+  if (process.env.BOTTOM) { await page.evaluate(() => scrollTo(0, document.body.scrollHeight)); await page.waitForTimeout(500) }
   const info = await page.evaluate(() => {
     const over = document.documentElement.scrollWidth > innerWidth + 1
     // overlapping fixed elements check

@@ -12,13 +12,13 @@ window.EvieFX=(()=>{
   let seen=false;try{seen=sessionStorage.getItem('evie-splash')==='1';sessionStorage.setItem('evie-splash','1');}catch{}
   if(seen||reduced()||!g()){el.remove();return Promise.resolve();}
   return new Promise(done=>{const G=g(),finish=()=>{if(!el.isConnected)return done();G.to(el,{opacity:0,duration:.45,ease:'power2.inOut',onComplete:()=>{el.remove();done();}});};
-   el.addEventListener('click',finish,{once:true});setTimeout(finish,3200);
+   el.addEventListener('click',finish,{once:true});setTimeout(finish,3800);
    const tl=G.timeline({onComplete:()=>setTimeout(finish,250)});
    tl.from(el.querySelectorAll('.splash-dots i'),{scale:0,opacity:0,stagger:{each:.04,from:'random'},duration:.5,ease:'back.out(2)'})
      .from(el.querySelector('.splash-orb'),{scale:.2,opacity:0,duration:.8,ease:'expo.out'},'-=.3')
      .to(el.querySelectorAll('.splash-dots i'),{x:()=>G.utils.random(-14,14),y:()=>G.utils.random(-14,14),duration:.9,ease:'sine.inOut'},'<')
      .from(el.querySelectorAll('.splash-word span'),{yPercent:120,opacity:0,stagger:.07,duration:.6,ease:'power3.out'},'-=.5')
-     .from(el.querySelector('.splash-tag'),{opacity:0,y:8,duration:.4},'-=.2');
+     .from(el.querySelector('.splash-tag'),{opacity:0,y:8,duration:.4},'-=.2').from(el.querySelector('.splash-credit'),{opacity:0,y:10,letterSpacing:'.5em',duration:.7,ease:'power3.out'},'-=.1');
   });
  }
  function gate(root){
