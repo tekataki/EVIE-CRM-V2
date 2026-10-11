@@ -279,3 +279,8 @@ html.evie-ui #neural-home-hero .dali-core-control:focus-visible{outline:2px soli
 html.evie-ui #neural-home-hero .orb-coordinate{position:absolute;left:0;right:0;text-align:center;z-index:3;pointer-events:none}
 html.evie-ui #neural-home-hero .coordinate-top{top:2%}html.evie-ui #neural-home-hero .coordinate-bottom{bottom:2%}
 @media(max-width:767px){html.evie-ui #neural-home-hero .neural-orb{height:auto!important;min-height:0!important;margin:8px auto 16px!important}html.evie-ui #neural-home-hero .dali-core-control{width:min(86vw,360px)!important}}
+
+/* v2.4 voice: replay control when iOS blocks autoplay (re-uses the already generated audio) */
+.evie-replay{display:inline-flex;align-items:center;gap:8px;margin:6px auto;padding:10px 16px;min-height:44px;border-radius:999px;border:1px solid rgba(190,170,255,.55);background:rgba(150,120,255,.18);color:inherit;font:inherit;font-size:14px;cursor:pointer;backdrop-filter:blur(10px)}
+.evie-replay[hidden]{display:none!important}.evie-replay svg{width:16px;height:16px}
+.evie-subs .evie-replay{display:flex}
