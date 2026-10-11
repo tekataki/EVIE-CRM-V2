@@ -43,10 +43,18 @@ test('daily chat limit returns 429 without calling OpenAI',async t=>{const f=awa
 test('missing OpenAI key degrades with a clear 503',async t=>{const f=await fixture(t,{OPENAI_API_KEY:''});const r=await f.request('/ai/chat',{method:'POST',cookie:f.cookie,body:{input:[{role:'user',content:'a'}]}});assert.equal(r.status,503);assert.match((await r.json()).error,/OPENAI_API_KEY/);});
 test('STT forwards audio to Groq in Spanish and meters the 10 s minimum',async t=>{const f=await fixture(t);
  const r=await f.request('/ai/stt',{method:'POST',cookie:f.cookie,type:'audio/webm',raw:new Uint8Array(500),headers:{'X-Evie-Duration':'3'}});assert.equal(r.status,200);assert.equal((await r.json()).text,'qué hay pendiente para hoy');
- const call=f.calls.find(c=>c.url.startsWith('https://api.groq.com'));assert.equal(call.options.body.get('language'),'es');assert.equal(call.options.body.get('model'),'whisper-large-v3-turbo');
+ const call=f.calls.find(c=>c.url.startsWith('https://api.groq.com'));assert.equal(call.options.body.get('language'),'es');assert.ok(call.url.endsWith('/audio/transcriptions'),'usa transcripción, no traducción');assert.equal(call.options.body.get('model'),'whisper-large-v3-turbo');
  assert.equal(f.db.prepare("select amount from ai_usage where kind='stt_seconds'").get().amount,10);
  assert.equal((await f.request('/ai/stt',{method:'POST',cookie:f.cookie,type:'text/html',raw:'<x>'})).status,415);});
 test('TTS uses the Fish Audio free model and configured voice; ignores unsafe voice ids',async t=>{const f=await fixture(t);
  const r=await f.request('/ai/tts',{method:'POST',cookie:f.cookie,body:{text:'Hola Dali'}});assert.equal(r.status,200);assert.equal(r.headers.get('content-type'),'audio/mpeg');
  const call=f.calls.find(c=>c.url.startsWith('https://api.fish.audio'));assert.equal(call.options.headers.model,'s2.1-pro-free');assert.equal(JSON.parse(call.options.body).reference_id,'voice12345');
  await f.request('/ai/tts',{method:'POST',cookie:f.cookie,body:{text:'x',voice:'../../etc'}});assert.equal(JSON.parse(f.calls.filter(c=>c.url.startsWith('https://api.fish.audio')).at(-1).options.body).reference_id,'voice12345');});
+test('voice pipeline end to end: Groq transcript -> OpenAI tool call -> function output -> answer -> Fish speech',async t=>{const f=await fixture(t);
+ const stt=await(await f.request('/ai/stt',{method:'POST',cookie:f.cookie,type:'audio/webm',raw:new Uint8Array(800),headers:{'X-Evie-Duration':'4'}})).json();
+ let step=0;f.setOpenAI(body=>{step++;if(step===1){assert.equal(body.input.at(-1).content,stt.text);return Response.json({output:[{type:'function_call',call_id:'c1',name:'get_today_overview',arguments:'{}'}]});}
+  assert.ok(body.input.some(x=>x.type==='function_call_output'&&x.call_id==='c1'));return Response.json({output:[{type:'message',content:[{type:'output_text',text:'Dali, hoy tienes 1 pendiente: revisar la propuesta.'}]}]});});
+ const r1=await(await f.request('/ai/chat',{method:'POST',cookie:f.cookie,body:{input:[{role:'user',content:stt.text}],context:{name:'Dali'}}})).json();assert.equal(r1.calls[0].name,'get_today_overview');
+ const r2=await(await f.request('/ai/chat',{method:'POST',cookie:f.cookie,body:{input:[{role:'user',content:stt.text},...r1.calls,{type:'function_call_output',call_id:'c1',output:JSON.stringify({pending_today:[{title:'revisar la propuesta'}]})}],context:{name:'Dali'}}})).json();
+ assert.match(r2.text,/revisar la propuesta/);
+ const tts=await f.request('/ai/tts',{method:'POST',cookie:f.cookie,body:{text:r2.text}});assert.equal(tts.status,200);assert.equal(tts.headers.get('content-type'),'audio/mpeg');});

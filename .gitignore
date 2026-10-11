@@ -8,3 +8,10 @@ out/
 evidence/shots/
 *.log
 owner-context*.json
+.env.*
+!.env.example
+!.dev.vars.example
+*.pem
+*.key
+*.sqlite
+*.sql.gz

@@ -1,0 +1,31 @@
+# Plantilla. Copia a .dev.vars (local, ignorado por Git). En producción: Cloudflare →
+# Workers & Pages → (proyecto) → Settings → Variables and Secrets → Add → tipo "Secret".
+# NUNCA pongas valores reales aquí, en GitHub ni en el chat.
+
+# --- Cuentas (obligatorio para modo nube) ---
+EVIE_ACCOUNTS_ENABLED=true
+SUPABASE_URL=https://TU-PROYECTO.supabase.co
+SUPABASE_PUBLISHABLE_KEY=
+EVIE_SESSION_KEY=            # openssl rand -base64 32
+EVIE_BOOTSTRAP_TOKEN=        # código para crear/reclamar la cuenta propietaria
+# Opcional
+SUPABASE_SERVICE_ROLE_KEY=   # solo servidor; evita el bloqueo de "Confirm email" al registrar
+EVIE_OPEN_SIGNUP=            # "true" abre el registro sin invitación (no recomendado)
+EVIE_AUTH_DOMAIN=            # dominio sintético de los correos internos (por defecto el del código)
+EVIE_LEGACY_OWNER_ID=        # UUID de la cuenta que puede importar datos locales antiguos
+EVIE_PUBLIC_ORIGIN=          # https://tu-dominio si difiere del dominio de la petición
+
+# --- EVIE voz e IA ---
+OPENAI_API_KEY=
+EVIE_MODEL_FAST=gpt-6-luna   # opcional; modelo barato con herramientas
+EVIE_MODEL_SMART=            # opcional
+GROQ_API_KEY=
+GROQ_STT_MODEL=whisper-large-v3-turbo
+FISH_AUDIO_API_KEY=
+FISH_AUDIO_VOICE_ID=         # ID de la voz (fish.audio → Discovery/My voices → copiar ID)
+FISH_AUDIO_MODEL=s2.1-pro-free
+EVIE_DAILY_LIMITS={"chat":150,"stt_seconds":1800,"tts_chars":40000}
+
+# --- Google Calendar (solo lectura, por cuenta) ---
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
