@@ -5,15 +5,17 @@
    Read tools run here against the local-first Store. Writes are DRAFTS confirmed by the user (IvyCommandBus). */
 window.EvieAssistant=(()=>{
  const e=s=>Domain.escape(String(s??''));
- let habitDraft=null,panel=null,inlineLast={you:'',evie:''},history=[],busy=false,audio=null,recorder=null,speakingCtx=null,ticket=0,clapOff=null,draft=null;
+ let googleDraft=null,recurringDraft=null,habitDraft=null,panel=null,inlineLast={you:'',evie:''},history=[],busy=false,clapOff=null,draft=null,voiceInline=false;
  const pref=()=>({clapWake:false,conversation:true,muted:false,cloudVoice:true,cloudAI:true,voiceId:'',...(Store.get()?.preferences?.evie||{})});
  const runtime=()=>window.EvieAccounts?.config?.()||{};
  const cloud=()=>!!(window.EvieAccounts?.current?.())&&runtime().accountsEnabled;
  const can=k=>cloud()&&runtime().ai?.[k]===true;
- const name=()=>{const p=Store.get()?.profile||{};return (p.preferred||p.name||'').trim();};
+ const name=()=>{const x=window.EvieProfile?.current?.();if(x&&x.enabled!==false&&x.preferred_name)return x.preferred_name;const p=Store.get()?.profile||{};return (p.preferred||p.name||'').trim();};
+ const zone=()=>{const x=window.EvieProfile?.current?.();return (x&&x.timezone)||DALI_CONFIG.timezone;};
  function setPhase(p){document.documentElement.dataset.evie=p;const map={idle:'idle',listening:'listening',thinking:'thinking',speaking:'speaking',error:'error'};document.querySelectorAll('[data-evie-phase]').forEach(n=>n.textContent=({idle:'Lista',listening:'Escuchando…',thinking:'Pensando…',speaking:'Hablando…',error:'Algo falló'})[p]||'');try{const cur=IvyState.get().phase,next={listening:'listening',thinking:'thinking',speaking:'speaking',idle:'idle',error:'error'}[map[p]];if(cur!==next){if(cur==='listening'&&next==='thinking')IvyState.transition('transcribing');IvyState.transition(next);}}catch{}window.EvieNeural?.kick();}
  /* ---------- local read tools (shared contract with src/assistant.js TOOLS) ---------- */
  const live=c=>Store.list(c)||[];
+ const dateOf=r=>window.Agenda?.dateOf?.(r)||null;
  const today=()=>Domain.today();
  const moneyStr=c=>Domain.money(c);
  function inRange(d,a,b){return d&&d>=a&&d<=b;}
@@ -30,12 +32,12 @@ window.EvieAssistant=(()=>{
   get_agenda({from,to}){const a=V2Domain.date(from)?from:today(),b=V2Domain.date(to)?to:a;const out=[];let d=a,guard=0;while(d<=b&&guard++<62){for(const r of live('agendaItems'))if(!['archived'].includes(r.status)&&Agenda.occurrence(r,d))out.push({date:d,title:r.title,done:Agenda.isDone(r,d),time:r.all_day?null:(r.due_at||r.start_at)?Agenda.localValue(r.due_at||r.start_at).slice(11,16):null});d=V2Domain.addDays(d,1);}return {from:a,to:b,items:out.slice(0,60)};},
   get_finance_summary({period='month'}={}){const from=periodFrom(period),t=today(),rows=live('transactions').filter(x=>inRange(x.date,from,t));const inc=rows.filter(x=>x.type==='income').reduce((a,b)=>a+b.amount,0),exp=rows.filter(x=>x.type==='expense').reduce((a,b)=>a+b.amount,0);const cats={};for(const x of rows.filter(x=>x.type==='expense'))cats[x.category||'Otro']=(cats[x.category||'Otro']||0)+x.amount;
    const accounts=(window.EvieModules?.accounts?.()||[]).map(a=>({name:a.name,type:a.type,estimated:moneyStr(a.balance),...(a.type==='credit'?{available:moneyStr(a.available),cut_day:a.cut||null,due_day:a.due||null}:{})}));
-   return {period,from,to:t,income:moneyStr(inc),expense:moneyStr(exp),net:moneyStr(inc-exp),ledger_balance_estimate:moneyStr(Domain.balance(live('transactions'))),top_expense_categories:Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>({category:k,amount:moneyStr(v)})),accounts,bills_pending:live('bills').filter(b=>Domain.outstanding(b)>0).map(b=>({title:b.title,amount:moneyStr(Domain.outstanding(b)),date:b.date})).slice(0,8),note:'Estimación con registros del usuario; no es el saldo real del banco.'};},
+   return {period,from,to:t,income:moneyStr(inc),expense:moneyStr(exp),net:moneyStr(inc-exp),available_now:(()=>{const a=Views.availableNow();return {amount:moneyStr(a.cents),basis:a.basis==='accounts'?'cuentas de efectivo/débito/cartera (sin tarjetas de crédito)':'solo registros (ingresos-gastos históricos); NO es saldo real',unassigned_movements:a.unassigned_count,credit_card_debt:moneyStr(a.credit_debt)};})(),top_expense_categories:Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>({category:k,amount:moneyStr(v)})),accounts,bills_pending:live('bills').filter(b=>Domain.outstanding(b)>0).map(b=>({title:b.title,amount:moneyStr(Domain.outstanding(b)),date:b.date})).slice(0,8),note:'Estimación con registros del usuario; no es el saldo real del banco.'};},
   get_business_summary(){const s=DaliCore.select(Store.get()).sales,list=window.EvieModules?.businesses?.()||[];return {soma:{month:s.month,collected:moneyStr(s.collected),target:moneyStr(s.target),receivable:moneyStr(s.receivable),pipeline_weighted:moneyStr(s.pipeline)},businesses:list.map(b=>({name:b.name,kind:b.kind,summary:b.summary})),followups:live('clients').filter(c=>c.nextDate&&c.nextAction&&!['Perdido','Completado'].includes(c.stage)).map(c=>({client:c.title,action:c.nextAction,date:c.nextDate})).slice(0,8)};},
   get_habits(){const l=window.EvieLife?.todayList()||[];return {today:l.map(x=>({title:x.h.title,done:x.done,minimum_done:x.min,streak:EvieLife.streak(EvieLife.data(),x.h)}))};},
   async get_google_calendar({date}){if(!cloud())return {connected:false,note:'Sin cuenta en la nube.'};const d=V2Domain.date(date)?date:today();try{return await EvieAccounts.request('connections/google/events?date='+d+'&tz='+encodeURIComponent(DALI_CONFIG.timezone));}catch(err){return {connected:false,error:err.message};}},
   get_goals(){return {goals:live('goals').filter(g=>!g.archived).map(g=>({title:g.title,progress:g.progress,target:g.target,date:g.date})).slice(0,20)};},
-  get_journal_stats({days=30}={}){const n=Math.max(1,Math.min(365,days|0||30)),from=V2Domain.addDays(today(),-(n-1)),res={};for(const k of ['alegria','tristeza','enojo','calma','ansiedad','gratitud']){const st=JournalData.statistics(Store.list('journal'),k,from,today());const vals=(st.points||[]).filter(p=>p.value!=null).map(p=>p.value);res[k]=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;}return {days:n,averages_0_100:res,entries:live('journal').filter(j=>j.date>=from).length,note:'Promedios de intensidades reportadas/confirmadas. No es evaluación clínica.'};},
+  get_journal_stats({days=30}={}){const pr=window.EvieProfile?.current?.();if(pr&&pr.use_journal!==true)return {not_allowed:true,note:'El usuario no habilitó usar su bitácora como contexto. Pídele que lo active en Configuración personalizada.'};const n=Math.max(1,Math.min(365,days|0||30)),from=V2Domain.addDays(today(),-(n-1)),res={};for(const k of ['alegria','tristeza','enojo','calma','ansiedad','gratitud']){const st=JournalData.statistics(Store.list('journal'),k,from,today());const vals=(st.points||[]).filter(p=>p.value!=null).map(p=>p.value);res[k]=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;}return {days:n,averages_0_100:res,entries:live('journal').filter(j=>j.date>=from).length,note:'Promedios de intensidades reportadas/confirmadas. No es evaluación clínica.'};},
   get_gym_summary(){const rows=live('gymSessions').sort((a,b)=>b.date.localeCompare(a.date)),week=V2Domain.addDays(today(),-6),nut=Store.get().preferences.evieNutrition||null;return {last:rows[0]?{title:rows[0].title,date:rows[0].date}:null,sessions_last_7_days:rows.filter(r=>r.date>=week).length,calorie_target:nut?.target||null};},
   search_records({query=''}={}){const q=IvyTools.norm(String(query)).slice(0,80);if(q.length<2)return {results:[]};const out=[];for(const [c,r] of [['agendaItems','agenda'],['transactions','finanzas'],['goals','objetivos'],['clients','soma'],['journal','bitacora'],['books','libros'],['skills','aprendizaje']])for(const x of live(c))if(IvyTools.norm(String(x.title||'')+' '+String(x.note||x.text||'').slice(0,300)).includes(q))out.push({type:c,title:x.title,date:x.date||null,route:r});return {results:out.slice(0,12)};},
   navigate({route}){if(DALI_CONFIG.sections.some(s=>s.route===route)){location.hash=route;return {ok:true,opened:route};}return {ok:false};},
@@ -44,6 +46,26 @@ window.EvieAssistant=(()=>{
   draft_transaction({type,amount,title,date}){return makeDraft('finance.create',{type,amount:Math.round(Number(amount)*100),title,date:V2Domain.date(date)?date:today()});},
   draft_journal_note({title,text}){return makeDraft('journal.create',{title,text,date:today()});},
   draft_habit_check({title}){const l=window.EvieLife?.todayList()||[],q=IvyTools.norm(String(title||'')),m=l.filter(x=>IvyTools.norm(x.h.title).includes(q)||q.includes(IvyTools.norm(x.h.title)));if(m.length!==1)return {status:'invalid',error:m.length?'Hay varios hábitos parecidos.':'No encontré ese hábito hoy.',options:l.map(x=>x.h.title)};if(m[0].done)return {status:'already_done'};habitDraft=m[0].h;draft={token:'habit',fields:{Hábito:m[0].h.title,Acción:'Marcar como cumplido hoy'},route:'habitos'};renderDraft();return {status:'draft_shown',needs_user_confirmation:true};},
+  draft_recurring(a){const t=today(),start=V2Domain.date(a.start_date)&&a.start_date>=t?a.start_date:t,freq=['daily','weekly','monthly','yearly'].includes(a.frequency)?a.frequency:'monthly';
+   const rec={frequency:freq,interval:1,timezone:DALI_CONFIG.timezone,time_local:/^\d{2}:\d{2}$/.test(a.time||'')?a.time:null,days_of_week:freq==='weekly'?(a.days_of_week||[]).filter(n=>n>=0&&n<=6):[],day_of_month:null,end_date:V2Domain.date(a.end_date)?a.end_date:null};
+   if(freq==='monthly'){const d=[...new Set((a.days_of_month||[]).filter(n=>n>=1&&n<=31))].sort((x,y)=>x-y);if(!d.length)return {status:'needs_info',ask:'¿Qué día o días del mes?'};if(d.length===1)rec.day_of_month=d[0];else rec.days_of_month=d;}
+   if(!rec.end_date)return {status:'needs_info',ask:'¿Hasta cuándo se repite? (o dime si es indefinido y lo pongo por 12 meses)'};
+   const dates=AgendaRules.expand(start,rec,start,rec.end_date,120);if(!dates.length)return {status:'invalid',error:'No hay fechas en ese rango.'};
+   const title=String(a.title||'').trim().slice(0,140);if(!title)return {status:'needs_info',ask:'¿Cómo lo llamo?'};
+   const payment=/payment/.test(a.kind||'');const amount=Number.isFinite(a.amount)&&a.amount>0?Math.round(a.amount*100):null;
+   const dupe=live('agendaItems').find(r=>!r.deleted_at&&r.recurrence&&IvyTools.norm(r.title)===IvyTools.norm(title)&&dateOf(r)===dates[0]);if(dupe)return {status:'duplicate',note:'Ya existe una serie igual que empieza el '+dates[0]+'. No se creó otra.'};
+   recurringDraft={title,rec:{...rec,start:dates[0]},first:dates[0],dates,payment,amount,kind:a.kind||'task'};
+   draft={token:'recurring',fields:{Título:title,Destino:'Agenda de EVIE (no Google Calendar)',Repetición:freq==='monthly'?'Días '+(rec.days_of_month||[rec.day_of_month]).join(' y ')+' de cada mes':freq,Hasta:Views.date(rec.end_date),[`Fechas (${dates.length})`]:dates.map(d=>Views.date(d,{day:'numeric',month:'short'})).join(' · '),...(payment?{Monto:amount?moneyStr(amount)+' cada vez':'Falta: escríbelo abajo',Nota:'Es un pago programado: no se registra como ingreso hasta que lo marques recibido.'}:{})},route:'agenda',needsAmount:payment&&!amount};
+   renderDraft();return {status:'draft_shown',needs_user_confirmation:true,occurrences:dates,needs_amount:payment&&!amount,note:payment&&!amount?'Pregunta el monto; el usuario puede escribirlo en la tarjeta.':undefined};},
+  async draft_google_event(a){if(!cloud())return {status:'unavailable',note:'Google Calendar requiere iniciar sesión con tu cuenta EVIE.'};
+   let st=window.EvieSettings?.googleStatus?.();if(!st){try{const r=await EvieAccounts.request('connections');const g=r.connections.find(c=>c.id==='google_calendar');st={connected:g?.status==='connected',write:!!g?.write,setup:g?.setup};}catch{st={connected:false};}}
+   if(st.setup)return {status:'unavailable',note:'Google Calendar aún no está configurado en el servidor: falta GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET (ver docs/SETUP.md). Puedo guardarlo en la Agenda de EVIE.'};
+   if(!st.connected)return {status:'unavailable',note:'No has conectado tu Google Calendar. Ve a Configuración → Conexiones. Mientras, puedo guardarlo en la Agenda de EVIE.'};
+   if(!st.write)return {status:'unavailable',note:'Tu conexión con Google es de solo lectura. En Conexiones toca «Permitir que EVIE cree eventos».'};
+   if(!V2Domain.date(a.date))return {status:'needs_info',ask:'¿Qué día?'};const title=String(a.title||'').trim();if(!title)return {status:'needs_info',ask:'¿Cómo se llama el evento?'};
+   const key=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>'0123456789abcdefghijklmnopqrstuv'[b%32]).join('');
+   googleDraft={title,date:a.date,time:/^\d{2}:\d{2}$/.test(a.time||'')?a.time:null,duration_minutes:a.duration_minutes||60,reminder_minutes:a.reminder_minutes??null,timezone:zone(),idempotency_key:key};
+   draft={token:'google',fields:{Destino:'Google Calendar (tu cuenta)',Título:title,Fecha:Views.date(a.date,{weekday:'long',day:'numeric',month:'long',year:'numeric'}),Hora:googleDraft.time?googleDraft.time+' · '+googleDraft.duration_minutes+' min':'Todo el día',Zona:googleDraft.timezone,...(googleDraft.reminder_minutes!=null?{Recordatorio:googleDraft.reminder_minutes+' min antes'}:{})},route:'agenda'};renderDraft();return {status:'draft_shown',needs_user_confirmation:true};},
   draft_goal({title}){return makeDraft('goal.create',{title,date:today()});}
  };
  function makeDraft(intent,params){try{const cmd=IvyCommandBus.envelope(intent,params,'voice','write');const p=IvyCommandBus.prepare(cmd);draft={token:p.token,fields:p.fields,route:p.route};renderDraft();return {status:'draft_shown',needs_user_confirmation:true,fields:p.fields};}catch(err){return {status:'invalid',error:err.message};}}
@@ -57,85 +79,169 @@ window.EvieAssistant=(()=>{
    if(cmd.intent==='navigate'){location.hash=cmd.parameters.route;return 'Abriendo '+(DALI_CONFIG.sections.find(s=>s.route===cmd.parameters.route)?.label||cmd.parameters.route)+'.';}
    if(cmd.risk==='write'&&IvyTools.intents.includes(cmd.intent)){const p=IvyCommandBus.prepare(cmd);draft={token:p.token,fields:p.fields,route:p.route};renderDraft();return 'Te dejé la propuesta en pantalla. Confírmala para guardarla.';}
   }catch{}
+  if(!can('chat')&&window.AgendaRules){const pm=AgendaRules.parseMonthly(text,today());if(pm){const title=(text.match(/(?:pagos?|cobros?|recordatorios?) (?:de |del )?([\wÁÉÍÓÚáéíóúñÑ ]{2,40}?)(?: el | los | cada |$)/i)?.[1]||'Pago programado').trim();const r=tools.draft_recurring({title:/pago|cobro/i.test(text)?'Pago '+title:title,frequency:'monthly',days_of_month:pm.days_of_month,start_date:today(),end_date:pm.end_date,time:null,amount:null,kind:/pago|cobro/i.test(text)?'payment_expected':'task'});if(r.status==='draft_shown')return r.needs_amount?'Te dejé las fechas en pantalla. ¿De cuánto es cada pago?':'Te dejé las fechas en pantalla para confirmar.';if(r.ask)return r.ask;if(r.note)return r.note;}}
   if(/(?:que|cual).*(?:pendiente|tengo|hay).*(?:hoy|dia)|como va mi dia|resumen de hoy/.test(q)&&!can('chat'))return speakOverview();
   return null;}
  function speakOverview(){const o=tools.get_today_overview(),n=o.name?o.name+', ':'',p=o.pending_today;let s=p.length?`${n}hoy tienes ${p.length} pendiente${p.length>1?'s':''}: ${p.slice(0,3).map(x=>x.title+(x.time?' a las '+x.time:'')).join(', ')}${p.length>3?' y más':''}.`:`${n}no tienes pendientes fechados para hoy.`;if(o.overdue.length)s+=` Ojo: ${o.overdue.length} vencido${o.overdue.length>1?'s':''}.`;if(o.bills_due_soon.length)s+=` Pagos próximos: ${o.bills_due_soon.map(b=>b.title).slice(0,2).join(' y ')}.`;return s;}
  /* ---------- OpenAI loop via server ---------- */
- async function chat(text){
+ async function chat(text,signal){
   history.push({role:'user',content:text});history=history.slice(-14);
-  const context={name:name(),timezone:DALI_CONFIG.timezone,currency:DALI_CONFIG.currency};let input=[...history];
+  window.EvieProfile?.load?.().catch(()=>{});const context={name:name(),timezone:zone(),currency:DALI_CONFIG.currency};let input=[...history];
   for(let step=0;step<4;step++){
-   const r=await EvieAccounts.request('ai/chat',{method:'POST',body:{input,context}});
-   if(!r.calls?.length){const say=(r.text||'').trim()||'Listo.';history.push({role:'assistant',content:say});return say;}
+   const r=await EvieAccounts.request('ai/chat',{method:'POST',body:{input,context},signal});if(signal?.aborted)throw Object.assign(Error('cancelado'),{name:'AbortError'});
+   if(!r.calls?.length){const say=(r.text||'').trim()||'Listo.';history.push({role:'assistant',content:say.slice(0,3900)});return {text:say,spoken:(r.spoken||say).trim(),sources:Array.isArray(r.sources)?r.sources:[],checked:r.checked_at||null,webUnavailable:!!r.web_unavailable};}
    input=[...input,...(r.reasoning||[]),...r.calls];
    for(const c of r.calls){let args={};try{args=JSON.parse(c.arguments||'{}');}catch{}let out;try{out=tools[c.name]?await tools[c.name](args):{error:'unknown tool'};}catch(err){out={error:err.message};}input.push({type:'function_call_output',call_id:c.call_id,output:JSON.stringify(out).slice(0,12000)});}
   }
   return 'Necesito más contexto para eso. ¿Me lo dices de otra forma?';
  }
- async function ask(text,{speak=true,inline=false}={}){
-  text=String(text||'').trim();if(!text)return;if(!(inline||onStage()))open();append('user',text);const my=++ticket;busy=true;setPhase('thinking');
-  let say;try{say=tryLocal(text);if(say===null){if(can('chat')&&pref().cloudAI)say=await chat(text);else say=fallbackAnswer(text);}}catch(err){say=err.status===429?err.message:(err.message||'No pude responder.');setPhase('error');}
-  if(my!==ticket)return;busy=false;if(say){append('evie',say);if(speak&&!pref().muted)await speakText(say);}
-  if(my!==ticket)return;setPhase('idle');
-  if(speak&&pref().conversation&&(panel?.dataset.voice==='1'||voiceInline)&&!draft&&say&&/\?\s*$/.test(say))listen();
+ async function ask(text,{speak=true,inline=false,turnToken=null}={}){
+  text=String(text||'').trim();if(!text)return;if(!turnToken)Voice.unlock();const t=turnToken||Voice.begin();if(!(inline||onStage()))open();append('user',text);busy=true;Voice.set('thinking');
+  let say;try{say=tryLocal(text);if(say===null){if(can('chat')&&pref().cloudAI)say=await chat(text,t.signal);else say=fallbackAnswer(text);}}catch(err){if(!Voice.alive(t.id))return;say=err.name==='AbortError'?'':err.status===429?err.message:(err.message||'No pude responder.');}
+  if(!Voice.alive(t.id))return;busy=false;
+  const ans=typeof say==='object'&&say?say:{text:say,spoken:say,sources:[]};
+  if(ans.text){append('evie',ans.text,ans);if(speak&&!pref().muted)await Voice.speak(ans.spoken||ans.text,t);}
+  if(!Voice.alive(t.id))return;if(Voice.state!=='blocked')Voice.set('idle');
+  if(speak&&pref().conversation&&(panel?.dataset.voice==='1'||voiceInline)&&!draft&&ans.text&&/\?\s*$/.test(ans.text)&&Voice.state==='idle')listen({inline:true});
  }
  function fallbackAnswer(text){try{const cmd=IvyCommandBus.parse(text,'voice');if(cmd.intent==='summary')return IvyTools.read(cmd.parameters.kind).text;}catch{}return can('chat')?'':'Puedo abrir secciones, darte el resumen de hoy, crear pendientes o registrar gastos. Para preguntas libres, configura EVIE IA en Ajustes.';}
- /* ---------- TTS ---------- */
- function stopSpeaking(){try{audio?.pause();}catch{}audio=null;try{speechSynthesis.cancel();}catch{}}
- async function speakText(text){stopSpeaking();setPhase('speaking');
-  if(can('tts')&&pref().cloudVoice){try{const res=await fetch('/api/ai/tts',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Evie-Request':'1','X-Evie-User':EvieAccounts.current().id},body:JSON.stringify({text:text.slice(0,600),...(pref().voiceId?{voice:pref().voiceId}:{})})});if(res.ok){const blob=await res.blob(),url=URL.createObjectURL(blob);audio=new Audio(url);try{const C=window.AudioContext||window.webkitAudioContext;speakingCtx=speakingCtx||new C();const src=speakingCtx.createMediaElementSource(audio),an=speakingCtx.createAnalyser();an.fftSize=256;src.connect(an);an.connect(speakingCtx.destination);const buf=new Uint8Array(an.frequencyBinCount);const loop=()=>{if(!audio||audio.paused)return;an.getByteFrequencyData(buf);let s=0;for(const v of buf)s+=v;const lv=s/buf.length/160;EvieNeural?.setOut(lv);EvieFX?.mic(lv);requestAnimationFrame(loop);};audio.addEventListener('play',loop,{once:true});}catch{}
-    await new Promise(r=>{audio.onended=audio.onerror=r;audio.play().catch(r);});URL.revokeObjectURL(url);return;}}catch{}}
-  if('speechSynthesis' in window){await new Promise(r=>{const u=new SpeechSynthesisUtterance(text);u.lang='es-MX';u.rate=1.03;const v=speechSynthesis.getVoices().find(v=>/es[-_](MX|US|419)/i.test(v.lang))||speechSynthesis.getVoices().find(v=>/^es/i.test(v.lang));if(v)u.voice=v;let id=setInterval(()=>EvieNeural?.setOut(.35+Math.random()*.3),120);u.onend=u.onerror=()=>{clearInterval(id);r();};speechSynthesis.speak(u);setTimeout(()=>{clearInterval(id);r();},Math.min(30000,text.length*90+2000));});}
- }
- /* ---------- STT ---------- */
- async function listen({inline=false}={}){
-  if(recorder){finishRecording();return;}stopSpeaking();if(!(inline||onStage()))open(true);else if(panel)panel.dataset.voice='1';else voiceInline=true;
-  if(can('stt')&&pref().cloudVoice&&window.MediaRecorder&&navigator.mediaDevices?.getUserMedia)return recordCloud();
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){append('evie','Tu navegador no permite dictado aquí. Escríbeme abajo.');return;}
-  const rec=new SR();rec.lang='es-MX';rec.interimResults=true;rec.maxAlternatives=1;let final='';setPhase('listening');
-  rec.onresult=ev=>{let txt='';for(const r of ev.results)txt+=r[0].transcript;final=txt;const inp=panel?.querySelector('#evie-input');if(inp)inp.value=txt;EvieNeural?.setMic(.5);};
-  rec.onerror=()=>setPhase('idle');rec.onend=()=>{recorder=null;if(final.trim())ask(final);else setPhase('idle');};recorder={stop:()=>rec.stop(),browser:true};rec.start();
- }
- async function recordCloud(){let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}});}catch{append('evie','Necesito permiso de micrófono. También puedes escribirme.');return;}
-  const type=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg'].find(t=>MediaRecorder.isTypeSupported?.(t))||'';const mr=new MediaRecorder(stream,type?{mimeType:type,audioBitsPerSecond:24000}:{});const chunks=[];const started=performance.now();
-  const C=window.AudioContext||window.webkitAudioContext,ctx=new C(),src=ctx.createMediaStreamSource(stream),an=ctx.createAnalyser();an.fftSize=1024;src.connect(an);const buf=new Uint8Array(an.fftSize);let silentSince=null,heard=false,raf;
-  const vad=()=>{an.getByteTimeDomainData(buf);let e2=0;for(const v of buf)e2+=((v-128)/128)**2;const rms=Math.sqrt(e2/buf.length),lv=Math.min(1,rms*8);EvieNeural?.setMic(lv);EvieFX?.mic(lv);const now=performance.now();if(rms>.035){heard=true;silentSince=null;}else if(heard){silentSince??=now;if(now-silentSince>1300)return finishRecording();}if(!heard&&now-started>7000)return finishRecording();if(now-started>30000)return finishRecording();raf=requestAnimationFrame(vad);};
-  mr.ondataavailable=ev=>{if(ev.data.size)chunks.push(ev.data);};
-  mr.onstop=async()=>{cancelAnimationFrame(raf);stream.getTracks().forEach(t=>t.stop());ctx.close().catch(()=>{});recorder=null;EvieFX?.mic(0);const dur=(performance.now()-started)/1000;if(!heard){setPhase('idle');return;}setPhase('thinking');
-   try{const blob=new Blob(chunks,{type:(mr.mimeType||'audio/webm').split(';')[0]});const hint=encodeURIComponent(['EVIE',name(),'SOMA','ALVENTO','BBVA','bitácora','pendiente'].filter(Boolean).join(', '));const res=await fetch('/api/ai/stt',{method:'POST',credentials:'same-origin',headers:{'Content-Type':blob.type,'X-Evie-Request':'1','X-Evie-User':EvieAccounts.current().id,'X-Evie-Duration':String(Math.ceil(dur)),'X-Evie-Hint':hint},body:blob});const j=await res.json();if(!res.ok)throw Error(j.error||'No se pudo transcribir.');if(j.text)ask(j.text);else{append('evie','No te escuché bien. ¿Lo repites?');setPhase('idle');}}catch(err){append('evie',err.message);setPhase('error');setTimeout(()=>setPhase('idle'),1500);}};
-  recorder={stop:()=>{try{mr.state!=='inactive'&&mr.stop();}catch{}}};mr.start(250);setPhase('listening');raf=requestAnimationFrame(vad);
- }
- function finishRecording(){const r=recorder;if(r)r.stop();}
+ /* ---------- Voice controller: one explicit state machine per turn ----------
+    idle → arming → listening → transcribing → thinking → synthesizing → speaking → idle
+    blocked: iOS refused autoplay → text stays visible + "Toca para escuchar" replays the SAME audio (no new paid request)
+    error(stage): mic | stt | chat | tts | play → short message, back to idle.
+    Every async step carries its turn id; a newer turn aborts and outranks older ones. */
+ const Voice=(()=>{
+  let state='idle',turn=0,ctl=null,ctx=null,player=null,silent=null,last=null,rec=null,routed=false,simTimer=null;const diag=[];
+  const AC=()=>window.AudioContext||window.webkitAudioContext;
+  const apple=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||(/Safari\//.test(navigator.userAgent)&&!/Chrome|Chromium|Android/.test(navigator.userAgent));
+  const visual={idle:'idle',arming:'listening',listening:'listening',transcribing:'thinking',thinking:'thinking',synthesizing:'thinking',speaking:'speaking',blocked:'idle',error:'error'};
+  function note(stage,code){diag.push({t:Date.now(),stage,code:String(code||'').slice(0,40)});if(diag.length>20)diag.shift();}
+  function set(s){state=s;setPhase(visual[s]||'idle');document.documentElement.dataset.evieVoice=s;syncReplay();}
+  function silentWav(){const n=800,b=new ArrayBuffer(44+n*2),v=new DataView(b),w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));}
+  // MUST run synchronously inside a user gesture: resumes the shared AudioContext and primes the single
+  // reusable <audio> element so Safari allows the later (post-network) play() of the answer.
+  function unlock(){try{if(!ctx){const K=AC();if(K)ctx=new K();}if(ctx&&ctx.state!=='running')ctx.resume().catch(()=>{});}catch{}
+   if(!player){player=new Audio();player.preload='auto';player.setAttribute('playsinline','');player.setAttribute('webkit-playsinline','');}
+   if(player.paused&&state!=='speaking'){try{player.src=silent||(silent=silentWav());const p=player.play();p?.catch?.(()=>{});}catch{}}}
+  function begin(){turn++;try{ctl?.abort();}catch{}ctl=new AbortController();if(rec)rec.stop(true);halt();return {id:turn,signal:ctl.signal};}
+  const alive=id=>id===turn;
+  function halt(){clearInterval(simTimer);simTimer=null;try{if(player&&!player.paused&&player.src!==silent)player.pause();}catch{}try{speechSynthesis.cancel();}catch{}}
+  function stop(){turn++;try{ctl?.abort();}catch{}if(rec)rec.stop(true);halt();set('idle');}
+  function fail(stage,msg,id){if(id!=null&&!alive(id))return;note(stage,msg);if(msg)append('evie',msg);set('error');setTimeout(()=>{if(state==='error')set(last&&last.pending?'blocked':'idle');},1600);}
+  function pickType(){if(!window.MediaRecorder)return '';const ok=t=>{try{return MediaRecorder.isTypeSupported?.(t);}catch{return false;}};const order=apple?['audio/mp4;codecs=mp4a.40.2','audio/mp4','audio/webm;codecs=opus','audio/webm']:['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'];return order.find(ok)||'';}
+  function blobType(chunks,mr,type){const t=(chunks[0]?.type||mr.mimeType||type||'').split(';')[0];return /^audio\//.test(t)?t:(apple?'audio/mp4':'audio/webm');}
+  async function record(t){set('arming');let stream;
+   try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});}
+   catch(e){return fail('mic',['NotAllowedError','SecurityError'].includes(e?.name)?'Necesito permiso de micrófono. Actívalo en los ajustes del navegador, o escríbeme.':'No pude abrir el micrófono. Puedes escribirme.',t.id);}
+   if(!alive(t.id)||document.hidden){stream.getTracks().forEach(x=>x.stop());if(alive(t.id))set('idle');return;}
+   const type=pickType();let mr;try{mr=new MediaRecorder(stream,type?{mimeType:type}:{});}catch{try{mr=new MediaRecorder(stream);}catch{stream.getTracks().forEach(x=>x.stop());return fail('mic','Este navegador no puede grabar audio aquí. Escríbeme abajo.',t.id);}}
+   const chunks=[],started=performance.now();let heard=false,quietSince=null,raf=null,src=null,an=null,buf=null,vadOk=false,floor=null,flat=0,done=false,discard=false;
+   try{if(ctx){if(ctx.state!=='running')await ctx.resume().catch(()=>{});if(ctx.state==='running'){src=ctx.createMediaStreamSource(stream);an=ctx.createAnalyser();an.fftSize=1024;src.connect(an);buf=new Uint8Array(an.fftSize);vadOk=true;}}}catch{vadOk=false;}
+   if(!vadOk)note('vad','unavailable');
+   const vad=()=>{raf=null;if(done)return;const now=performance.now(),el=now-started;
+    if(vadOk){an.getByteTimeDomainData(buf);let e2=0;for(const v of buf)e2+=((v-128)/128)**2;const rms=Math.sqrt(e2/buf.length);
+     if(rms===0){if(++flat>90){vadOk=false;note('vad','flat');}}else flat=0;
+     if(el<400)floor=floor==null?rms:Math.min(floor,rms)*.5+rms*.5;const thr=Math.min(.035,Math.max(.012,(floor||0)*2.5+.01));
+     const lv=Math.min(1,rms*8);EvieNeural?.setMic(lv);EvieFX?.mic(lv);
+     if(el>400&&rms>thr){heard=true;quietSince=null;}else if(heard){quietSince??=now;if(now-quietSince>1400)return rec?.stop(false);}
+     if(!heard&&el>8000)return rec?.stop(false);}
+    else{EvieNeural?.setMic(.3+Math.random()*.2);if(el>15000)return rec?.stop(false);}
+    if(el>30000)return rec?.stop(false);raf=requestAnimationFrame(vad);};
+   mr.ondataavailable=ev=>{if(ev.data&&ev.data.size)chunks.push(ev.data);};
+   mr.onstop=async()=>{done=true;if(raf)cancelAnimationFrame(raf);stream.getTracks().forEach(x=>x.stop());try{src?.disconnect();}catch{}EvieFX?.mic(0);rec=null;
+    const dur=(performance.now()-started)/1000;if(discard||!alive(t.id))return;
+    if(vadOk&&!heard){append('evie','No te escuché. Toca el núcleo y habla cuando veas «Escuchando…».');note('vad','silence');return set('idle');}
+    const blob=new Blob(chunks,{type:blobType(chunks,mr,type)});if(blob.size<800||dur<.5){append('evie','No se grabó audio. ¿Lo intentas de nuevo?');note('mic','empty');return set('idle');}
+    set('transcribing');let text='';
+    try{const hint=encodeURIComponent(['EVIE',name(),'SOMA','ALVENTO','BBVA','bitácora','pendiente'].filter(Boolean).join(', '));const to=setTimeout(()=>ctl?.abort(),30000);
+     const res=await fetch('/api/ai/stt',{method:'POST',credentials:'same-origin',signal:t.signal,headers:{'Content-Type':blob.type,'X-Evie-Request':'1','X-Evie-User':EvieAccounts.current().id,'X-Evie-Duration':String(Math.ceil(dur)),'X-Evie-Hint':hint},body:blob});clearTimeout(to);
+     const j=await res.json().catch(()=>({}));if(!res.ok){note('stt',res.status);throw Error(j.error||'No se pudo transcribir.');}text=String(j.text||'').trim();}
+    catch(err){if(!alive(t.id))return;return fail('stt',err.name==='AbortError'?'La transcripción tardó demasiado. Intenta otra vez.':err.message,t.id);}
+    if(!alive(t.id))return;if(!text){append('evie','No te entendí bien. ¿Lo repites?');return set('idle');}
+    ask(text,{turnToken:t});};
+   rec={stop:(drop)=>{discard=!!drop;try{mr.state!=='inactive'&&mr.stop();}catch{}},vad:()=>vadOk};
+   try{mr.start();}catch{stream.getTracks().forEach(x=>x.stop());rec=null;return fail('mic','No pude iniciar la grabación.',t.id);}
+   set('listening');if(!vadOk)append('evie','Habla y toca de nuevo para enviar.');raf=requestAnimationFrame(vad);}
+  function browserListen(t){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){append('evie','Tu navegador no permite dictado aquí. Escríbeme abajo.');return set('idle');}
+   const r=new SR();r.lang='es-MX';r.interimResults=true;r.maxAlternatives=1;let final='';
+   r.onresult=ev=>{let txt='';for(const x of ev.results)txt+=x[0].transcript;final=txt;const inp=panel?.querySelector('#evie-input');if(inp)inp.value=txt;EvieNeural?.setMic(.5);};
+   r.onerror=ev=>{note('stt',ev.error);};r.onend=()=>{rec=null;if(!alive(t.id))return;if(final.trim())ask(final,{turnToken:t});else set('idle');};
+   rec={stop:(drop)=>{if(drop)t.id=-1;try{r.stop();}catch{}}};try{r.start();set('listening');}catch{rec=null;set('idle');}}
+  function listen(){if(rec){rec.stop(false);return;}unlock();const t=begin();
+   if(can('stt')&&pref().cloudVoice&&window.MediaRecorder&&navigator.mediaDevices?.getUserMedia)return record(t);return browserListen(t);}
+  function simulate(){clearInterval(simTimer);simTimer=setInterval(()=>{EvieNeural?.setOut(.35+Math.random()*.35);EvieFX?.mic(.3+Math.random()*.3);},120);}
+  async function playLast(t,gesture){if(!last?.url)return;if(gesture)unlock();if(!player)unlock();
+   if(!apple&&ctx&&ctx.state==='running'&&!routed){try{const s=ctx.createMediaElementSource(player),an=ctx.createAnalyser();an.fftSize=256;s.connect(an);an.connect(ctx.destination);routed=an;}catch{routed=null;}}
+   if(routed&&ctx.state!=='running')await ctx.resume().catch(()=>{});
+   player.src=last.url;set('speaking');
+   // Listen for the end BEFORE play(): short clips (or errors) can finish before play() resolves.
+   let finish;const ended=new Promise(r=>{const end=()=>{player.removeEventListener('ended',end);player.removeEventListener('error',end);player.removeEventListener('pause',end);clearTimeout(cap);r();};const cap=setTimeout(end,Math.max(15000,(last.text.length*110)+8000));finish=end;player.addEventListener('ended',end);player.addEventListener('error',end);});
+   try{await player.play();}catch(e){finish();if(!alive(t.id))return;note('play',e?.name);last.pending=true;set('blocked');append('evie','');return;}
+   last.pending=false;if(!player.ended)player.addEventListener('pause',finish,{once:true});else finish();
+   if(routed){const b=new Uint8Array(routed.frequencyBinCount);const loop=()=>{if(player.paused||!alive(t.id))return;routed.getByteFrequencyData(b);let s=0;for(const v of b)s+=v;const lv=s/b.length/160;EvieNeural?.setOut(lv);EvieFX?.mic(lv);requestAnimationFrame(loop);};loop();}else simulate();
+   await ended;
+   clearInterval(simTimer);simTimer=null;EvieFX?.mic(0);if(alive(t.id)&&state==='speaking')set('idle');}
+  async function browserSpeak(text,t){if(!('speechSynthesis' in window))return;set('speaking');simulate();
+   await new Promise(r=>{const u=new SpeechSynthesisUtterance(text);u.lang='es-MX';u.rate=1.03;const vs=speechSynthesis.getVoices(),v=vs.find(v=>/es[-_](MX|US|419)/i.test(v.lang))||vs.find(v=>/^es/i.test(v.lang));if(v)u.voice=v;u.onend=u.onerror=()=>r();speechSynthesis.speak(u);setTimeout(r,Math.min(30000,text.length*90+2000));});
+   clearInterval(simTimer);simTimer=null;if(alive(t.id))set('idle');}
+  async function speak(text,t){if(!alive(t.id))return;
+   if(last?.url){URL.revokeObjectURL(last.url);}last=null;
+   if(can('tts')&&pref().cloudVoice){set('synthesizing');
+    try{const to=setTimeout(()=>ctl?.abort(),25000);const res=await fetch('/api/ai/tts',{method:'POST',credentials:'same-origin',signal:t.signal,headers:{'Content-Type':'application/json','X-Evie-Request':'1','X-Evie-User':EvieAccounts.current().id},body:JSON.stringify({text:text.slice(0,600),...(pref().voiceId?{voice:pref().voiceId}:{})})});clearTimeout(to);
+     if(!alive(t.id))return;if(!res.ok){const j=await res.json().catch(()=>({}));note('tts',res.status);throw Error(j.error||'tts');}
+     const blob=await res.blob();if(!alive(t.id))return;last={url:URL.createObjectURL(blob),text,pending:false};return await playLast(t,false);}
+    catch(err){if(!alive(t.id))return;note('tts',err.name||'error');}}
+   return browserSpeak(text,t);}
+  function replay(){if(!last?.url)return;const t={id:++turn,signal:(ctl=new AbortController()).signal};unlock();playLast(t,true);}
+  function syncReplay(){const show=state==='blocked'&&!!last?.url;document.querySelectorAll('[data-evie=replay]').forEach(b=>{b.hidden=!show;});}
+  function onHide(){if(state==='arming'){turn++;set('idle');}if(rec){rec.stop(true);note('lifecycle','hidden-rec');set('idle');}
+   if(state==='speaking'&&last?.url){try{player.pause();}catch{}last.pending=true;turn++;set('blocked');}
+   else if(['transcribing','thinking','synthesizing'].includes(state)){/* keep the request; playback will need a tap if iOS blocks it */}}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)onHide();});addEventListener('pagehide',onHide);
+  return {listen,stop,begin,alive,speak,replay,unlock,set,get state(){return state;},get recording(){return !!rec;},finish:()=>rec?.stop(false),cancelRec:()=>rec?.stop(true),stats:()=>({state,turn,recording:!!rec,replay:!!last?.url,pending:!!last?.pending,diag:diag.slice(-8),ctx:ctx?.state||null})};
+ })();
+ function stopSpeaking(){Voice.stop();}
+ function finishRecording(){Voice.finish();}
+ function listen({inline=false}={}){if(!Voice.recording){if(!(inline||onStage()))open(true);else if(panel)panel.dataset.voice='1';else voiceInline=true;}Voice.listen();}
  /* ---------- panel UI ---------- */
  const suggestions=['¿Qué hay pendiente para hoy?','¿Cómo van mis finanzas este mes?','Activa el modo enfoque','¿Cómo me he sentido esta semana?','Registra gasto 120: Comida hoy'];
- function open(voice=false){if(!panel){panel=document.createElement('section');panel.id='evie-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','EVIE');panel.innerHTML=`<header class="evie-panel-head"><span class="evie-panel-orb" aria-hidden="true"></span><div><strong>EVIE</strong><small data-evie-phase>Lista</small></div><button class="icon-button" data-evie="stop" aria-label="Detener voz">${Views.icon('square')}</button><button class="icon-button" data-evie="close" aria-label="Cerrar EVIE">${Views.icon('x')}</button></header><div class="evie-log" id="evie-log" aria-live="polite"></div><div class="evie-draft" id="evie-draft" hidden></div><div class="evie-suggest">${suggestions.map(s=>`<button class="evie-chip" data-evie="suggest">${e(s)}</button>`).join('')}</div><form class="evie-form" id="evie-form"><label class="sr-only" for="evie-input">Escríbele a EVIE</label><input id="evie-input" autocomplete="off" maxlength="600" placeholder="Pregúntale algo a EVIE…"><button type="button" class="icon-button evie-mic" data-evie="listen" aria-label="Hablar">${Views.icon('mic')}</button><button class="icon-button primary" aria-label="Enviar">${Views.icon('arrow-up')}</button></form>`;document.body.append(panel);
+ function open(voice=false){if(!panel){panel=document.createElement('section');panel.id='evie-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','EVIE');panel.innerHTML=`<header class="evie-panel-head"><span class="evie-panel-orb" aria-hidden="true"></span><div><strong>EVIE</strong><small data-evie-phase>Lista</small></div><button class="icon-button" data-evie="stop" aria-label="Detener voz">${Views.icon('square')}</button><button class="icon-button" data-evie="close" aria-label="Cerrar EVIE">${Views.icon('x')}</button></header><div class="evie-log" id="evie-log" aria-live="polite"></div><button type="button" class="evie-replay" data-evie="replay" hidden>${Views.icon('play')} Toca para escuchar la respuesta</button><div class="evie-draft" id="evie-draft" hidden></div><div class="evie-suggest">${suggestions.map(s=>`<button class="evie-chip" data-evie="suggest">${e(s)}</button>`).join('')}</div><form class="evie-form" id="evie-form"><label class="sr-only" for="evie-input">Escríbele a EVIE</label><input id="evie-input" autocomplete="off" maxlength="600" placeholder="Pregúntale algo a EVIE…"><button type="button" class="icon-button evie-mic" data-evie="listen" aria-label="Hablar">${Views.icon('mic')}</button><button class="icon-button primary" aria-label="Enviar">${Views.icon('arrow-up')}</button></form>`;document.body.append(panel);
    panel.querySelector('#evie-form').onsubmit=ev=>{ev.preventDefault();const i=panel.querySelector('#evie-input'),v=i.value;i.value='';panel.dataset.voice='0';ask(v,{speak:!pref().muted&&pref().conversation});};
    if(!history.length)append('evie',greet());window.lucide?.createIcons({root:panel});}
   panel.hidden=false;document.body.classList.add('evie-open');if(voice)panel.dataset.voice='1';EvieFX?.panelIn(panel);if(!voice)setTimeout(()=>panel.querySelector('#evie-input')?.focus({preventScroll:true}),60);}
- function close(){if(!panel)return;panel.hidden=true;document.body.classList.remove('evie-open');finishRecording();stopSpeaking();setPhase('idle');}
+ function close(){if(!panel)return;panel.hidden=true;document.body.classList.remove('evie-open');Voice.stop();}
  function greet(){const h=new Date().getHours(),n=name();return `${h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches'}${n?', '+n:''}. ¿En qué te ayudo?`;}
  function onStage(){return !!document.getElementById('evie-stage')&&(!panel||panel.hidden);}
- let voiceInline=false;
- function syncInline(){const box=document.getElementById('evie-subs');if(!box)return;box.innerHTML=`<p class="status" data-evie-phase>${({idle:'Lista',listening:'Escuchando…',thinking:'Pensando…',speaking:'Hablando…',error:'Algo falló'})[document.documentElement.dataset.evie]||'Lista'}</p>${inlineLast.you?`<p class="you">${e(inlineLast.you)}</p>`:''}${inlineLast.evie?`<p class="evie">${e(inlineLast.evie)}</p>`:`<p class="evie">${e(greet())}</p>`}`;if(window.gsap&&!EvieFX.reduced())gsap.from(box.querySelectorAll('p:not(.status)'),{opacity:0,y:6,duration:.35,stagger:.05});}
- function append(who,text){if(who==='user'){inlineLast={you:text,evie:''};syncInline();}else if(who==='evie'){inlineLast.evie=text;syncInline();}const lr=document.getElementById('evie-live');if(lr&&who==='evie')lr.textContent=text;if(!panel)return;const log=panel.querySelector('#evie-log'),p=document.createElement('p');p.className='evie-msg '+who;p.textContent=text;log.append(p);while(log.children.length>30)log.firstChild.remove();log.scrollTop=log.scrollHeight;}
- function renderDraft(){let box;if(onStage()){box=document.getElementById('evie-stage-draft');}else{open();box=panel.querySelector('#evie-draft');}if(!box)return;if(!draft){box.hidden=true;box.innerHTML='';return;}box.hidden=false;box.innerHTML=`<span class="eyebrow">PROPUESTA · AÚN NO SE GUARDA</span><dl>${Object.entries(draft.fields).map(([k,v])=>`<div><dt>${e(k)}</dt><dd>${e(v)}</dd></div>`).join('')}</dl><div class="toolbar"><button class="button primary" data-evie="draft-confirm">Guardar</button><button class="button" data-evie="draft-cancel">Descartar</button></div>`;EvieFX?.panelIn(box);}
+ function syncInline(){const box=document.getElementById('evie-subs');if(!box)return;box.innerHTML=`<button type="button" class="evie-replay" data-evie="replay" hidden>${Views.icon('play')} Toca para escuchar la respuesta</button><p class="status" data-evie-phase>${({idle:'Lista',listening:'Escuchando…',thinking:'Pensando…',speaking:'Hablando…',error:'Algo falló'})[document.documentElement.dataset.evie]||'Lista'}</p>${inlineLast.you?`<p class="you">${e(inlineLast.you)}</p>`:''}${inlineLast.evie?`<p class="evie">${e(inlineLast.evie)}</p>${srcHtml(inlineLast.meta)}`:`<p class="evie">${e(greet())}</p>`}`;syncInlineReplay();if(window.gsap&&!EvieFX.reduced())gsap.from(box.querySelectorAll('p:not(.status)'),{opacity:0,y:6,duration:.35,stagger:.05});}
+ function srcHtml(meta){const list=(meta?.sources||[]).filter(x=>/^https:\/\//.test(x.url));if(!list.length)return meta?.webUnavailable?'<small class="evie-src-note">La búsqueda web no está disponible con el modelo actual.</small>':'';return `<div class="evie-sources"><span>Fuentes web${meta.checked?' · consultadas '+e(meta.checked.slice(0,16).replace('T',' ')):''}</span><ol>${list.map(x=>`<li><a href="${e(x.url)}" target="_blank" rel="noopener noreferrer nofollow">${e(x.title||x.host)}</a> <small>${e(x.host)}</small></li>`).join('')}</ol></div>`;}
+ function plain(t){return String(t||'').replace(/\s*\(\[([^\]]+)\]\((https?:[^)]+)\)\)/g,'').replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g,'$1');}
+ function append(who,text,meta=null){if(who==='evie'&&!text){syncInlineReplay();return;}if(who==='evie')text=plain(text);if(who==='user'){inlineLast={you:text,evie:''};syncInline();}else if(who==='evie'){inlineLast.evie=text;inlineLast.meta=meta;syncInline();}const lr=document.getElementById('evie-live');if(lr&&who==='evie')lr.textContent=text;if(!panel)return;const log=panel.querySelector('#evie-log'),p=document.createElement('p');p.className='evie-msg '+who;p.textContent=text;log.append(p);if(meta&&(meta.sources?.length||meta.webUnavailable)){const d=document.createElement('div');d.innerHTML=srcHtml(meta);log.append(d);}while(log.children.length>30)log.firstChild.remove();log.scrollTop=log.scrollHeight;}
+ function syncInlineReplay(){const show=Voice.stats().pending;document.querySelectorAll('[data-evie=replay]').forEach(b=>b.hidden=!show);}
+ function renderDraft(){let box;if(onStage()){box=document.getElementById('evie-stage-draft');}else{open();box=panel.querySelector('#evie-draft');}if(!box)return;if(!draft){box.hidden=true;box.innerHTML='';return;}box.hidden=false;box.innerHTML=`<span class="eyebrow">PROPUESTA · AÚN NO SE GUARDA</span><dl>${Object.entries(draft.fields).map(([k,v])=>`<div><dt>${e(k)}</dt><dd>${e(v)}</dd></div>`).join('')}</dl>${draft.needsAmount?`<label class="evie-draft-amount">Monto por pago (MXN)<input class="input" inputmode="decimal" data-evie-amount placeholder="0.00"></label>`:''}<div class="toolbar"><button class="button primary" data-evie="draft-confirm">Guardar</button><button class="button" data-evie="draft-cancel">Descartar</button></div>`;EvieFX?.panelIn(box);}
  document.addEventListener('click',ev=>{const b=ev.target.closest('[data-evie]');if(!b)return;const a=b.dataset.evie;
-  if(a==='open')open();else if(a==='close')close();else if(a==='stop'){stopSpeaking();finishRecording();setPhase('idle');}
-  else if(a==='listen'||a==='orb'){if(a==='orb'&&panel&&!panel.hidden&&!recorder&&document.documentElement.dataset.evie==='idle'&&ev.detail===0)return close();EvieFX?.pulse();listen();}
+  if(a==='open')open();else if(a==='close')close();else if(a==='stop'){Voice.stop();}
+  else if(a==='replay'){Voice.replay();}
+  else if(a==='listen'||a==='orb'){if(a==='orb'&&panel&&!panel.hidden&&!Voice.recording&&document.documentElement.dataset.evie==='idle'&&ev.detail===0)return close();EvieFX?.pulse();listen();}
   else if(a==='suggest'){panel.dataset.voice='0';ask(b.textContent,{speak:!pref().muted&&pref().conversation});}
+  else if(a==='draft-confirm'&&draft?.token==='google'){const d=googleDraft;if(!d||b.disabled)return;b.disabled=true;EvieAccounts.request('connections/google/events',{method:'POST',body:{...d,confirm:true}}).then(r=>{googleDraft=null;draft=null;document.querySelectorAll('#evie-stage-draft,#evie-draft').forEach(x=>{x.hidden=true;x.innerHTML='';});append('evie',r.duplicate?'Ese evento ya estaba en tu Google Calendar; no lo dupliqué.':'Listo, quedó en tu Google Calendar.');App.toast('Evento creado en Google Calendar.','success');}).catch(err=>{b.disabled=false;append('evie',err.message||'No se pudo crear el evento.');});}
+  else if(a==='draft-confirm'&&draft?.token==='recurring'){const d=recurringDraft;if(!d)return;let amount=d.amount;if(d.payment&&!amount){const v=b.closest('.evie-draft')?.querySelector('[data-evie-amount]')?.value;const c=v?Domain.cents(v):0;if(!(c>0)){append('evie','¿De cuánto es cada pago? Escríbelo en la tarjeta y vuelve a tocar Guardar.');return;}amount=c;}
+   const dup=Store.list('agendaItems').find(r=>!r.deleted_at&&r.recurrence&&IvyTools.norm(r.title)===IvyTools.norm(d.title)&&Agenda.dateOf(r)===d.first);if(dup){append('evie','Esa serie ya existe; no la dupliqué.');draft=null;recurringDraft=null;renderDraft();return;}
+   const now=new Date().toISOString(),{start,...rec}=d.rec,at=Agenda.toTimestamp(d.first+'T'+(rec.time_local||'09:00'));
+   Store.save(s=>{s.agendaItems.push({...RCData.defaults('agendaItems'),id:crypto.randomUUID(),title:d.title+(amount?' · '+Domain.money(amount):''),kind:d.kind==='event'?'event':d.payment?'reminder':'task',area:d.payment?'finance':'personal',status:'scheduled',all_day:!rec.time_local,start_at:at,due_at:null,recurrence:rec,notes:d.payment?`Pago programado${amount?' de '+Domain.money(amount):''}. No es un ingreso registrado: cuando lo recibas, regístralo en Finanzas.`:'',source:'evie',history:[],created_at:now,updated_at:now});});
+   recurringDraft=null;draft=null;document.querySelectorAll('#evie-stage-draft,#evie-draft').forEach(x=>{x.hidden=true;x.innerHTML='';});App.render();append('evie',`Listo: ${d.dates.length} fechas en tu Agenda de EVIE.`);App.toast('Serie guardada en Agenda.','success');}
   else if(a==='draft-confirm'&&draft?.token==='habit'){const h=habitDraft;EvieLife.complete(h.id);habitDraft=null;draft=null;document.querySelectorAll('#evie-stage-draft,#evie-draft').forEach(b=>{b.hidden=true;b.innerHTML='';});App.render();append('evie','Listo, '+h.title+' cumplido.');App.toast(h.title+' ✓','success',()=>EvieLife.undo(h.id));}
   else if(a==='draft-confirm'){try{const r=IvyCommandBus.confirm(draft.token);draft=null;document.querySelectorAll('#evie-stage-draft,#evie-draft').forEach(b=>{b.hidden=true;b.innerHTML='';});App.render();append('evie','Guardado.');App.toast('EVIE guardó el registro.','success',r.undo);}catch(err){append('evie',err.message);}}
-  else if(a==='draft-cancel'){try{if(draft?.token!=='habit')IvyCommandBus.cancel(draft?.token);}catch{}habitDraft=null;draft=null;renderDraft();document.querySelectorAll('#evie-stage-draft,#evie-draft').forEach(b=>{b.hidden=true;b.innerHTML='';});append('evie','Descartado.');}
+  else if(a==='draft-cancel'){try{if(!['habit','recurring','google'].includes(draft?.token))IvyCommandBus.cancel(draft?.token);}catch{}habitDraft=null;recurringDraft=null;googleDraft=null;draft=null;renderDraft();document.querySelectorAll('#evie-stage-draft,#evie-draft').forEach(b=>{b.hidden=true;b.innerHTML='';});append('evie','Descartado.');}
  });
  document.addEventListener('keydown',ev=>{if(document.body.classList.contains('account-locked'))return;if(ev.ctrlKey&&!ev.shiftKey&&ev.code==='Space'&&!window.evieDesktop){ev.preventDefault();listen();}if(ev.key==='Escape'&&panel&&!panel.hidden&&!document.querySelector('dialog[open]'))close();});
  /* ---------- wake: double clap (opt-in, only while app is visible) ---------- */
- const Wake={async start(){if(clapOff)return;try{await IvyAudio.start('evie-wake',true);const det=IvyClap.detector();let noise=[],thr=.14,cal=performance.now()+1500;clapOff=IvyAudio.subscribe(s=>{if(s.now<cal){noise.push(s.rms);return;}if(noise.length){thr=Math.max(.08,Math.min(.5,noise.reduce((a,b)=>a+b,0)/noise.length*5+.04));noise=[];}if(!recorder&&document.documentElement.dataset.evie!=='speaking'&&det.sample(s,thr)){Wake.stop();if(!onStage())open(true);listen();setTimeout(()=>{if(pref().clapWake)Wake.start();},4000);}});document.documentElement.dataset.evieWake='on';}catch(err){clapOff=null;App.toast(err.message,'error');}},
+ const Wake={async start(){if(clapOff)return;try{await IvyAudio.start('evie-wake',true);const det=IvyClap.detector();let noise=[],thr=.14,cal=performance.now()+1500;clapOff=IvyAudio.subscribe(s=>{if(s.now<cal){noise.push(s.rms);return;}if(noise.length){thr=Math.max(.08,Math.min(.5,noise.reduce((a,b)=>a+b,0)/noise.length*5+.04));noise=[];}if(!Voice.recording&&document.documentElement.dataset.evie!=='speaking'&&det.sample(s,thr)){Wake.stop();if(!onStage())open(true);listen();setTimeout(()=>{if(pref().clapWake)Wake.start();},4000);}});document.documentElement.dataset.evieWake='on';}catch(err){clapOff=null;App.toast(err.message,'error');}},
   stop(){clapOff?.();clapOff=null;IvyAudio.stop('evie-wake');delete document.documentElement.dataset.evieWake;},active:()=>!!clapOff};
  document.addEventListener('visibilitychange',()=>{if(document.hidden)Wake.stop();else if(pref().clapWake&&Store.get())Wake.start();});
  // Deep link / PWA shortcut: /#inicio?evie=listen or ?evie=1
  function fromUrl(){const q=new URLSearchParams(location.search);if(q.get('evie')==='listen'||q.get('evie')==='1'){history.replaceState(null,'',location.pathname+location.hash);setTimeout(()=>open(true),400);}}
  setPhase('idle');
- return Object.freeze({open,close,ask,listen,syncInline,tools,tryLocal,Wake,fromUrl,pref,stopSpeaking,stats:()=>({panel:!!panel,busy,history:history.length,draft:!!draft,wake:!!clapOff})});
+ return Object.freeze({open,close,ask,listen,syncInline,tools,tryLocal,Wake,fromUrl,pref,stopSpeaking,replay:()=>Voice.replay(),reset(){Voice.stop();history=[];inlineLast={you:'',evie:''};draft=null;habitDraft=null;if(panel){panel.remove();panel=null;}},stats:()=>({panel:!!panel,busy,history:history.length,draft:!!draft,wake:!!clapOff,voice:Voice.stats()})});
 })();
 
 /* ---------- Modes: "activa el modo X" ---------- */
@@ -145,7 +251,7 @@ window.EvieModes=(()=>{
   enfoque:{label:'Enfoque',route:'agenda',say:'Modo enfoque activado: 25 minutos sin distracciones. Te aviso al terminar.',timer:25},
   gym:{label:'Gym',route:'gimnasio',say:'Modo gym. Vamos con todo.'},
   negocio:{label:'Negocio',route:'negocios',say:'Modo negocio. Aquí están tus negocios.'},
-  cierre:{label:'Cierre del día',route:'bitacora',say:'Modo cierre. Cuéntame cómo te fue hoy y lo guardamos en tu bitácora.'},
+  cierre:{label:'Cierre del día',route:'bitacora',say:'Modo cierre. Abre Mascota Virtual y cuéntale a Kisha cómo te fue hoy.'},
   noche:{label:'Noche',theme:'dark',say:'Modo noche: tema oscuro y menos movimiento. Descansa.'}
  };
  let timer=null,ends=0;

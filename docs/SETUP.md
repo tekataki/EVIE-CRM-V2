@@ -40,14 +40,28 @@
 - Límites por cuenta y día: `EVIE_DAILY_LIMITS`. Sin claves, EVIE usa dictado y voz del navegador. Comandos simples (abrir, modos, resumen de hoy, marcar hábito) nunca usan IA.
 - No se guardan grabaciones. El audio solo viaja a Groq durante la transcripción.
 
-## 5. Google Calendar (solo lectura, cada persona conecta la suya)
-1. https://console.cloud.google.com → proyecto → *APIs & Services → Library* → **Google Calendar API** → Enable.
-2. *OAuth consent screen*: External; alcance `https://www.googleapis.com/auth/calendar.events.readonly`; *Test users*: los 2 correos de Google.
-3. *Credentials → Create credentials → OAuth client ID → Web application*.
+## 5. Google Calendar (cada persona conecta la suya)
+EVIE lee eventos con `calendar.events.readonly` y, solo si la persona lo permite, crea eventos con
+`calendar.events.owned` (únicamente calendarios propios; no puede tocar calendarios compartidos ajenos).
+Cada token se guarda cifrado (AES-GCM, `EVIE_SESSION_KEY`) y ligado a la sesión del dueño: Naomi nunca ve el calendario de Alejandro.
+
+1. https://console.cloud.google.com → crea o elige un proyecto → *APIs & Services → Library* → **Google Calendar API** → *Enable*.
+2. *OAuth consent screen* → *External*. Nombre de la app, correo de soporte y dominio (`evie-crm-v2.pages.dev`).
+   Alcances: `.../auth/calendar.events.readonly` y `.../auth/calendar.events.owned`.
+   *Test users*: añade los 2 correos de Google (en modo *Testing* el refresh token caduca a los 7 días; publica la app para evitarlo).
+3. *Credentials → Create credentials → OAuth client ID* → *Web application*.
    *Authorized redirect URI*: `https://evie-crm-v2.pages.dev/api/connections/google/callback` (y tu dominio propio si usas uno).
-4. Guarda `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` como secretos en Cloudflare.
-5. En EVIE: *Configuración → Conexiones → Conectar Google Calendar*. "Desconectar" revoca en Google y borra el token.
-**No conectados (sin simulación):** Gmail (alcance restringido → verificación de Google) y Spotify (Premium + dispositivo + aprobación).
+4. Guarda los secretos en Cloudflare (Pages → evie-crm-v2 → Settings → Variables and secrets, tipo *Secret*):
+   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Redespliega.
+5. En EVIE: *Configuración → Conexiones → Conectar Google Calendar* (lectura).
+   Para crear eventos: **Permitir que EVIE cree eventos** (vuelve a pedir consentimiento con el alcance de escritura).
+6. Crear un evento: EVIE muestra una vista previa y solo escribe al pulsar *Confirmar*. Cada borrador lleva una clave
+   de idempotencia que se usa como id del evento, así que repetir la confirmación no lo duplica.
+   "Desconectar" revoca en Google y borra el token.
+
+**No conectados (sin simulación):**
+- Gmail: alcances restringidos → requiere verificación de seguridad de Google (CASA) antes de uso real.
+- Spotify: requiere app en el Developer Dashboard, cuenta Premium, un dispositivo activo y aprobación de cuota extendida.
 
 ## 6. Desarrollo y pruebas
 ```bash

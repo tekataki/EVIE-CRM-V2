@@ -1,0 +1,41 @@
+'use strict';
+// Kisha client logic: deterministic state machine beats AI cues, bounded context, draft→journal v4
+// compatible with the existing validator, idempotency, legacy compatibility, honest trends, private drafts.
+const {test}=require('node:test');const assert=require('node:assert/strict');const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+const ctx={crypto:globalThis.crypto,console};ctx.window=ctx;vm.createContext(ctx);
+for(const f of ['v2-domain.js','rc-data.js','journal-data.js','kisha-core.js']){try{vm.runInContext(fs.readFileSync(path.join(__dirname,'../public',f),'utf8'),ctx);}catch(e){if(f!=='rc-data.js')throw e;}}
+const K=ctx.KishaCore,J=ctx.JournalData;const plain=x=>JSON.parse(JSON.stringify(x));
+test('device phases win over AI cues; illegal transitions are refused',()=>{const m=K.machine();
+ assert.equal(m.go('greeting'),true);assert.equal(m.go('speaking'),true);assert.equal(m.suggest('happy'),true);assert.equal(m.view().pose,'speaking','cue never overrides speaking');
+ m.go('idle');assert.equal(m.view().pose,'happy');assert.equal(m.suggest('dance'),false);assert.equal(m.suggest('<script>'),false);
+ m.go('listening');m.suggest('happy');assert.equal(m.view().pose,'listening');
+ assert.equal(m.go('review'),false,'cannot jump from listening to review');m.go('transcribing');assert.equal(m.view().pose,'thinking');
+ m.go('error');assert.equal(m.view().pose,'confused');m.go('idle');m.suggest('supportive');assert.equal(m.view().pose,'supportive');m.go('resting');assert.equal(m.view().pose,'resting');
+ assert.throws(()=>m.go('celebrate'));});
+test('context sends recent turns plus memory and asks to refresh memory in long sessions',()=>{const s={messages:[],memory:null,memoryUpTo:0};for(let i=0;i<20;i++)s.messages.push({role:i%2?'kisha':'user',text:'mensaje '+i});
+ let c=K.context(s);assert.equal(c.messages.length,8);assert.equal(c.need_memory,true);assert.equal(c.messages.at(-1).text,'mensaje 19');
+ s.memory='Resumen fiel';s.memoryUpTo=12;c=K.context(s);assert.equal(c.memory,'Resumen fiel');assert.equal(c.need_memory,false);
+ assert.equal(K.context({messages:[{role:'user',text:'hola'}]}).need_memory,false);
+ assert.equal(K.greeting('Naomi',9),'Buenos días, Naomi. Soy Kisha. ¿Cómo estuvo tu día? Estoy aquí para escucharte.');assert.doesNotMatch(K.greeting('',21),/,\s*\./);});
+const session={id:'44444444-4444-4444-8444-444444444444',messages:[{role:'kisha',text:'¿Cómo estuvo tu día?'},{role:'user',text:'Terminé el proyecto y me sentí orgullosa.'},{role:'kisha',text:'¡Qué bien!'}]};
+const review={date:'2026-10-12',time_local:'21:15',timezone:'America/Mexico_City',title:'Proyecto terminado',summary:'Contaste que terminaste el proyecto.',moments:[{text:'Terminar el proyecto'}],emotions:[{key:'orgullo',value:70,evidence:'me sentí orgullosa'},{key:'alegria',value:40,edited:true}],observation:'Quizá fue un día de cierre.'};
+test('a confirmed review becomes a journal v4 record accepted by the existing validator',()=>{const e=K.toEntry(review,{session,keepTranscript:true});
+ assert.equal(J.validate(plain(e)),true);assert.equal(e.confirmed_by_user,true);assert.equal(e.source,'kisha');assert.equal(e.source_entry_id,'kisha:'+session.id);assert.equal(e.time_local,'21:15');
+ assert.equal(e.transcript.length,3);assert.match(e.raw_narrative,/orgullosa/);assert.equal(e.emotions.find(x=>x.key==='alegria').basis,'reported');
+ assert.equal(J.statistics([plain(e)],'orgullo','2026-10-01','2026-10-31').entries,1);
+ const noT=K.toEntry(review,{session,keepTranscript:false});assert.equal(noT.transcript,null);assert.equal(noT.raw_narrative,null);assert.equal(J.validate(plain(noT)),true);});
+test('validation rejects out-of-range or invented emotion keys, missing title and bad dates',()=>{for(const bad of [{emotions:[{key:'orgullo',value:101}]},{emotions:[{key:'odio',value:5}]},{emotions:[{key:'calma',value:4.5}]},{title:'  '},{date:'12/10/2026'},{time_local:'9pm'},{emotions:[{key:'calma',value:3},{key:'calma',value:4}]}])assert.throws(()=>K.toEntry({...review,...bad},{session,keepTranscript:false}));
+ const empty=K.toEntry({...review,emotions:[],moments:[],summary:'',insufficient:true},{session,keepTranscript:false});assert.equal(empty.emotions.length,0);assert.equal(empty.insufficient,true);assert.equal(J.validate(plain(empty)),true);});
+test('duplicate-save prevention and legacy records stay distinguishable',()=>{const e=K.toEntry(review,{session,keepTranscript:false});const legacy={id:'l1',title:'Mi día',text:'Escrito a mano',summary:'',date:'2025-01-01',journal_version:1,source:'manual'};const imported={id:'l2',title:'JSON',date:'2025-02-01',journal_version:4,source:'chatgpt_daily_reflection'};
+ assert.equal(K.existing([legacy,e],session.id).id,e.id);assert.equal(K.existing([legacy],session.id),null);assert.equal(K.existing([{...e,deleted_at:'x'}],session.id),null);
+ assert.equal(K.isLegacy(legacy),true);assert.equal(K.isLegacy(imported),true);assert.equal(K.isLegacy(e),false);assert.equal(K.excerpt(legacy),'Escrito a mano');});
+test('history filters by title and date, groups several entries per day newest first',()=>{const r=(id,date,time,title)=>({id,date,time_local:time,title,summary:'s'});const rows=[r('a','2026-10-10','08:00','Mañana'),r('b','2026-10-12','09:00','Café con Ana'),r('c','2026-10-12','21:00','Noche tranquila'),{...r('d','2026-10-12','22:00','Borrada'),deleted_at:'x'}];
+ const f=K.filter(rows,{});assert.deepEqual(f.map(x=>x.id),['c','b','a']);assert.deepEqual(plain(K.groupByDay(f).map(g=>[g.date,g.rows.length])),[['2026-10-12',2],['2026-10-10',1]]);
+ assert.deepEqual(K.filter(rows,{q:'cafe'}).map(x=>x.id),['b']);assert.equal(K.filter(rows,{from:'2026-10-11',to:'2026-10-11'}).length,0);});
+test('trends use only confirmed entries, cautious wording and list the entries behind each value',()=>{const e=(id,date,val,hl,conf=true)=>({id,date,journal_version:4,confirmed_by_user:conf,emotions:[{key:'calma',intensity:val}],highlights:hl});
+ const t=K.trends([e('1','2026-10-01',40,['Trabajo']),e('2','2026-10-02',60,['trabajo','Familia']),e('3','2026-10-03',90,['Trabajo'],false)],{from:'2026-10-01',to:'2026-10-31'});
+ assert.equal(t.entries,2);assert.equal(t.emotions[0].mean,50);assert.deepEqual(plain(t.emotions[0].ids),['1','2']);assert.equal(t.repeated[0].sentence,'Este tema apareció en 2 de tus 2 entradas.');assert.doesNotMatch(JSON.stringify(t),/porque|causa/);});
+test('private draft is per-account, round-trips and rejects tampered data',()=>{assert.notEqual(K.draftKey('aaa-1'),K.draftKey('bbb-2'));assert.equal(K.draftKey('../x'),'evie-kisha-draft:x');
+ const back=K.restore(K.serialize({...session,memory:'m',memoryUpTo:2}));assert.equal(back.id,session.id);assert.equal(back.messages.length,3);
+ assert.equal(K.restore('{"v":1,"id":"<script>","messages":[]}'),null);assert.equal(K.restore('nope'),null);
+ const t=K.restore(JSON.stringify({v:1,id:session.id,messages:[{role:'system',text:'x'},{role:'user',text:'<b>hola</b>'}]}));assert.deepEqual(plain(t.messages),[{role:'user',text:'b hola /b',at:null}]);});

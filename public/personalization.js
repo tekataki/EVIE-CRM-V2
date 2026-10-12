@@ -1,6 +1,6 @@
 'use strict';
 window.Personalization=(()=>{
- const mandatory=['inicio','perfil','configuracion'];
+ const mandatory=['inicio','perfil','configuracion','personalizada'];
  const routes=()=>DALI_CONFIG.sections.map(x=>x.route);
  function normalize(p={}){const all=routes(),unique=a=>[...new Set(Array.isArray(a)?a:[])].filter(x=>all.includes(x));return {order:[...unique(p.sectionOrder),...all.filter(x=>!unique(p.sectionOrder).includes(x))],hidden:unique(p.hiddenSections).filter(x=>!mandatory.includes(x)),favorites:unique(p.favoriteSections).slice(0,5),mobile:unique(p.mobileShortcuts).length===5?unique(p.mobileShortcuts):['inicio','agenda','finanzas','negocios','bitacora']};}
  function sections(p){const n=normalize(p);return n.order.filter(x=>!n.hidden.includes(x)).map(x=>DALI_CONFIG.sections.find(s=>s.route===x));}

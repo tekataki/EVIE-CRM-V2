@@ -3,6 +3,8 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import { bodyLimit } from 'hono/body-limit'
 import { createConnections } from './connections.js'
 import { createAssistant } from './assistant.js'
+import { createKisha } from './kisha.js'
+import { createProfile } from './profile.js'
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export function normalizeUsername(value) {
@@ -33,7 +35,9 @@ const SCHEMA=["CREATE TABLE IF NOT EXISTS auth_accounts (owner_id TEXT PRIMARY K
  "CREATE TABLE IF NOT EXISTS ai_usage (owner_id TEXT NOT NULL, day TEXT NOT NULL, kind TEXT NOT NULL, amount INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (owner_id, day, kind))",
  "CREATE TABLE IF NOT EXISTS provider_tokens (owner_id TEXT NOT NULL, provider TEXT NOT NULL CHECK (provider IN ('google_calendar')), tokens TEXT NOT NULL, scopes TEXT NOT NULL, created_at INTEGER NOT NULL, last_ok INTEGER, error TEXT, PRIMARY KEY (owner_id, provider))",
  "CREATE TABLE IF NOT EXISTS oauth_states (state TEXT PRIMARY KEY, owner_id TEXT NOT NULL, provider TEXT NOT NULL, verifier TEXT NOT NULL, expires_at INTEGER NOT NULL)",
- "CREATE INDEX IF NOT EXISTS idx_oauth_states_exp ON oauth_states(expires_at)"]
+ "CREATE INDEX IF NOT EXISTS idx_oauth_states_exp ON oauth_states(expires_at)",
+ "CREATE TABLE IF NOT EXISTS user_profiles (owner_id TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at INTEGER NOT NULL)",
+ "CREATE TABLE IF NOT EXISTS kisha_turns (owner_id TEXT NOT NULL, turn_id TEXT NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY (owner_id, turn_id))"]
 const schemaReady=new WeakMap()
 export function ensureSchema(db){if(!db)return Promise.resolve();let p=schemaReady.get(db);if(!p){p=(async()=>{for(const sql of SCHEMA)await db.prepare(sql).bind().run()})().catch(e=>{schemaReady.delete(db);throw e});schemaReady.set(db,p)}return p}
 export function createAccounts({fetcher=fetch}={}) {
@@ -49,7 +53,7 @@ export function createAccounts({fetcher=fetch}={}) {
   if(c.req.method!=='GET'){
    const origin=c.req.header('Origin');const expected=new URL(c.req.url).origin
    if(c.req.header('X-Evie-Request')!=='1'||origin!==expected)return jsonError(c,'Solicitud no autorizada.',403)
-   if(!c.req.path.endsWith('/ai/stt')&&!c.req.header('Content-Type')?.startsWith('application/json'))return jsonError(c,'Usa JSON.',415)
+   if(!c.req.path.endsWith('/ai/stt')&&c.req.method!=='DELETE'&&!c.req.header('Content-Type')?.startsWith('application/json'))return jsonError(c,'Usa JSON.',415)
   }
   await ensureSchema(env.AUTH_DB)
   await next()
@@ -166,7 +170,10 @@ export function createAccounts({fetcher=fetch}={}) {
  api.post('/data/pull',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||typeof b.after!=='string'||b.after.length>200||Object.keys(b).some(k=>k!=='after'))return jsonError(c,'Cursor inválido.');const r=await remote(c,'/rest/v1/rpc/evie_pull',{method:'POST',access:s.tokens.access_token,body:{after_key:b.after}});if(!r.ok)return jsonError(c,'No se pudo leer la cuenta.',502);const rows=await r.json();return c.json({owner:s.user.id,rows,next:rows.length===500?rows.at(-1).collection+'/'+rows.at(-1).record_id:''})})
  api.post('/data/push',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||!Array.isArray(b.changes)||!b.changes.length||b.changes.length>5000||Object.keys(b).some(k=>k!=='changes'))return jsonError(c,'Lote de 1 a 5000 cambios requerido.');const r=await remote(c,'/rest/v1/rpc/evie_apply',{method:'POST',access:s.tokens.access_token,body:{changes:b.changes}});if(!r.ok)return jsonError(c,r.status===409?'Otro dispositivo cambió estos registros.':'No se pudieron guardar los cambios.',r.status===409?409:422);return c.json({owner:s.user.id,rows:await r.json()})})
  api.route('/connections',createConnections({fetcher,seal,unseal,authenticate:async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}}))
- api.route('/ai',createAssistant({fetcher,authenticate:async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}}))
+ const bound=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
+ api.route('/profile',createProfile({authenticate:bound,seal,unseal}))
+ api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal}))
+ api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal}))
  api.onError((err,c)=>{
   console.error('EVIE_ACCOUNTS_ERROR', err?.stack || err?.message || String(err))
   return jsonError(c,'Servicio temporalmente no disponible. No se han descartado cambios locales.',503)

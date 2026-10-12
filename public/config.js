@@ -16,7 +16,7 @@ window.DALI_CONFIG = Object.freeze({
     {route:'negocios',label:'Negocios',icon:'briefcase-business',group:'principal',searchTerms:['negocio','empresas','soma','alvento','granja','emprendimientos'],mobilePriority:3},
     {route:'soma',label:'SOMA · Clientes',icon:'handshake',group:'negocios',searchTerms:['clientes','soma','ventas'],mobilePriority:0},
     {route:'aprendizaje',label:'Aprendizaje',icon:'graduation-cap',group:'principal',searchTerms:['rutas','habilidades'],mobilePriority:0},
-    {route:'bitacora',label:'Bitácora',icon:'book-open',group:'principal',searchTerms:['día','diario'],mobilePriority:5},
+    {route:'bitacora',label:'Mascota Virtual',icon:'dog',group:'principal',searchTerms:['kisha','mascota','perrita','bitácora','día','diario','conversar'],mobilePriority:5},
     {route:'granja',label:'Granja',icon:'sprout',group:'negocios',searchTerms:['cerdos','rancho','camadas'],mobilePriority:0},
     {route:'libros',label:'Biblioteca',icon:'library-big',group:'principal',searchTerms:['lectura','biblioteca'],mobilePriority:0},
     {route:'alvento',label:'ALVENTO',icon:'shirt',group:'negocios',searchTerms:['drops','ropa'],mobilePriority:0},
@@ -26,6 +26,7 @@ window.DALI_CONFIG = Object.freeze({
     {route:'logros',label:'Logros',icon:'trophy',group:'principal',searchTerms:['insignias','premios','medallas'],mobilePriority:0},
     {route:'subir',label:'Subir',icon:'upload',group:'herramientas',searchTerms:['importar','json','chatgpt'],mobilePriority:3},
     {route:'perfil',label:'Mi perfil',icon:'user-round',group:'cuenta',searchTerms:['identidad','foto'],mobilePriority:0},
-    {route:'configuracion',label:'Configuración',icon:'settings-2',group:'cuenta',searchTerms:['respaldo','exportar','tema'],mobilePriority:0}
+    {route:'configuracion',label:'Configuración',icon:'settings-2',group:'cuenta',searchTerms:['respaldo','exportar','tema'],mobilePriority:0},
+    {route:'personalizada',label:'Configuración personalizada',icon:'sliders-horizontal',group:'cuenta',searchTerms:['perfil evie','tono','estilo','zona horaria','preferencias'],mobilePriority:0}
   ]
 });

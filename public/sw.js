@@ -4,6 +4,8 @@ const CACHE='evie-shell-'+SHELL_VERSION;
 const allowed=new Set(SHELL_FILES.filter(file=>file.startsWith('/')&&!file.startsWith('/api/')&&!file.startsWith('/__')&&!file.includes('?')&&!file.includes('#')));
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll([...allowed].map(file=>new Request(new URL(file,self.location.origin),{cache:'reload',credentials:'omit',redirect:'error'}))))));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('evie-shell-')&&key!==CACHE)await caches.delete(key);await self.clients.claim();})()));
+// The page asks a waiting worker to take over only when no form is dirty (no lost input).
+self.addEventListener('message',event=>{if(event.data==='evie-skip-waiting')self.skipWaiting();});
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  // Never cache authentication, account configuration, private API responses,

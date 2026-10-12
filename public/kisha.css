@@ -1,0 +1,85 @@
+/* Mascota Virtual · Kisha — uses EVIE glass tokens (--g-*) so dark/light themes stay coherent. */
+.kisha-page{display:grid;gap:18px;max-width:980px;margin:0 auto;padding-bottom:calc(var(--nav-h,76px) + env(safe-area-inset-bottom) + 24px)}
+.kisha-heading{text-align:center;justify-content:center}
+.kisha-heading>div{margin:0 auto}
+.kisha-stage{position:relative;display:grid;justify-items:center;gap:12px;padding:22px clamp(14px,4vw,32px) 18px;overflow:hidden;isolation:isolate}
+.kisha-stage::before{content:"";position:absolute;inset:-20% -10% auto;height:70%;z-index:-1;pointer-events:none;background:radial-gradient(closest-side,rgba(159,212,255,.20),transparent 70%),radial-gradient(40% 40% at 70% 30%,rgba(195,155,255,.14),transparent 70%)}
+:root[data-theme=light] .kisha-stage::before{background:radial-gradient(closest-side,rgba(120,150,255,.20),transparent 70%),radial-gradient(40% 40% at 70% 30%,rgba(190,140,255,.16),transparent 70%)}
+.kisha-char{width:min(400px,78vw);aspect-ratio:1;max-height:46vh;filter:drop-shadow(0 18px 30px rgba(0,0,0,.28));transition:width .35s ease,max-height .35s ease}
+.kisha-stage.active .kisha-char{width:min(300px,56vw);max-height:32vh}
+.kisha-svg{width:100%;height:100%;display:block;overflow:visible}
+.kisha-stage[data-phase=listening] .kisha-char{filter:drop-shadow(0 0 22px rgba(120,200,255,.45)) drop-shadow(0 18px 30px rgba(0,0,0,.28))}
+.kisha-status{margin:0;min-height:1.4em;font-weight:600;color:var(--g-accent);letter-spacing:.02em;text-align:center}
+.kisha-start{font-size:1.08rem;padding:14px 28px;min-height:52px;border-radius:999px}
+.kisha-privacy{margin:4px 0 0;max-width:60ch;text-align:center;font-size:.8rem;color:var(--g-muted);display:flex;gap:6px;align-items:flex-start;justify-content:center}
+.kisha-privacy svg{flex:none;width:16px;height:16px;margin-top:2px}
+.kisha-anim-toggle{font-size:.78rem;color:var(--g-muted);background:none;border:0;text-decoration:underline;cursor:pointer;padding:4px;min-height:32px}
+.kisha-resume{display:grid;gap:8px;justify-items:center;text-align:center}
+.kisha-resume p{margin:0;display:flex;gap:6px;align-items:center}
+.kisha-convo{width:100%;display:grid;gap:10px}
+.kisha-log{list-style:none;margin:0;padding:6px 2px;display:grid;gap:10px;max-height:min(42vh,420px);overflow-y:auto;overscroll-behavior:contain}
+.kisha-msg{max-width:min(86%,640px);padding:10px 14px;border-radius:18px;border:1px solid var(--g-line);background:rgba(var(--g-rgb),.55)}
+.kisha-msg p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45}
+.kisha-msg.kisha{justify-self:start;border-bottom-left-radius:6px}
+.kisha-msg.user{justify-self:end;border-bottom-right-radius:6px;background:color-mix(in srgb,var(--g-accent) 20%,rgba(var(--g-rgb),.6))}
+.kisha-msg.system{justify-self:center;background:transparent;border-style:dashed;color:var(--g-muted);font-size:.88rem;text-align:center}
+.kisha-msg.safety{border-color:#f0a35b;box-shadow:0 0 0 2px rgba(240,163,91,.25)}
+.kisha-who{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--g-muted)}
+.kisha-input{display:flex;gap:8px;align-items:flex-end}
+.kisha-input textarea{flex:1;min-width:0;resize:none;min-height:46px;max-height:140px;padding:12px 14px;border-radius:16px;border:1px solid var(--g-line);background:rgba(var(--g-rgb),.7);color:var(--g-text);font:inherit;font-size:16px}
+.kisha-input .icon-button{width:46px;height:46px;flex:none;border-radius:14px}
+.kisha-mic[aria-pressed=true]{background:#e2475e!important;color:#fff!important;animation:kisha-pulse 1.4s ease-in-out infinite}
+@keyframes kisha-pulse{50%{box-shadow:0 0 0 8px rgba(226,71,94,.18)}}
+.kisha-controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.kisha-controls .button{min-height:44px}
+.kisha-replay{text-align:center}
+.kisha-history .kisha-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:6px;margin:8px 0 12px}
+.kisha-filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.kisha-filters label{display:grid;gap:4px;font-size:.82rem;min-width:0}
+.kisha-filters input{width:100%;min-width:0}
+.kisha-day h3{font-size:.82rem;text-transform:capitalize;color:var(--g-muted);margin:14px 0 6px}
+.kisha-entry{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;border:1px solid var(--g-line);text-decoration:none;color:inherit;margin-bottom:6px;background:rgba(var(--g-rgb),.35);min-width:0}
+.kisha-entry>span:nth-child(2){min-width:0}
+.kisha-entry:hover,.kisha-entry:focus-visible{border-color:var(--g-accent)}
+.kisha-entry strong{display:block;overflow-wrap:anywhere}
+.kisha-entry small{color:var(--g-muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.kisha-chart{margin:8px 0}
+.kisha-chart figcaption{font-weight:600;margin-bottom:8px}
+.kisha-chart ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.kisha-chart li{display:grid;grid-template-columns:minmax(90px,150px) 1fr 62px;gap:10px;align-items:center}
+.kc-label{font-size:.88rem}
+.kc-track{height:12px;border-radius:999px;background:color-mix(in srgb,currentColor 10%,transparent);overflow:hidden}
+.kc-bar{display:block;height:100%;width:calc(var(--v,0) * 1%);border-radius:inherit;background:linear-gradient(90deg,#7f9bff,#a9c0ff);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.kc-alegria{background:linear-gradient(90deg,#f6c34a,#ffd978)}.kc-tristeza{background:linear-gradient(90deg,#4f7fe0,#7da4ff)}.kc-enojo{background:linear-gradient(90deg,#e05656,#ff8a7a)}.kc-ansiedad{background:linear-gradient(90deg,#c27ae0,#e0a6ff)}.kc-calma{background:linear-gradient(90deg,#3fb8a0,#7fe0c8)}
+.kc-val{text-align:right;font-variant-numeric:tabular-nums}
+.kc-num{width:62px;text-align:right;padding:6px 8px;font-size:16px}
+.kc-note{grid-column:1/-1;margin-top:-6px;color:var(--g-muted);font-style:italic;overflow-wrap:anywhere}
+.kisha-nodata{display:flex;gap:6px;align-items:center;color:var(--g-muted)}
+.kisha-review .form-grid{display:grid;gap:12px}
+.kisha-review .form-grid>*{min-width:0}
+.kisha-moments{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.kisha-moments small{display:block;color:var(--g-muted);margin-left:26px}
+.kisha-check{display:flex;gap:8px;align-items:flex-start}
+.kisha-add{display:grid;gap:4px;max-width:260px;margin-top:8px}
+.kisha-inline{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}
+.kisha-inline label{flex:1;min-width:180px;display:grid;gap:4px}
+.kisha-why summary{cursor:pointer;color:var(--g-accent);font-size:.88rem}
+.kisha-transcript summary{cursor:pointer;font-weight:600;margin:10px 0}
+.kisha-detail .button.danger{color:#e2475e}
+.kisha-review .form-footer{position:static;flex-wrap:wrap;margin:0;padding:0;background:none;border:0;box-shadow:none}
+.sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.kisha-page :focus-visible{outline:3px solid var(--g-accent);outline-offset:2px}
+@media (max-width:640px){
+ .kisha-page{gap:12px}
+ .kisha-stage{padding:16px 12px 14px}
+ .kisha-char{width:min(300px,70vw);max-height:36vh}
+ .kisha-stage.active .kisha-char{width:min(190px,44vw);max-height:22vh}
+ .kisha-log{max-height:34vh}
+ .kisha-msg{max-width:92%}
+ .kisha-filters{grid-template-columns:1fr 1fr}.kisha-filters label:first-child{grid-column:1/-1}
+ .kisha-chart li{grid-template-columns:minmax(80px,110px) 1fr 58px;gap:8px}
+ .kisha-controls .button{flex:1 1 calc(50% - 8px);justify-content:center}
+ .kisha-controls .kisha-finish{flex-basis:100%}
+}
+@media (max-width:360px){.kisha-controls .button{flex-basis:100%}.kisha-chart li{grid-template-columns:1fr 56px}.kisha-chart .kc-track{grid-column:1/-1;grid-row:2}.kisha-filters{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.kc-bar,.kisha-char{transition:none}.kisha-mic[aria-pressed=true]{animation:none}}

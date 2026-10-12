@@ -1,7 +1,7 @@
 [
  "desktop-agenda.js","desktop-voice.js","desktop-ui.js","pcm-recorder.js","pig-hologram.js","phase3.css",
  "vendor/lucide.min.js","vendor/jszip.min.js","vendor/three.module.min.js","vendor/three.core.min.js","vendor/THREE-LICENSE.txt","vendor/LUCIDE-LICENSE.txt","vendor/JSZIP-LICENSE.txt",
- "ivy-state-machine.js","ivy-local-tools.js","ivy-command-bus.js","ivy-audio-reactor.js","ivy-voice-browser.js","evie-neural.js","ivy-command-surface.js","ivy-module-worlds.js","ivy-shell.js","ivy.css","ivy-modules.css","tests-ivy.js","manifest.webmanifest","icons/ivy-192.png","icons/ivy-512.png",
+ "ivy-state-machine.js","ivy-local-tools.js","ivy-command-bus.js","ivy-audio-reactor.js","ivy-voice-browser.js","evie-neural.js","evie-profile.js","kisha-core.js","kisha-character.js","kisha-voice.js","kisha-view.js","kisha.css","agenda-rules.js","gym-log.js","finance-core.js","finance-chart.js","ivy-command-surface.js","ivy-module-worlds.js","ivy-shell.js","ivy.css","ivy-modules.css","tests-ivy.js","manifest.webmanifest","icons/ivy-192.png","icons/ivy-512.png",
  "review-rc-care.html","review-rc-care-dark.html","review-rc-journalEditor.html","review-rc-journalEditor-dark.html","review-rc-journalCalendar.html",
  "review-rc-finance.html","review-rc-soma.html","review-rc-books.html","review-rc-alvento.html","review-rc-content.html","review-rc-vision.html","review-rc-stats.html","review-rc-gym.html","review-rc-goals.html","review-rc-agendaDay.html",
  "tests-modules.js","module-experience.js","module-experience.css","tests-insights.js","insight-charts.js","insight-charts.css","review-rc-form.html","review-rc-form-review.html","tests-forms.js","form-safety.js","form-safety.css",
