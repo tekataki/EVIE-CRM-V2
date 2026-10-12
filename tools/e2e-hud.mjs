@@ -1,0 +1,82 @@
+// E2E v3 HUD in a real browser. /api/info/* is mocked (no paid calls); everything else is the real app.
+// Covers: single neural core, greeting, open/close cards by text command and click, Escape, clock,
+// capabilities, pendientes, Kisha card -> real module, research card with verified sources, weather,
+// learning path confirm (no duplicates), SOMA schedule -> one Finance income, desktop action unavailable on web.
+import { chromium } from 'playwright'
+import assert from 'node:assert/strict'
+const W = Number(process.env.W || 1440), H = Number(process.env.H || 900), THEME = process.env.THEME || 'dark'
+const b = await chromium.launch({ args: ['--no-sandbox', '--js-flags=--max-old-space-size=200'] })
+const p = await (await b.newContext({ viewport: { width: W, height: H } })).newPage()
+const errors = []; p.on('pageerror', (e) => errors.push(e.message))
+const calls = { research: 0, learn: 0, weather: 0 }
+await p.route('**/api/info/**', (r) => { const u = r.request().url()
+  if (u.endsWith('/research')) { calls.research++; return r.fulfill({ json: { query: 'qué es el TEC de Ciudad Guzmán', insufficient: false, summary: 'El TecNM campus Ciudad Guzmán es una institución pública de educación superior en Jalisco.', spoken: 'Es un campus del Tecnológico Nacional de México.', key_points: ['Pertenece al TecNM'], event_date: null, sources: [{ url: 'https://www.itcg.edu.mx/', title: 'ITCG', host: 'itcg.edu.mx', published: null }], images: [], retrieved_at: '2026-10-12T09:00:00', timezone: 'America/Mexico_City', dropped: 1 } }) }
+  if (u.endsWith('/weather')) { calls.weather++; return r.fulfill({ json: { place: 'Ciudad Guzmán, Jalisco, MX', timezone: 'America/Mexico_City', current: { observed_at: '2026-10-12T09:00', temperature_c: 18.4, feels_like_c: 17, humidity: 70, wind_kmh: 6, precipitation_mm: 0, condition: 'Parcialmente nublado' }, days: [{ date: '2026-10-12', max_c: 26, min_c: 12, rain_prob: 30, condition: 'Nublado' }], retrieved_at: '2026-10-12T09:01:00', attribution: { text: 'Datos meteorológicos de Open-Meteo.com (CC BY 4.0)', url: 'https://open-meteo.com/' } } }) }
+  if (u.endsWith('/learn')) { calls.learn++; return r.fulfill({ json: { topic: 'psicología', title: 'Psicología', summary: 'Ruta de fundamentos a avanzado.', levels: [{ level: 0, name: 'Fundamentos', items: [{ title: 'Historia de la psicología', points: 2, source: 0 }, { title: 'Método científico', points: 3, source: null }] }, { level: 1, name: 'Básico', items: [{ title: 'Procesos cognitivos', points: 3, source: null }] }], sources: [{ url: 'https://www.apa.org/', title: 'APA', host: 'apa.org', published: null }], retrieved_at: '2026-10-12T09:00:00' } }) }
+  return r.fulfill({ status: 404, json: {} }) })
+await p.goto('http://localhost:3000/index.html?qa=hud-' + Date.now(), { timeout: 90000 }); await p.waitForFunction(() => window.DALI_READY, null, { timeout: 30000 })
+await p.evaluate((t) => { document.getElementById('evie-splash')?.remove(); Store.save((s) => { s.preferences.evieModulesChosen = true; s.preferences.theme = t; s.profile.preferred = 'Alejandro'; s.profile.greeting_form = 'Bienvenido' }); location.hash = 'inicio'; App.render() }, THEME)
+// Simulated cloud session for the info cards (UI gate only; server auth is covered by tests/research.test.cjs).
+await p.evaluate(() => { const k = EvieAccounts.storageKey(); const cfg = EvieAccounts.config(); cfg.accountsEnabled = true; cfg.research = true; cfg.ai = { chat: false, stt: false, tts: false }; EvieAccounts.current = () => ({ id: '11111111-1111-4111-8111-111111111111', username: 'alejandro' }); EvieAccounts.storageKey = () => k; const req = EvieAccounts.request; EvieAccounts.request = (path, o = {}) => path.startsWith('info/') ? fetch('/api/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(o.body || {}) }).then((r) => r.json()) : req(path, o) })
+const checks = []; const ok = (n) => checks.push(n)
+const say = (t) => p.evaluate((t) => { const i = document.getElementById('evie-stage-input'); i.value = t; document.getElementById('evie-stage-form').requestSubmit() }, t)
+const cards = () => p.evaluate(() => EvieHUD.cards())
+const until = (fn, a, ms = 15000) => p.waitForFunction(fn, a, { timeout: ms })
+await until(() => document.getElementById('evie-hud'))
+let s = await p.evaluate(() => ({ canvases: document.querySelectorAll('#neural-canvas').length, cores: document.querySelectorAll('.dali-core-control').length, stage: !!document.getElementById('evie-stage'), greet: document.getElementById('hud-greeting').textContent, dash: !!document.querySelector('.dashboard-grid,.briefing-grid'), sidebarHidden: getComputedStyle(document.getElementById('sidebar')).transform !== 'none', coreW: document.getElementById('hud-core').getBoundingClientRect().width, renderer: document.getElementById('neural-canvas')?.dataset.renderer }))
+assert.equal(s.canvases, 1); assert.equal(s.cores, 1); assert.equal(s.stage, false); assert.match(s.greet, /^Bienvenido, Alejandro/); assert.equal(s.dash, false); assert.ok(s.sidebarHidden); assert.equal(s.renderer, 'evie'); ok(`single neural core (renderer ${s.renderer}, ${Math.round(s.coreW)}px), greeting, no dashboard/sidebar`)
+await say('Ivi, abre finanzas'); await until(() => EvieHUD.cards().some((c) => c.type === 'finanzas' && c.state === 'ready'))
+s = await p.evaluate(() => document.querySelector('.hud-card[data-type=finanzas]').innerText); assert.match(s, /Ingresos del mes/); assert.match(s, /no el saldo del banco/); ok('voice/text "abre finanzas" -> real Finance card')
+await say('¿Qué hora es?'); await until(() => EvieHUD.cards().some((c) => c.type === 'clock' && c.state === 'ready'))
+s = await p.evaluate(() => document.querySelector('#evie-subs').innerText); assert.match(s, /Son las/); ok('clock card + spoken time from local tz, no AI call')
+await say('Ivi, ¿qué puedes hacer?'); await until(() => EvieHUD.cards().some((c) => c.type === 'capabilities' && c.state === 'ready'))
+s = await p.evaluate(() => document.querySelector('.hud-card[data-type=capabilities]').innerText); assert.match(s, /Requiere configuración|Disponible/); assert.match(s, /Solo EVIE para Windows/); assert.match(s, /Próximamente/); ok('capabilities distinguish available / config / desktop / future')
+await say('cierra finanzas'); await until(() => !EvieHUD.cards().some((c) => c.type === 'finanzas'))
+s = await p.evaluate(() => Store.list('transactions').length); ok('"cierra finanzas" closes only that card (data untouched: ' + s + ' tx)')
+await p.keyboard.press('Escape'); await p.waitForTimeout(500); assert.equal((await cards()).length, 1); ok('Escape closes the active card')
+await say('cierra todo'); await until(() => EvieHUD.cards().length === 0)
+// Kisha
+await say('Ivi, abre a Kisha'); await until(() => EvieHUD.cards().some((c) => c.type === 'kisha' && c.state === 'ready'))
+s = await p.evaluate(() => !!document.querySelector('.hud-card[data-type=kisha] [data-hud-kisha] svg')); assert.ok(s, 'Kisha avatar rendered')
+await p.click('.hud-card[data-type=kisha] [data-hud-primary]'); await until(() => location.hash === '#bitacora' && document.querySelector('.kisha-page'))
+await until(() => KishaView.stats().session === true || !!document.querySelector('#kisha-log .kisha-msg'), null, 10000).catch(() => {})
+s = await p.evaluate(() => ({ crumb: document.getElementById('page-crumb').textContent, started: !!document.querySelector('#kisha-log .kisha-msg') })); assert.equal(s.crumb, 'Mascota Virtual'); ok('Kisha card opens the real Kisha module' + (s.started ? ' and starts the conversation' : ''))
+await p.evaluate(() => { location.hash = 'inicio' }); await until(() => document.getElementById('evie-hud'))
+// Pendientes + SOMA
+await p.evaluate(() => { const t = Domain.today(); Store.save((s) => { s.clients.push({ ...Store.record({ title: 'Cliente QA', date: t, stage: 'Cliente', amount: 900000, contact: '', phone: '', email: '', project: '', payments: [], deliverables: [] }) }); s.bills.push({ ...Store.record({ title: 'Luz QA', date: t, amount: 50000, payments: [] }) }) }); const c = Store.list('clients').find((x) => x.title === 'Cliente QA'); Store.save((s) => SomaPayments.addSchedule(s, c.id, { title: 'Iguala', amount: 300000, frequency: 'monthly', days_of_month: [Number(t.slice(8))], start: t, installments: 3, forecast: true })); App.render() })
+await say('¿Qué pendientes tengo?'); await until(() => EvieHUD.cards().some((c) => c.type === 'pendientes' && c.state === 'ready'))
+s = await p.evaluate(() => document.querySelector('.hud-card[data-type=pendientes]').innerText); assert.match(s, /Cliente QA/); assert.match(s, /Luz QA/); ok('Pendientes card lists SOMA cobro + Finance bill')
+const cid = await p.evaluate(() => Store.list('clients').find((x) => x.title === 'Cliente QA').id)
+await p.evaluate((id) => { location.hash = 'soma/' + id }, cid); await until(() => document.getElementById('soma-schedules'))
+const before = await p.evaluate(() => Store.list('transactions').length)
+await p.click('#soma-schedules [data-v3=receive]'); await until(() => document.getElementById('v3-receive-form'))
+await p.fill('#v3-receive-form [name=amount]', '1000'); await p.evaluate(() => document.getElementById('v3-receive-form').requestSubmit()); await p.waitForTimeout(400)
+s = await p.evaluate(() => ({ tx: Store.list('transactions').filter((t) => t.source === 'clients'), txt: document.getElementById('soma-schedules').innerText }))
+assert.equal(s.tx.length, 1); assert.equal(s.tx[0].amount, 100000); assert.match(s.txt, /Abonado/); assert.equal((await p.evaluate(() => Store.list('transactions').length)) - before, 1); ok('partial SOMA collection -> exactly one Finance income')
+await p.evaluate(() => { location.hash = 'finanzas' }); await until(() => document.querySelector('.summary-grid'))
+s = await p.evaluate(() => document.getElementById('finance-forecast')?.innerText || ''); assert.match(s, /Proyección, no dinero recibido/); ok('Finance shows projected receivables separately')
+await p.evaluate(() => { location.hash = 'pendientes' }); await until(() => document.querySelector('.pend-list')); ok('Pendientes page renders')
+await p.evaluate(() => { location.hash = 'inicio' }); await until(() => document.getElementById('evie-hud'))
+// Research / weather / learning via tools (what OpenAI would call)
+let r = await p.evaluate(() => EvieAssistant.tools.research_web({ query: 'qué es el TEC de Ciudad Guzmán' })); assert.equal(r.ok, true)
+await until(() => EvieHUD.cards().some((c) => c.type === 'research' && c.state === 'ready'))
+s = await p.evaluate(() => { const c = document.querySelector('.hud-card[data-type=research]'); return { t: c.innerText, a: [...c.querySelectorAll('.hud-sources a')].map((a) => [a.href, a.target, a.rel]) } }); assert.match(s.t, /Consultado 2026-10-12 09:00/); assert.match(s.t, /sin fecha de publicación visible/); assert.match(s.t, /descartada/); assert.deepEqual(s.a[0], ['https://www.itcg.edu.mx/', '_blank', 'noopener noreferrer nofollow']); assert.equal(calls.research, 1); ok('research card: clickable cited source, retrieved-at, publication date honesty, single paid call')
+r = await p.evaluate(() => EvieAssistant.tools.get_weather({ place: 'Ciudad Guzmán' })); await until(() => EvieHUD.cards().some((c) => c.type === 'weather' && c.state === 'ready'))
+s = await p.evaluate(() => document.querySelector('.hud-card[data-type=weather]').innerText); assert.match(s, /Observado 2026-10-12 09:00/); assert.match(s, /Open-Meteo/); ok('weather card with observation time + attribution')
+await p.evaluate(() => EvieHUD.close('all'))
+r = await p.evaluate(() => EvieAssistant.tools.propose_learning_path({ topic: 'psicología' })); assert.equal(r.needs_user_confirmation, true)
+await until(() => EvieHUD.cards().some((c) => c.type === 'learning' && c.state === 'ready'))
+assert.equal(await p.evaluate(() => Store.list('skills').filter((x) => x.title === 'Psicología').length), 0)
+await p.click('.hud-card[data-type=learning] [data-hud-learn=save]'); await p.waitForTimeout(300)
+s = await p.evaluate(() => Store.list('skills').filter((x) => x.title === 'Psicología').map((x) => x.tasks.length)); assert.deepEqual(s, [3])
+await p.evaluate(() => EvieAssistant.tools.propose_learning_path({ topic: 'psicología' })); await until(() => EvieHUD.cards().some((c) => c.type === 'learning' && c.state === 'ready'))
+s = await p.evaluate(() => document.querySelector('.hud-card[data-type=learning]').innerText); assert.match(s, /Ya tienes «Psicología»/); await p.click('.hud-card[data-type=learning] [data-hud-learn=save]'); await p.waitForTimeout(300)
+s = await p.evaluate(() => Store.list('skills').filter((x) => x.title === 'Psicología').map((x) => x.tasks.length)); assert.deepEqual(s, [3]); ok('learning path: preview, explicit save, duplicate topic detected, no duplicate activities')
+r = await p.evaluate(() => EvieAssistant.tools.desktop_action({ action: 'open_spotify', contact: null, message: null })); assert.equal(r.ok, false); assert.equal(r.status, 'unavailable'); ok('desktop action honestly unavailable on web')
+// Max cards + layout overlap check
+await p.evaluate(() => { EvieHUD.close('all'); for (const t of ['clock', 'finanzas', 'habitos', 'objetivos', 'agenda']) EvieHUD.open(t) }); await p.waitForTimeout(1200)
+s = await p.evaluate(() => { const r = [...document.querySelectorAll('.hud-card')].map((n) => n.getBoundingClientRect()); const core = document.querySelector('#hud-core canvas').getBoundingClientRect(); let overlap = 0; for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) { const a = r[i], b = r[j]; if (a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2) overlap++ } return { n: r.length, overlap, sw: document.documentElement.scrollWidth, vw: innerWidth } })
+assert.equal(s.n, 4); assert.equal(s.overlap, 0); assert.ok(s.sw <= s.vw + 1, 'no horizontal scroll'); ok(`max 4 cards, no overlap, no horizontal scroll at ${W}px`)
+if (process.env.SHOT) await p.screenshot({ path: `/tmp/hud-${W}-${THEME}.png` })
+await p.evaluate(() => { location.hash = 'agenda' }); await p.waitForTimeout(400); s = await p.evaluate(() => ({ cards: EvieHUD.cards().length, cls: document.body.classList.contains('hud-home') })); assert.deepEqual(s, { cards: 0, cls: false }); ok('leaving Home disposes cards and restores normal layout')
+assert.deepEqual(errors, []); console.log(`HUD E2E OK (${checks.length} checks, ${W}x${H} ${THEME})\n - ` + checks.join('\n - ')); await b.close()

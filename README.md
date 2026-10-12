@@ -18,6 +18,19 @@ CRM personal con asistente de voz **EVIE** para 2 cuentas privadas. Web/PWA (PC 
 - **D1**: tabla `kisha_turns` (migración `0005_kisha.sql`, creada automáticamente por `ensureSchema`).
 - **Pruebas**: `tests/kisha-server.test.cjs`, `tests/kisha-core.test.cjs`, `tools/e2e-kisha.mjs` (navegador, proveedores simulados), `tools/shot-kisha.mjs` (layout 320–1440, claro/oscuro).
 
+## Novedades v3 · Neural Core
+- **Inicio = Neural Core**: un único núcleo neural centrado, saludo «Bienvenido, [nombre preferido]», sin barra lateral ni panel derecho; estados idle/escuchando/transcribiendo/pensando/consultando/hablando/confirmación/error; texto, subtítulos y conversación completa como alternativas.
+- **Tarjetas tipadas** (`public/evie-hud-cards.js`, `evie-hud.js`): finanzas, agenda, hábitos, objetivos, gimnasio, SOMA, aprendizaje, Kisha, pendientes, hora, hoy, capacidades, investigación, clima, ruta de aprendizaje, mensaje. Máx. 4, sin solaparse, cerrar nunca borra datos; voz, clic, teclado (Esc) y lector de pantalla.
+- **EVIE más capaz**: investigación web con fuentes verificadas (solo URLs devueltas por la herramienta, fecha de publicación vs. evento, hora de consulta), clima Open-Meteo, intenciones locales sin coste (abrir/cerrar tarjetas, hora, capacidades, pendientes).
+- **Activación**: clic en el núcleo, botón de micrófono, atajo, doble aplauso y palabra de activación opcional «Ivi/Evie» **solo si el navegador la procesa en el dispositivo** (nunca se envía audio a Groq para detectarla). Sonidos originales con volumen.
+- **Google** con Supabase (PKCE, invitaciones, vinculación explícita, sin fusión por correo, traspaso a escritorio por `evie-crm://`).
+- **SOMA**: calendarios de cobro recurrentes, cuotas, pagos parciales, proyección en Finanzas (separada del dinero recibido) y un cobro confirmado = exactamente un ingreso.
+- **Pendientes** unificados (rojo/amarillo/verde, origen, deduplicados, zona horaria) en `#pendientes` y en la tarjeta.
+- **Aprendizaje asistido**: ruta propuesta con fuentes → vista previa → confirmación → sin duplicados.
+- **Escritorio Windows**: abrir Spotify/WhatsApp, teclas multimedia, mensaje prellenado con confirmación (IPC validado). En web estas acciones se muestran como no disponibles.
+
+Configuración v3: ver `docs/SETUP.md §7`.
+
 ## Arquitectura
 `public/` (frontend) + `src/` (API Hono) → `npm run build` → `dist/` con `_worker.js` → **Cloudflare Pages**. Datos: **Supabase** (`crm_records`, `user_preferences` con RLS). D1 `AUTH_DB` (`evie-auth`): sesiones, roles, invitaciones, uso de IA, tokens de conexiones.
 

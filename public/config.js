@@ -11,7 +11,7 @@ window.DALI_CONFIG = Object.freeze({
     {route:'agenda',label:'Agenda',icon:'calendar-days',group:'principal',searchTerms:['hoy','pendientes','semana'],mobilePriority:0},
     {route:'finanzas',label:'Finanzas',icon:'wallet',group:'principal',searchTerms:['dinero','pagos'],mobilePriority:2},
     {route:'gimnasio',label:'Salud y gym',icon:'dumbbell',group:'principal',searchTerms:['gimnasio','symmetry','entrenamientos','calorias','nutricion'],mobilePriority:0},
-    {route:'habitos',label:'Hábitos',icon:'repeat',group:'principal',searchTerms:['habitos','rutina','racha','constancia'],mobilePriority:0},
+    {route:'pendientes',label:'Pendientes',icon:'bell-ring',group:'principal',searchTerms:['pendientes','avisos','notificaciones','urgente','vence'],mobilePriority:0},{route:'habitos',label:'Hábitos',icon:'repeat',group:'principal',searchTerms:['habitos','rutina','racha','constancia'],mobilePriority:0},
     {route:'objetivos',label:'Objetivos',icon:'target',group:'principal',searchTerms:['tareas','metas'],mobilePriority:4},
     {route:'negocios',label:'Negocios',icon:'briefcase-business',group:'principal',searchTerms:['negocio','empresas','soma','alvento','granja','emprendimientos'],mobilePriority:3},
     {route:'soma',label:'SOMA · Clientes',icon:'handshake',group:'negocios',searchTerms:['clientes','soma','ventas'],mobilePriority:0},

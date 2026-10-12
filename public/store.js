@@ -67,6 +67,7 @@ window.Store = (()=>{
           if (paid>r.amount) fail('Los abonos no pueden superar el monto total.');
         }
         if (c==='transactions' && (!['income','expense'].includes(r.type)||!text(r.category))) fail('Movimiento no válido.');
+        if (c==='clients' && r.schedules!==undefined && (!Array.isArray(r.schedules)||r.schedules.length>20||(window.SomaPayments&&(()=>{try{return !SomaPayments.validateClient(r);}catch{return true;}})()))) fail('Calendario de cobro no válido en un cliente.');
         if (c==='clients' && (!text(r.stage)||!text(r.phone)||!Array.isArray(r.deliverables||[])||(r.deliverables||[]).some(d=>!idValid(d.id)||!text(d.title)))) fail('Cliente no válido.');
         if (c==='goals' && (!Number.isInteger(r.target)||r.target<=0||!Number.isInteger(r.progress)||r.progress<0||r.progress>r.target||!['diario','semanal','mensual','anual'].includes(r.horizon)||!text(r.category)||!text(r.periodKey)||!Array.isArray(r.history))) fail('Objetivo no válido.');
         if (c==='routines' && (!text(r.exercises)||!r.exercises.trim()||!Number.isInteger(r.day)||r.day<0||r.day>6)) fail('Rutina no válida.');

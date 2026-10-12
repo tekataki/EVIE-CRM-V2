@@ -72,3 +72,41 @@ for f in tests/*.test.cjs; do node --test "$f"; done     # 158 pruebas
 node tools/e2e-life.mjs          # Hábitos / Logros / Compras (servidor local)
 node tools/check-privacy.mjs     # dist sin datos personales
 ```
+
+## 7. EVIE v3 (Neural Core, investigación, Google, SOMA, escritorio)
+
+### Variables de entorno (Cloudflare Pages → Settings → Variables / `wrangler pages secret put`)
+| Variable | Valor | Uso |
+|---|---|---|
+| `EVIE_GOOGLE_AUTH` | `true` | Activa «Entrar con Google» (desactivado por defecto) |
+| `EVIE_PASSWORD_LOGIN` | `off` (opcional) | Retira el acceso con contraseña **solo** cuando todos hayan vinculado Google |
+| `EVIE_PUBLIC_ORIGIN` | `https://evie-crm-v2.pages.dev` | Origen usado para el callback OAuth |
+| `SUPABASE_SERVICE_ROLE_KEY` | secreto | Opcional: borra usuarios Supabase huérfanos de Google sin invitación |
+| `EVIE_MODEL_RESEARCH` | p. ej. `gpt-6-luna` | Modelo con `web_search` para investigación |
+| `EVIE_WEB_SEARCH` | `off` para desactivar | Investigación en vivo (de pago, se mide) |
+| `EVIE_DAILY_LIMITS` | JSON, p. ej. `{"web_search":20,"weather":60}` | Límites diarios por cuenta |
+| `OPENAI_API_KEY`, `GROQ_API_KEY`, `FISH_AUDIO_API_KEY`, `FISH_AUDIO_VOICE_ID` | secretos | Chat/investigación, STT, TTS |
+
+Clima: Open-Meteo, sin clave (atribución CC BY 4.0).
+
+### Supabase
+1. Authentication → Sign In / Providers → **Google**: activar con el Client ID/Secret de Google Cloud.
+2. Activar **Manual linking** (necesario para «Vincular Google» desde Configuración).
+3. Authentication → URL Configuration → Redirect URLs: añadir `https://evie-crm-v2.pages.dev/api/auth/google/callback*` (y `http://localhost:3000/api/auth/google/callback*` para pruebas).
+4. Google Cloud Console → OAuth client (Web) → Authorized redirect URI: `https://<proyecto>.supabase.co/auth/v1/callback`. Ámbitos: solo `openid email profile` (sin Gmail/Calendar).
+
+Reglas: no se fusionan cuentas por correo. Las cuentas existentes (Alejandro, Naomi) entran con usuario+contraseña y vinculan Google en **Configuración → Acceso con Google**. Una cuenta de Google nueva necesita código de invitación del propietario.
+
+### D1
+`migrations/d1/0006_google_research.sql` (tablas `google_auth_states`, `google_links`, `desktop_handoffs`). También se crean solas vía `SCHEMA`. Reversión: `DROP TABLE` de las tres (comentado en el archivo).
+
+### Escritorio Windows (instalador)
+El `.exe` de Squirrel debe compilarse **en Windows** (en Linux falla la edición de recursos del ejecutable sin wine):
+```powershell
+npm ci
+npm run build
+powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1   # o: npm run make:win
+# → out/make/squirrel.windows/x64/EVIE-CRM-V2-Setup.exe  y  out/make/zip/win32/x64/*.zip
+```
+Variable necesaria para cuentas/Google en escritorio: `EVIE_ACCOUNT_API_ORIGIN=https://evie-crm-v2.pages.dev`. El instalador registra el protocolo `evie-crm://` (vuelta de Google al escritorio).
+Contactos para «mándale un mensaje a…»: Configuración → Contactos de EVIE. EVIE solo abre WhatsApp con el mensaje prellenado; **nunca envía ni confirma entrega**.

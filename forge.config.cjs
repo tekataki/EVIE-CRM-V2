@@ -3,7 +3,7 @@ const path=require('node:path');
 module.exports={
  packagerConfig:{
   name:'EVIE CRM V2',executableName:'evie-crm-v2',appBundleId:'com.evie.crm.v2',
-  icon:path.join(__dirname,'assets/icons/evie'),asar:true,
+  icon:path.join(__dirname,'assets/icons/evie'),asar:true,protocols:[{name:'EVIE CRM',schemes:['evie-crm']}],
   extraResource:[path.join(__dirname,'scripts')],
   win32metadata:{CompanyName:'EVIE',FileDescription:'EVIE CRM V2 · Ivy local',ProductName:'EVIE CRM V2',OriginalFilename:'evie-crm-v2.exe'},
   ignore:[/^\/(evidence|tests|docs|tools|src|dist|out|\.git|\.wrangler)(\/|$)/,/^\/\.env/,/^\/\.dev\.vars/,/^\/node_modules\/(hono)(\/|$)/]

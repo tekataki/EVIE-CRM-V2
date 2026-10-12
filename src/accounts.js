@@ -4,6 +4,8 @@ import { bodyLimit } from 'hono/body-limit'
 import { createConnections } from './connections.js'
 import { createAssistant } from './assistant.js'
 import { createKisha } from './kisha.js'
+import { createResearch } from './research.js'
+import { createGoogleAuth } from './google-auth.js'
 import { createProfile } from './profile.js'
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -37,14 +39,17 @@ const SCHEMA=["CREATE TABLE IF NOT EXISTS auth_accounts (owner_id TEXT PRIMARY K
  "CREATE TABLE IF NOT EXISTS oauth_states (state TEXT PRIMARY KEY, owner_id TEXT NOT NULL, provider TEXT NOT NULL, verifier TEXT NOT NULL, expires_at INTEGER NOT NULL)",
  "CREATE INDEX IF NOT EXISTS idx_oauth_states_exp ON oauth_states(expires_at)",
  "CREATE TABLE IF NOT EXISTS user_profiles (owner_id TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at INTEGER NOT NULL)",
- "CREATE TABLE IF NOT EXISTS kisha_turns (owner_id TEXT NOT NULL, turn_id TEXT NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY (owner_id, turn_id))"]
+ "CREATE TABLE IF NOT EXISTS kisha_turns (owner_id TEXT NOT NULL, turn_id TEXT NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY (owner_id, turn_id))",
+ "CREATE TABLE IF NOT EXISTS google_auth_states (state TEXT PRIMARY KEY, data TEXT NOT NULL, expires_at INTEGER NOT NULL)",
+ "CREATE TABLE IF NOT EXISTS google_links (owner_id TEXT PRIMARY KEY, email TEXT NOT NULL DEFAULT '', linked_at INTEGER NOT NULL)",
+ "CREATE TABLE IF NOT EXISTS desktop_handoffs (code TEXT PRIMARY KEY, data TEXT NOT NULL, expires_at INTEGER NOT NULL)"]
 const schemaReady=new WeakMap()
 export function ensureSchema(db){if(!db)return Promise.resolve();let p=schemaReady.get(db);if(!p){p=(async()=>{for(const sql of SCHEMA)await db.prepare(sql).bind().run()})().catch(e=>{schemaReady.delete(db);throw e});schemaReady.set(db,p)}return p}
 export function createAccounts({fetcher=fetch}={}) {
  const api=new Hono()
  api.use('*',async(c,next)=>{const max=c.req.path.endsWith('/data/push')?16*1024*1024:c.req.path.endsWith('/ai/stt')?4*1024*1024:256*1024;return bodyLimit({maxSize:max,onError:c=>jsonError(c,'La solicitud supera el límite.',413)})(c,next)})
  api.use('*',async(c,next)=>{c.header('Cache-Control','no-store, private');c.header('X-Content-Type-Options','nosniff');await next()})
- api.get('/runtime',c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},providers:{spotify:false,whatsapp:false,instagram:false}}))
+ api.get('/runtime',c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:c.env?.EVIE_GOOGLE_AUTH==='true',passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
  api.use('*',async(c,next)=>{
   const env=c.env||{}
   if(env.EVIE_ACCOUNTS_ENABLED!=='true')return jsonError(c,'Las conexiones externas están desactivadas.',503)
@@ -146,7 +151,8 @@ export function createAccounts({fetcher=fetch}={}) {
   const acct=await c.env.AUTH_DB.prepare('SELECT role FROM auth_accounts WHERE owner_id=?').bind(result.user.id).first()
   return c.json({user:{id:result.user.id,username:data.username,role:acct?.role||'member'}})
  }
- api.post('/auth/signup',c=>enter(c,true));api.post('/auth/signin',c=>enter(c,false))
+ const passwordOff=c=>c.env.EVIE_PASSWORD_LOGIN==='off'?jsonError(c,'El acceso con contraseña se retiró. Entra con Google.',410):null
+ api.post('/auth/signup',c=>passwordOff(c)||enter(c,true));api.post('/auth/signin',c=>passwordOff(c)||enter(c,false))
  const verified=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
  const owner=async c=>{const s=await verified(c);if(!s)return [null,jsonError(c,'Inicia sesión de nuevo.',401)];if(s.user.role!=='owner')return [null,jsonError(c,'Solo el propietario puede administrar personas.',403)];return [s,null]}
  // Existing accounts (created before invitations) can claim ownership once with the bootstrap token.
@@ -174,6 +180,8 @@ export function createAccounts({fetcher=fetch}={}) {
  api.route('/profile',createProfile({authenticate:bound,seal,unseal}))
  api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal}))
  api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal}))
+ api.route('/info',createResearch({fetcher,authenticate:bound,unseal}))
+ api.route('/auth/google',createGoogleAuth({remote,issueSession,verified,seal,unseal,digest,limited}))
  api.onError((err,c)=>{
   console.error('EVIE_ACCOUNTS_ERROR', err?.stack || err?.message || String(err))
   return jsonError(c,'Servicio temporalmente no disponible. No se han descartado cambios locales.',503)

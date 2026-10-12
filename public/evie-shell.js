@@ -15,6 +15,7 @@ window.EvieShell=(()=>{
   document.addEventListener('click',ev=>{const t=ev.target.closest('#dali-core-control');if(!t||ev.detail===0||!document.documentElement.classList.contains('evie-ui'))return;ev.stopImmediatePropagation();ev.preventDefault();EvieFX.pulse();EvieAssistant.listen({inline:true});},true);
   window.EvieModes?.apply();EvieAssistant.fromUrl();
   if(EvieAssistant.pref().clapWake)EvieAssistant.Wake.start();
+  if(EvieAssistant.pref().wakeWord)EvieAssistant.wakeWord(true);
  }
  function mobileNav(){const nav=document.querySelector('.mobile-nav');if(!nav||nav.querySelector('.evie-orb-button'))return;
   // 4 shortcuts + centered orb = 5 equal columns: orb is geometrically centered at every width.
@@ -33,7 +34,7 @@ window.EvieShell=(()=>{
   const side=document.querySelector('.sidebar-bottom');if(side&&!side.querySelector('.evie-credit')){const c=document.createElement('p');c.className='evie-credit';c.innerHTML=html;side.append(c);}
   const foot=document.querySelector('.app-footer');if(foot&&!document.getElementById('evie-credit-mobile')){const c=document.createElement('p');c.id='evie-credit-mobile';c.className='evie-credit';c.innerHTML=html;foot.append(c);}}
  // Inline EVIE stage (subtitles + composer) right under the neural core on Inicio.
- function stage(){if(UI.section!=='inicio'||UI.id)return;const orb=document.querySelector('#neural-home-hero .neural-orb');if(!orb||document.getElementById('evie-stage'))return;const st=document.createElement('section');st.id='evie-stage';st.className='evie-stage';st.setAttribute('aria-label','Conversación con EVIE');
+ function stage(){if(UI.section!=='inicio'||UI.id||document.getElementById('evie-hud'))return;const orb=document.querySelector('#neural-home-hero .neural-orb');if(!orb||document.getElementById('evie-stage'))return;const st=document.createElement('section');st.id='evie-stage';st.className='evie-stage';st.setAttribute('aria-label','Conversación con EVIE');
   st.innerHTML=`<div class="evie-subs" id="evie-subs" aria-live="polite"><p class="status" data-evie-phase>Lista</p></div><div class="evie-draft" id="evie-stage-draft" hidden></div><form class="evie-composer" id="evie-stage-form"><label class="sr-only" for="evie-stage-input">Escríbele a EVIE</label><input id="evie-stage-input" autocomplete="off" maxlength="600" placeholder="Pregúntale algo a EVIE…"><button type="button" class="icon-button evie-mic" data-evie="listen" aria-label="Hablar con EVIE">${Views.icon('mic')}</button><button class="icon-button evie-send" aria-label="Enviar">${Views.icon('arrow-up')}</button></form><div class="evie-stage-links"><button type="button" data-evie="open">Ver conversación completa</button><button type="button" data-evie="stop">Detener</button></div>`;
   const hero=document.getElementById('neural-home-hero');hero.after(st);
   st.querySelector('form').onsubmit=ev=>{ev.preventDefault();const i=st.querySelector('input'),v=i.value;i.value='';EvieAssistant.ask(v,{speak:!EvieAssistant.pref().muted&&EvieAssistant.pref().conversation,inline:true});};
