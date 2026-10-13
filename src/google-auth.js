@@ -86,7 +86,7 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
       const username = usernameFrom(email, taken)
       await db(c).prepare('INSERT INTO auth_accounts(owner_id,username,role,created_at) VALUES(?,?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(id, username, role, Date.now()).run()
       await db(c).prepare('INSERT INTO google_links(owner_id,email,linked_at) VALUES(?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(id, email, Date.now()).run()
-      acct = { owner_id: id, username, role }
+      acct = { owner_id: id, username, role, created: true }
     } else {
       const linked = await db(c).prepare('SELECT owner_id FROM google_links WHERE owner_id=?').bind(id).first()
       if (!linked) return back(c, 'not_linked')
@@ -98,6 +98,11 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
       return c.html(`<!doctype html><meta charset="utf-8"><title>EVIE</title><body style="font-family:system-ui;background:#0b1020;color:#e8ecff;display:grid;place-items:center;height:100vh"><main><h1>Listo</h1><p>Vuelve a EVIE para Windows. Si no se abrió sola, <a style="color:#9fb4ff" href="evie-crm://auth?code=${handoff}">toca aquí</a>.</p></main><script>location.href='evie-crm://auth?code=${handoff}'</script>`)
     }
     if (!await issueSession(c, result, acct.username)) return back(c, 'exchange')
+    if (acct.created) {
+      // New invited account → onboarding. The name is only a prefill hint in the fragment (not sent to servers).
+      const meta = result.user?.user_metadata || {}, gname = String(google?.identity_data?.full_name || meta.full_name || meta.name || '').trim().slice(0, 60)
+      return c.redirect(origin(c) + '/?google=new#inicio' + (gname ? '&gn=' + encodeURIComponent(gname) : ''), 302)
+    }
     return back(c, st.mode === 'link' ? 'linked' : 'ok')
   })
 

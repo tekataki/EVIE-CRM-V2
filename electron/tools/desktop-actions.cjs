@@ -6,13 +6,18 @@
 // - Messages: prepare -> token (2 min) -> open_prepared_message opens WhatsApp with recipient+text
 //   prefilled. EVIE never presses send and never reports delivery.
 const {randomUUID}=require('node:crypto');
-const ACTIONS=new Set(['open_spotify','open_whatsapp','media_next','media_previous','media_play_pause','prepare_message','open_prepared_message','cancel_message','status']);
+const ACTIONS=new Set(['open_spotify','open_whatsapp','media_next','media_previous','media_play_pause','prepare_message','open_prepared_message','cancel_message','status','open_url']);
 const PHONE=/^\+?[0-9]{8,15}$/,TOKEN=/^[0-9a-f-]{36}$/;
+// v3.1 Automatizaciones: ONLY public http(s) websites, opened in the user's normal browser (shell.openExternal).
+function safeWebUrl(raw){if(typeof raw!=='string'||raw.length>2048||/[\u0000-\u001f\s]/.test(raw))throw Error('Dirección inválida.');let u;try{u=new URL(raw);}catch{throw Error('Dirección inválida.');}
+ if(!['http:','https:'].includes(u.protocol))throw Error('Solo se abren sitios web http/https.');if(u.username||u.password)throw Error('La dirección no puede incluir credenciales.');
+ const h=u.hostname.toLowerCase();if(!h.includes('.')||/^(localhost|0\.0\.0\.0|127\.|10\.|192\.168\.|169\.254\.)/.test(h)||/^172\.(1[6-9]|2\d|3[01])\./.test(h)||/\.(local|internal|lan)$/.test(h))throw Error('Solo sitios públicos.');return u.href;}
 function validateDesktop(args){
  if(!args||typeof args!=='object'||Array.isArray(args))throw Error('Acción inválida.');
  const keys=Object.keys(args).sort().join(',');
  if(!ACTIONS.has(args.action))throw Error('Acción de escritorio no permitida.');
  if(args.action==='prepare_message'){if(keys!=='action,message,phone'||!PHONE.test(args.phone)||typeof args.message!=='string'||!args.message.trim()||args.message.length>1000)throw Error('Mensaje inválido.');}
+ else if(args.action==='open_url'){if(keys!=='action,url')throw Error('Parámetros no permitidos.');safeWebUrl(args.url);}
  else if(['open_prepared_message','cancel_message'].includes(args.action)){if(keys!=='action,token'||!TOKEN.test(args.token))throw Error('Confirmación inválida.');}
  else if(keys!=='action')throw Error('Parámetros no permitidos.');
  return args;
@@ -30,6 +35,7 @@ function createDesktopActions({shell,platform=process.platform,media,now=()=>Dat
    case 'open_spotify':return {ok:true,data:{...await openProtocol('spotify:','https://open.spotify.com/'),note:'Solicité abrir Spotify; no verifico reproducción.'}};
    case 'open_whatsapp':return {ok:true,data:{...await openProtocol('whatsapp:','https://web.whatsapp.com/'),note:'Solicité abrir WhatsApp.'}};
    case 'media_next':case 'media_previous':case 'media_play_pause':{const key={media_next:'next',media_previous:'previous',media_play_pause:'play'}[args.action];const r=await media(key);return {ok:true,data:{submitted:true,method:'windows_media_keys',note:'Tecla multimedia enviada a Windows; el reproductor activo decide si la acepta.',...(r||{})}};}
+   case 'open_url':{await shell.openExternal(safeWebUrl(args.url));return {ok:true,data:{opened:true,method:'default_browser',note:'Se pidió a Windows abrir el sitio en tu navegador.'}};}
    case 'prepare_message':{const token=randomUUID();prepared.set(token,{phone:args.phone.replace(/^\+/,''),message:args.message.trim(),expires:now()+ttl});return {ok:true,data:{token,expires_in:ttl/1000,sent:false}};}
    case 'cancel_message':prepared.delete(args.token);return {ok:true,data:{cancelled:true}};
    case 'open_prepared_message':{const p=prepared.get(args.token);prepared.delete(args.token);if(!p||p.expires<now())return {ok:false,error:'La confirmación expiró. Vuelve a pedir el mensaje.'};
@@ -40,4 +46,4 @@ function createDesktopActions({shell,platform=process.platform,media,now=()=>Dat
  }
  return {run,pending:()=>prepared.size};
 }
-module.exports={createDesktopActions,validateDesktop,ACTIONS};
+module.exports={createDesktopActions,validateDesktop,ACTIONS,safeWebUrl};

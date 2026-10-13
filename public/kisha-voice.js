@@ -78,7 +78,7 @@ window.KishaVoice=(()=>{
     const cap=setTimeout(end,Math.max(15000,clip.text.length*110+8000));player.addEventListener('ended',end);player.addEventListener('error',end);
     player.addEventListener('playing',()=>{if(!clip)return;clip.playing=true;clip.pending=false;onPhase('speaking');drive();player.addEventListener('pause',end,{once:true});},{once:true});
     signal?.addEventListener('abort',()=>{try{player.pause();}catch{}end();},{once:true});});
-   try{await player.play();}catch{if(clip)clip.playing=false;return 'blocked';}
+   try{const started=await Promise.race([player.play().then(()=>true),new Promise(r=>setTimeout(()=>r(false),8000))]);if(!started){try{player.pause();}catch{}if(clip)clip.playing=false;return 'blocked';}}catch{if(clip)clip.playing=false;return 'blocked';}
    await ended;return signal?.aborted?'cancelled':'played';}
   function browserSpeak(text,signal){if(!('speechSynthesis' in window))return Promise.resolve('text');
    return new Promise(resolve=>{try{speechSynthesis.cancel();}catch{}const u=new SpeechSynthesisUtterance(text);u.lang='es-MX';u.rate=1;speechUtter=u;let pulse=0,iv=0;

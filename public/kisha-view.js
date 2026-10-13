@@ -30,6 +30,7 @@ window.KishaView=(()=>{
  function stageHTML(){const active=!!session&&!session.review,draft=!session&&loadDraft();
   return `<section class="kisha-stage panel ${active?'active':''}" id="kisha-stage" aria-label="Conversación con Kisha">
    <div class="kisha-char" id="kisha-char"></div>
+   <p class="kisha-subs" id="kisha-subs" aria-hidden="true">${e([...(session?.messages||[])].reverse().find(m=>m.role==='kisha')?.text||'')}</p>
    <p class="kisha-status" id="kisha-status" role="status" aria-live="polite">Lista para conversar</p>
    ${active?convoHTML():draft&&draft.messages.some(m=>m.role==='user')?`<div class="kisha-resume" role="group" aria-label="Conversación sin terminar"><p>${i('history')}Tienes una conversación sin terminar${draft.started_at?' del '+e(Views.date(draft.started_at.slice(0,10))):''}.</p><div class="toolbar"><button class="button primary" data-kisha="resume">Continuar conversación</button><button class="button" data-kisha="discard-draft">Descartar</button></div></div>`:`<button class="button primary kisha-start" data-kisha="start">${i('message-circle-heart')}Iniciar conversación</button>`}
    <p class="kisha-privacy">${i('shield-check')}<span>Lo que dices por voz se transcribe con Groq, Kisha responde con OpenAI y habla con Fish Audio. No guardamos el audio. Nada se guarda en tu historial sin tu confirmación. Kisha es una compañera de IA, no una terapeuta.</span></p>
@@ -115,7 +116,7 @@ window.KishaView=(()=>{
  function abort(){try{ctl?.abort();}catch{}ctl=null;}
  function ensureVoice(){if(!voice)voice=KishaVoice.create({onPhase:p=>{if(p!=='synthesizing')machine.go(p);},onLevel:l=>character?.setMouth(l),canCloud:can});return voice;}
  /* ---------- conversation ---------- */
- function add(role,text){session.messages.push({role,text,at:new Date().toISOString()});const log=document.getElementById('kisha-log');if(log){log.insertAdjacentHTML('beforeend',msgHTML(session.messages.at(-1)));log.scrollTop=log.scrollHeight;}persist();}
+ function add(role,text){session.messages.push({role,text,at:new Date().toISOString()});if(role==='kisha'){const sb=document.getElementById('kisha-subs');if(sb)sb.textContent=text;}const log=document.getElementById('kisha-log');if(log){log.insertAdjacentHTML('beforeend',msgHTML(session.messages.at(-1)));log.scrollTop=log.scrollHeight;}persist();}
  function note(text,html=''){const log=document.getElementById('kisha-log');if(log){log.insertAdjacentHTML('beforeend',`<li class="kisha-msg system" role="note"><p>${e(text)}</p>${html}</li>`);log.scrollTop=log.scrollHeight;}}
  async function start(){ensureVoice().unlock();window.EvieAssistant?.stopSpeaking?.();session={id:K().newId(),started_at:new Date().toISOString(),messages:[],memory:null,memoryUpTo:0};machine=K().machine(onView);machine.go('greeting');App.render();
   const hello=K().greeting(name(),hourNow());add('kisha',hello);await say(hello);if(session&&['greeting','speaking'].includes(machine.phase))machine.go('idle');document.getElementById('kisha-text')?.focus({preventScroll:true});}

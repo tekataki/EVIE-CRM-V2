@@ -2,13 +2,13 @@
 /* Schema 4 foundation. Pure migration/validation; no storage or UI side effects. */
 window.RCData=(()=>{
  const A=V2Domain.assert,I=V2Domain.integer,D=V2Domain.date,T=V2Domain.text;
- const collections=['agendaItems','entityLinks','nutritionDays','pantryItems','groceryRuns'];
+ const collections=['agendaItems','entityLinks','nutritionDays','pantryItems','groceryRuns','automations'];
  const areas=['personal','school','soma','farm','finance','gym','learning','alvento','content','other'];
  const nutrients=['calories','protein','carbohydrates','fat','fiber','sodium'];
  const proposedTargets={calories:2800,protein:150,carbohydrates:350,fat:70,fiber:38,sodium:2300};
  const stamp=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/.test(v)&&D(v.slice(0,10))&&Number.isFinite(Date.parse(v));
  const id=v=>typeof v==='string'&&/^[a-zA-Z0-9-]{1,80}$/.test(v);
- function migrate(input){A(input.version===3||input.version===4,'Primero migra al esquema 3.');const s=structuredClone(input);if(s.version===4)return s;for(const c of collections)if(s[c]===undefined)s[c]=[];
+ function migrate(input){A(input.version===3||input.version===4,'Primero migra al esquema 3.');const s=structuredClone(input);if(s.version===4){if(s.automations===undefined)s.automations=[];return s;}for(const c of collections)if(s[c]===undefined)s[c]=[];
   s.preferences={somaMonthlyTargetCents:1500000,mobileShortcuts:['inicio','finanzas','subir','objetivos','bitacora'],journalPrivacy:{includeNarrative:false,crossModule:false},coreThresholds:{soonHours:72,urgentHours:24,mediumOverdue:3,paceStartDay:10,paceLagPercent:15,finalDays:7,gapPercent:25},...s.preferences};
   for(const r of s.journal){if(r.source===undefined)r.source='manual';if(r.journal_version===undefined)r.journal_version=1;}
   s.version=4;s.migrations=[...(s.migrations||[]),{version:4,from:3,key:'dali-rc-schema-4'}];return s;
@@ -35,6 +35,7 @@ window.RCData=(()=>{
   for(const r of s.groceryRuns){A(D(r.date)&&T(r.title)&&Array.isArray(r.items)&&['draft','purchased'].includes(r.status),'Compra de despensa inválida.');if(r.amount_cents!=null)A(I(r.amount_cents,1,1e12),'Importe de compra inválido.');for(const item of r.items)A(T(item.title)&&item.title.trim(),'Artículo de compra inválido.');if(r.transaction_id){const t=s.transactions.find(x=>x.id===r.transaction_id);A(t&&t.type==='expense'&&t.amount===r.amount_cents&&t.source==='grocery'&&t.origin===r.id,'Compra sin gasto consistente.');}}
   for(const t of s.transactions.filter(t=>t.source==='grocery'))A(s.groceryRuns.some(r=>r.id===t.origin&&((r.transaction_id===t.id&&r.amount_cents===t.amount)||(t.deleted_at&&r.expense_history?.some(h=>h.transaction_id===t.id&&h.amount_cents===t.amount&&stamp(h.reversed_at))))),'Gasto de despensa sin compra consistente.');
   for(const r of s.journal)if(r.journal_version===4)JournalData.validate(r);
+  if(window.EvieAutomations)for(const r of s.automations)A(EvieAutomations.validate(r),'Automatización inválida: «'+String(r?.name||'').slice(0,40)+'». Solo se permiten sitios web http/https.');
   return true;
  }
  function completeAgenda(s,itemId,at=new Date().toISOString()){const r=s.agendaItems.find(x=>x.id===itemId&&!x.deleted_at);A(r,'Pendiente no encontrado.');if(r.status==='done')return false;A(r.status!=='archived','Primero recupera el pendiente.');r.history.push({status:r.status,at,occurrence:r.due_at||r.start_at});r.status='done';r.completed_at=at;r.updated_at=at;return true;}

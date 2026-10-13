@@ -1,0 +1,11 @@
+'use strict';
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+function soundCtx(voice=''){const gains=[];let t=0;const s={performance:{now:()=>t},addEventListener(){},document:{documentElement:{dataset:{evieVoice:voice}},getElementById:()=>null},Store:{get:()=>({preferences:{evie:{}}})}};
+ class Ctx{constructor(){this.state='running';this.currentTime=0;this.destination={};}resume(){return Promise.resolve();}createOscillator(){return {frequency:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},start(){},stop(){}};}createGain(){return {gain:{setValueAtTime(){},linearRampToValueAtTime:v=>gains.push(v),exponentialRampToValueAtTime(){}},connect(){}};}}
+ s.AudioContext=Ctx;s.window=s;vm.createContext(s);vm.runInContext(fs.readFileSync(path.join(root,'public/evie-sounds.js'),'utf8'),s);s.EvieSounds.unlock();return {s,gains,tick:ms=>t+=ms};}
+test('sound cues exist for card open/close, shortcut open, success and error',()=>{const {s}=soundCtx();for(const n of ['card','close','open','success','error'])assert.ok(s.EvieSounds.names.includes(n),n);});
+test('cues do not stack: a second cue within 90 ms is dropped',()=>{const {s,tick}=soundCtx();tick(1000);assert.equal(s.EvieSounds.play('card'),true);tick(20);assert.equal(s.EvieSounds.play('open'),false);tick(200);assert.equal(s.EvieSounds.play('open'),true);});
+test('cues are ducked while EVIE is speaking',()=>{const a=soundCtx('idle');a.tick(1000);a.s.EvieSounds.play('card');const b=soundCtx('speaking');b.tick(1000);b.s.EvieSounds.play('card');assert.ok(b.gains[0]<a.gains[0]*.5);});
+function auto(){const s={URL};s.window=s;vm.createContext(s);vm.runInContext(fs.readFileSync(path.join(root,'public/evie-automations.js'),'utf8'),s);return s.EvieAutomations;}
+test('automation URLs accept http(s) only and reject unsafe targets',()=>{const A=auto();assert.match(A.normalizeUrl('soma.com/app'),/^https:\/\/soma\.com\/app/);for(const u of ['javascript:alert(1)','data:text/html,x','file:///etc/passwd','ftp://x.com','https://user:pw@x.com','http://localhost:3000','http://192.168.1.4'])assert.throws(()=>A.normalizeUrl(u),u);});

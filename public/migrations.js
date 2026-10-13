@@ -19,7 +19,7 @@ window.Migrations=(()=>{
   s.version=2;s.migrated_at=stamp;s.migrations=[...(s.migrations||[]),{version:2,at:stamp,from:1}];return FarmUpgrade.migrate(s);
  }
  function migrate(input){
-  if(input.version===4){const next=structuredClone(input);if(next.farm_catalog_version!==4){next.version=3;const updated=FarmUpgrade.upgradeReferences(next);updated.version=4;return updated;}return next;}
+  if(input.version===4){const next=structuredClone(input);if(next.automations===undefined)next.automations=[];if(next.farm_catalog_version!==4){next.version=3;const updated=FarmUpgrade.upgradeReferences(next);updated.version=4;return updated;}return next;}
   return RCData.migrate(migrateLegacy(input));
  }
  return {migrate};

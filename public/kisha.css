@@ -83,3 +83,11 @@
 }
 @media (max-width:360px){.kisha-controls .button{flex-basis:100%}.kisha-chart li{grid-template-columns:1fr 56px}.kisha-chart .kc-track{grid-column:1/-1;grid-row:2}.kisha-filters{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.kc-bar,.kisha-char{transition:none}.kisha-mic[aria-pressed=true]{animation:none}}
+
+/* v3.1 Kisha open composition */
+.kisha-stage.panel{background:transparent!important;border:0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;overflow:visible}
+.kisha-stage::before{inset:-10% 0 auto;height:60%;opacity:.8}
+.kisha-subs{margin:-4px 0 0;max-width:min(92%,560px);min-height:1.4em;text-align:center;font-size:clamp(.98rem,1.6vw,1.12rem);line-height:1.45;color:var(--g-text);text-wrap:balance;opacity:.92}
+.kisha-subs:empty{display:none}
+.kisha-stage .kisha-status{font-size:.82rem;color:var(--g-muted);letter-spacing:.02em}
+.kisha-stage .kisha-privacy{max-width:620px;opacity:.85}

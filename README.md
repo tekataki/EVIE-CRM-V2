@@ -31,6 +31,15 @@ CRM personal con asistente de voz **EVIE** para 2 cuentas privadas. Web/PWA (PC 
 
 Configuración v3: ver `docs/SETUP.md §7`.
 
+## Novedades v3.1
+- **Acceso Google-first**: dos recorridos («Iniciar sesión» / «Crear mi cuenta»), pestañas operables con flechas, estados claros (`not_linked`, `not_invited`, `expired`, `disabled`, cancelado), transición con usuario y contraseña si Google no está configurado (sin bloqueo), onboarding con Ivi.
+- **Workspace del HUD por cuenta**: las tarjetas no se pierden al hablar, re-renderizar, cambiar tema o volver de un módulo; sin desalojo (las que no caben van a una bandeja); cierre por nombre («cierra la tarjeta del clima», «finaliza esta tarjeta», «cierra todas»); una respuesta tardía no resucita una tarjeta cerrada; otra cuenta nunca ve tus tarjetas.
+- **«¿Qué puedes hacer?»** abre una vista radial (hoja en móvil) generada del registro real de capacidades; no borra tarjetas.
+- **Automatizaciones**: accesos directos a sitios (solo `http/https`, sin credenciales en URL, sin redes locales); se abren por voz o clic; en Windows con `open_url` validado.
+- **Kisha**: composición abierta (sin panel rectangular) con subtítulos bajo el personaje; el arranque de la voz tiene tope de 8 s → si el navegador no reproduce, pasa a «Tocar para escuchar» en lugar de quedarse en el saludo.
+- **Sonidos**: nuevo cue `open`; los cues se atenúan (−60 %) mientras EVIE o Kisha hablan y nunca se apilan (≥ 90 ms entre cues).
+- **Pendiente**: rediseño fotorrealista de Kisha con poses generadas (bloqueado por créditos de generación de imágenes); la Kisha SVG actual sigue activa.
+
 ## Arquitectura
 `public/` (frontend) + `src/` (API Hono) → `npm run build` → `dist/` con `_worker.js` → **Cloudflare Pages**. Datos: **Supabase** (`crm_records`, `user_preferences` con RLS). D1 `AUTH_DB` (`evie-auth`): sesiones, roles, invitaciones, uso de IA, tokens de conexiones.
 
@@ -40,7 +49,7 @@ API `/api`: `runtime`, `auth/*`, `data/pull|push`, `ai/status|chat|stt|tts`, `co
 **docs/SETUP.md** (Cloudflare, Supabase, cuentas, claves, costos, Google) y `.dev.vars.example`.
 
 ## Pruebas
-158 pruebas de Node (`tests/*.test.cjs`), e2e `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs`, privacidad `tools/check-privacy.mjs`.
+231 pruebas de Node en 23 archivos (`tests/*.test.cjs`; ejecútalas archivo por archivo en máquinas con poca RAM), e2e `tools/e2e-login.mjs`, `e2e-v31.mjs`, `e2e-hud.mjs`, `e2e-workspace.mjs`, `e2e-kisha.mjs`, `e2e-gym.mjs`, `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs`, privacidad `tools/check-privacy.mjs`.
 
 ## Restaurar la versión anterior
 Tag `pre-v2.3-946d437` en GitHub, o *Cloudflare → Deployments → Rollback*.
