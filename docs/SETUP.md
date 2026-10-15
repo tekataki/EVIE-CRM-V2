@@ -110,3 +110,44 @@ powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1   # o: npm ru
 ```
 Variable necesaria para cuentas/Google en escritorio: `EVIE_ACCOUNT_API_ORIGIN=https://evie-crm-v2.pages.dev`. El instalador registra el protocolo `evie-crm://` (vuelta de Google al escritorio).
 Contactos para «mándale un mensaje a…»: Configuración → Contactos de EVIE. EVIE solo abre WhatsApp con el mensaje prellenado; **nunca envía ni confirma entrega**.
+
+## 8. v3.2 · Lista consolidada (borradores seguros, Mapa, Memoria, Configuración personalizada)
+> No hay que tocar el proyecto de Supabase en vivo: esta versión **no trae migraciones de Supabase**.
+
+### Cloudflare (Pages → evie-crm-v2 → Settings → Variables and Secrets)
+| Variable | Tipo | Obligatoria | Uso |
+|---|---|---|---|
+| `STADIA_API_KEY` | **Secret** | Para el Mapa | Búsqueda y rutas vía Worker (`/api/map`). Sin ella el Mapa muestra «no configurado» y no inventa rutas |
+| `EVIE_MAP_LIMITS` | Text | No | JSON, por defecto `{"map_search":200,"map_route":120}` por cuenta y día |
+| `EVIE_MAP_TRAFFIC` | Text | No | `on` solo con plan Stadia Standard o superior + atribución TomTom |
+| `EVIE_MAP_STYLE_URL` / `EVIE_MAP_STYLE_URL_DARK` | Text | No | Otro estilo de Stadia (por defecto `alidade_smooth(_dark)`) |
+| `STADIA_BASE_URL` | Text | No | Por defecto `https://api.stadiamaps.com` |
+| `EVIE_SESSION_KEY` | Secret | Ya existe | También cifra la memoria de Ivi (AES-GCM) y sus índices HMAC |
+
+### Stadia Maps (https://client.stadiamaps.com/signup/)
+1. Crea la cuenta (14 días de prueba Professional; después queda en Free salvo que contrates un plan).
+2. *Manage Properties → Authentication*:
+   - Añade `evie-crm-v2.pages.dev` (y tu dominio propio) en **Authorized domains**. Así las teselas cargan sin clave en el navegador.
+   - Para desarrollo local, `localhost` ya está permitido.
+3. *API Keys → Create*: copia la clave a `STADIA_API_KEY` como **Secret** y redespliega.
+4. **Plan:**
+   - Free = 200 000 créditos/mes, **solo no comercial**.
+   - Uso comercial (SOMA, clientes) → Starter, 20 US$/mes.
+   - Tráfico en vivo → Standard.
+   - Detalle de créditos y estimación en `docs/MAP.md`.
+
+### D1 (`evie-auth`)
+`npx wrangler d1 migrations apply evie-auth --remote` → aplica `0007_memory.sql` (aditiva: 3 tablas nuevas + índices). El Worker también las crea si faltan.
+
+### Verificación después del despliegue
+1. *Configuración personalizada*: escribe y espera más de 60 s. El texto no se pierde y aparece el aviso de actualización en pausa si llega un cambio remoto.
+2. *Mapa*: «Ivi, calcula la ruta al Tecnológico» → elige el lugar → «Mi ubicación» → ruta con distancia y tiempo → «Iniciar navegación» → «Detener».
+3. *Memoria*: «Ivi, recuerda que mi color favorito es azul» → aparece en *Configuración personalizada → Memoria*. «Ivi, olvida mi color favorito» lo borra.
+4. Entra con la otra cuenta: no debe ver nada de lo anterior.
+
+### Pruebas
+```bash
+for f in tests/*.test.cjs; do node --max-old-space-size=300 --test --test-reporter=spec "$f"; done   # 26 archivos
+for t in drafts memory map login v31 hud workspace kisha gym life; do W=1440 node tools/e2e-$t.mjs; W=390 node tools/e2e-$t.mjs; done
+SHOT=evidence/sweep node tools/qa-sweep.mjs     # desborde / etiquetas / áreas táctiles en todas las secciones
+```

@@ -29,3 +29,8 @@ EVIE_DAILY_LIMITS={"chat":150,"stt_seconds":1800,"tts_chars":40000}
 # --- Google Calendar (solo lectura, por cuenta) ---
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+
+# --- Mapa (Stadia Maps, datos OpenStreetMap) — ver docs/MAP.md ---
+STADIA_API_KEY=              # secreto; sin él el Mapa queda "no configurado" (sin rutas simuladas)
+EVIE_MAP_LIMITS={"map_search":200,"map_route":120}
+EVIE_MAP_TRAFFIC=            # "on" solo con plan Standard + atribución TomTom
