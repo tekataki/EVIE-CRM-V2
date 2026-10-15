@@ -19,18 +19,18 @@ window.EvieMemoryView=(()=>{
  async function reload(){if(!root?.isConnected||busy)return;const r=await EvieMemory.load(true);if(!root?.isConnected)return;if(!r?.memories||!r?.settings){root.innerHTML='<p class="mem-off">No se pudo cargar la memoria. Revisa tu conexión; nada se perdió.</p>';return;}data=r;
   const f=root.querySelector('#mem-settings');if(f&&f.contains(document.activeElement)&&window.FormSafety?.busy?.()){renderLists();return;}render();}
  function render(){if(!root?.isConnected||!data?.settings)return;const st=data.settings,pend=EvieMemory.pendingSensitive();
-  root.innerHTML=`<form id="mem-settings" class="mem-settings" data-draft-manual>
-    <div class="mem-switches">${SW.map(([k,l,h])=>`<label class="evp-switch"><input type="checkbox" name="${k}" ${st[k]?'checked':''} ${k!=='enabled'&&!st.enabled?'disabled':''}><span><strong>${e(l)}</strong><small>${e(h)}</small></span></label>`).join('')}</div>
-    <div class="evp-actions"><button class="button primary" type="submit">Guardar ajustes de memoria</button><button class="button" type="button" data-memory-private="${EvieMemory.isPrivate()?'off':'on'}">${EvieMemory.isPrivate()?'Salir del modo privado':'Empezar conversación privada'}</button></div>
+  root.innerHTML=`<div id="mem-settings" class="mem-settings" role="group" aria-label="Ajustes de memoria" data-draft-ignore>
+    <div class="mem-switches">${SW.map(([k,l,h])=>`<label class="evp-switch"><input type="checkbox" form="mem-noform" data-mem-sw name="${k}" ${st[k]?'checked':''} ${k!=='enabled'&&!st.enabled?'disabled':''}><span><strong>${e(l)}</strong><small>${e(h)}</small></span></label>`).join('')}</div>
+    <div class="evp-actions"><button class="button primary" type="button" data-mem-save>Guardar ajustes de memoria</button><button class="button" type="button" data-memory-private="${EvieMemory.isPrivate()?'off':'on'}">${EvieMemory.isPrivate()?'Salir del modo privado':'Empezar conversación privada'}</button></div>
     <p class="evp-hint">Dile a Ivi «recuerda que…» u «olvida…». Lo que digas en una conversación privada no se guarda ni aparece después.</p>
-   </form>
+   </div>
    ${pend?`<div class="mem-pending" role="group" aria-label="Recuerdo sensible por confirmar"><p><strong>¿Guardar este dato sensible?</strong> «${e(pend)}»</p><div class="toolbar"><button class="button primary" type="button" data-mem="confirm-sensitive">Sí, recordarlo</button><button class="button" type="button" data-mem="drop-sensitive">No guardar</button></div></div>`:''}
    <div id="mem-lists"></div>
    <div class="evp-actions mem-danger"><button class="button" type="button" data-mem="export">Exportar mi memoria (JSON)</button><button class="button danger" type="button" data-mem="wipe">Borrar toda mi memoria</button></div>`;
   renderLists();
-  const form=root.querySelector('#mem-settings');if(!form)return;form.elements.enabled.addEventListener('change',()=>{for(const el of form.elements)if(el.type==='checkbox'&&el.name!=='enabled')el.disabled=!form.elements.enabled.checked;});
-  form.onsubmit=async ev=>{ev.preventDefault();const b=form.querySelector('[type=submit]');b.disabled=true;const o={};for(const el of form.elements)if(el.type==='checkbox')o[el.name]=el.checked;
-   try{const r=await EvieMemory.request('settings',{method:'PUT',body:{settings:o}});data.settings=r.settings;FormSafety.cleanPage(form);App.toast('Ajustes de memoria guardados.','success');render();}catch(err){App.toast(err.message||'No se pudo guardar.','error');}finally{b.disabled=false;}};}
+  const box=root.querySelector('#mem-settings');if(!box)return;const sws=()=>[...box.querySelectorAll('[data-mem-sw]')];const en=box.querySelector('[data-mem-sw][name=enabled]');en.addEventListener('change',()=>{for(const el of sws())if(el!==en)el.disabled=!en.checked;});
+  box.querySelector('[data-mem-save]').onclick=async()=>{const b=box.querySelector('[data-mem-save]');b.disabled=true;const o={};for(const el of sws())o[el.name]=el.checked;
+   try{const r=await EvieMemory.request('settings',{method:'PUT',body:{settings:o}});data.settings=r.settings;App.toast('Ajustes de memoria guardados.','success');render();}catch(err){App.toast(err.message||'No se pudo guardar.','error');}finally{b.disabled=false;}};}
  function renderLists(){const host=root.querySelector('#mem-lists');if(!host)return;const ms=data.memories||[],ss=data.sessions||[];
   host.innerHTML=`<section class="mem-block" aria-labelledby="mem-h1"><h4 id="mem-h1">Lo que Ivi recuerda <span class="mem-count">${ms.length}</span></h4>
     ${ms.length?`<ul class="mem-list">${ms.map(m=>`<li class="mem-item" data-id="${e(m.id)}"><div class="mem-text"><p>${e(m.text)}</p><small>${m.category!=='general'?`<span class="mem-tag">${e({health:'Salud',emotional:'Emocional'}[m.category]||m.category)}</span> `:''}${m.source==='conversation'?'De una conversación':'Me lo pediste'} · ${e(day(m.updated_at))}${m.source_session&&ss.some(s=>s.id===m.source_session)?` · <button type="button" class="linklike" data-mem="open-session" data-sid="${e(m.source_session)}">ver conversación</button>`:''}</small></div>

@@ -31,7 +31,7 @@ await p.route('**/api/memory**', async (r) => {
 await p.route('**/api/profile', (r) => r.fulfill({ json: { profile: { enabled: true } } }))
 await p.goto('http://localhost:3000/index.html?qa=mem' + Date.now(), { timeout: 90000 }); await p.waitForFunction(() => window.DALI_READY, null, { timeout: 30000 })
 const checks = []; const ok = (n) => { checks.push(n); console.log(' ✓ ' + n) }
-const until = (fn, a, ms = 15000) => p.waitForFunction(fn, a, { timeout: ms })
+const until = async (fn, a, ms = 15000) => { try { return await p.waitForFunction(fn, a, { timeout: ms }) } catch (e) { console.log('STUCK', JSON.stringify(await p.evaluate(() => ({ hash: location.hash, sec: UI.section, form: !!document.getElementById('evp-form'), mem: !!document.getElementById('mem-settings'), host: document.getElementById('evp-memory-host')?.innerText.slice(0, 120), dlg: document.querySelector('dialog[open]')?.id || null, active: document.activeElement?.id, dirty: FormSafety.dirty(), subs: document.getElementById('evie-subs')?.innerText.slice(0, 80) })))); throw e } }
 const signIn = (id) => p.evaluate((id) => { const k = EvieAccounts.storageKey(); const cfg = EvieAccounts.config(); cfg.accountsEnabled = true; cfg.ai = { chat: false, stt: false, tts: false }; EvieAccounts.current = () => ({ id, username: id.slice(0, 4) }); EvieAccounts.storageKey = () => k; EvieAccounts.verify = async () => true; EvieAccounts.request = (path, o = {}) => fetch('/api/' + path, { method: o.method || 'GET', headers: { 'Content-Type': 'application/json' }, body: o.body ? JSON.stringify(o.body) : undefined }).then(async (r) => { const j = await r.json(); if (!r.ok) throw Object.assign(Error(j.error || 'error'), { status: r.status }); return j }); EvieMemory.reset(); EvieProfile.reset() }, id)
 const A = '11111111-1111-4111-8111-111111111111', B = '22222222-2222-4222-8222-222222222222'
 await p.evaluate(() => { document.getElementById('evie-splash')?.remove(); Store.save((s) => { s.preferences.evieModulesChosen = true; s.profile.preferred = 'Ale' }); location.hash = 'inicio' })
@@ -52,10 +52,10 @@ await p.click('#evie-private-badge'); await until(() => !document.getElementById
 await say('Ivi, ¿recuerdas lo que te pregunté ayer?'); await subsMatch(/No guardo un historial/)
 ok('recall with history off says plainly it was not stored (no invented exchange)')
 await p.evaluate(() => { location.hash = 'personalizada' }); await until(() => document.querySelector('#mem-settings'))
-let s = await p.evaluate(() => ({ items: [...document.querySelectorAll('#mem-lists .mem-item p')].map((x) => x.textContent), sw: [...document.querySelectorAll('#mem-settings input[type=checkbox]')].map((x) => x.name + ':' + x.checked) }))
+let s = await p.evaluate(() => ({ items: [...document.querySelectorAll('#mem-lists .mem-item p')].map((x) => x.textContent), sw: [...document.querySelectorAll('#mem-settings [data-mem-sw]')].map((x) => x.name + ':' + x.checked) }))
 assert.deepEqual(s.items, ['mi color favorito es verde']); assert.ok(s.sw.includes('save_history:false') && s.sw.includes('allow_health:false')); ok('Memoria panel lists the item; history + sensitive switches off by default')
 await p.check('#mem-settings [name=save_history]'); await p.check('#mem-settings [name=reference_history]'); await p.check('#mem-settings [name=allow_health]')
-assert.equal(db.A.settings.save_history, false, 'not uploaded before pressing save'); await p.click('#mem-settings [type=submit]'); await p.waitForTimeout(500)
+assert.equal(db.A.settings.save_history, false, 'not uploaded before pressing save'); await p.click('#mem-settings [data-mem-save]'); await p.waitForTimeout(500)
 assert.equal(db.A.settings.save_history, true); assert.equal(db.A.settings.allow_health, true); ok('memory switches upload only on «Guardar ajustes de memoria»')
 await p.evaluate(() => { location.hash = 'inicio' }); await until(() => document.getElementById('evie-stage-input'))
 await say('Ivi, recuerda que tengo diabetes'); await subsMatch(/sensible/); assert.equal(db.A.memories.length, 1)
