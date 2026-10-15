@@ -16,9 +16,9 @@ window.EvieMemoryView=(()=>{
   ['allow_emotional','Recordar temas emocionales','Desactivado por defecto. Kisha nunca crea recuerdos automáticamente.']];
  function mount(host){root=host;if(!root)return;if(!window.EvieMemory?.cloud?.()){root.innerHTML=`<p class="mem-off">${Views.icon('cloud-off')} La memoria de Ivi se guarda en tu cuenta EVIE. Inicia sesión con tu cuenta para usarla. En modo local no se guarda nada.</p>`;return;}
   root.innerHTML='<p class="mem-loading">Cargando tu memoria…</p>';reload();}
- async function reload(){if(!root?.isConnected||busy)return;const r=await EvieMemory.load(true);if(!root?.isConnected)return;if(!r?.memories){root.innerHTML='<p class="mem-off">No se pudo cargar la memoria. Revisa tu conexión; nada se perdió.</p>';return;}data=r;
+ async function reload(){if(!root?.isConnected||busy)return;const r=await EvieMemory.load(true);if(!root?.isConnected)return;if(!r?.memories||!r?.settings){root.innerHTML='<p class="mem-off">No se pudo cargar la memoria. Revisa tu conexión; nada se perdió.</p>';return;}data=r;
   const f=root.querySelector('#mem-settings');if(f&&f.contains(document.activeElement)&&window.FormSafety?.busy?.()){renderLists();return;}render();}
- function render(){const st=data.settings,pend=EvieMemory.pendingSensitive();
+ function render(){if(!root?.isConnected||!data?.settings)return;const st=data.settings,pend=EvieMemory.pendingSensitive();
   root.innerHTML=`<form id="mem-settings" class="mem-settings" data-draft-manual>
     <div class="mem-switches">${SW.map(([k,l,h])=>`<label class="evp-switch"><input type="checkbox" name="${k}" ${st[k]?'checked':''} ${k!=='enabled'&&!st.enabled?'disabled':''}><span><strong>${e(l)}</strong><small>${e(h)}</small></span></label>`).join('')}</div>
     <div class="evp-actions"><button class="button primary" type="submit">Guardar ajustes de memoria</button><button class="button" type="button" data-memory-private="${EvieMemory.isPrivate()?'off':'on'}">${EvieMemory.isPrivate()?'Salir del modo privado':'Empezar conversación privada'}</button></div>
@@ -28,7 +28,7 @@ window.EvieMemoryView=(()=>{
    <div id="mem-lists"></div>
    <div class="evp-actions mem-danger"><button class="button" type="button" data-mem="export">Exportar mi memoria (JSON)</button><button class="button danger" type="button" data-mem="wipe">Borrar toda mi memoria</button></div>`;
   renderLists();
-  const form=root.querySelector('#mem-settings');form.elements.enabled.addEventListener('change',()=>{for(const el of form.elements)if(el.type==='checkbox'&&el.name!=='enabled')el.disabled=!form.elements.enabled.checked;});
+  const form=root.querySelector('#mem-settings');if(!form)return;form.elements.enabled.addEventListener('change',()=>{for(const el of form.elements)if(el.type==='checkbox'&&el.name!=='enabled')el.disabled=!form.elements.enabled.checked;});
   form.onsubmit=async ev=>{ev.preventDefault();const b=form.querySelector('[type=submit]');b.disabled=true;const o={};for(const el of form.elements)if(el.type==='checkbox')o[el.name]=el.checked;
    try{const r=await EvieMemory.request('settings',{method:'PUT',body:{settings:o}});data.settings=r.settings;FormSafety.cleanPage(form);App.toast('Ajustes de memoria guardados.','success');render();}catch(err){App.toast(err.message||'No se pudo guardar.','error');}finally{b.disabled=false;}};}
  function renderLists(){const host=root.querySelector('#mem-lists');if(!host)return;const ms=data.memories||[],ss=data.sessions||[];
