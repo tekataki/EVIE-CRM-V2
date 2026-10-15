@@ -1,0 +1,45 @@
+/* P2 · Mapa (Ciudad Guzmán). Glass layout consistent with HUD/P4 panels: canvas + side panel on wide screens,
+   single column on narrow ones. Attribution stays legible (provider terms). Modes use .map-mode (NOT .chip:
+   .chip is the bank-card chip in styles.css). */
+.map-page{display:grid;gap:18px;grid-template-columns:minmax(0,1fr);min-width:0}
+@media (min-width:1100px){.map-page{grid-template-columns:minmax(0,1fr) minmax(320px,380px);align-items:start}.map-panel{position:sticky;top:88px;max-height:calc(100vh - 110px);overflow:auto}}
+.map-canvas{position:relative;min-height:clamp(320px,58vh,680px);border-radius:var(--g-r,22px);overflow:hidden;background:color-mix(in srgb,var(--g-accent,#7aa2ff) 6%,rgba(10,14,30,.55));border:1px solid var(--g-line,rgba(255,255,255,.12));min-width:0}
+.map-canvas .maplibregl-map{position:absolute;inset:0}
+.map-panel{display:grid;gap:14px;padding:clamp(16px,2.2vw,24px)!important;border-radius:var(--g-r,22px);min-width:0;overflow-wrap:anywhere}
+.map-h{margin:0;font-size:1.1rem}.map-h6{margin:0 0 6px;font-size:.9rem;font-weight:600}
+.map-search{display:flex;gap:8px;min-width:0}.map-search .input{flex:1;min-width:0}
+.map-row{display:flex;flex-wrap:wrap;gap:8px}.map-row .button{min-height:44px}
+.map-mode{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border-radius:999px;border:1px solid var(--g-line,rgba(255,255,255,.18));background:transparent;color:inherit;font:inherit;cursor:pointer}
+.map-mode svg{width:16px;height:16px}
+.map-mode.on{background:color-mix(in srgb,var(--g-accent,#7aa2ff) 22%,transparent);border-color:var(--g-accent,#7aa2ff);font-weight:600}
+.map-mode:focus-visible,.map-cand:focus-visible,.map-handoff:focus-visible{outline:2px solid var(--g-accent,#7aa2ff);outline-offset:2px}
+.map-cands{display:grid;gap:6px}
+.map-cand{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--g-line,rgba(255,255,255,.16));background:color-mix(in srgb,var(--g-accent,#7aa2ff) 7%,transparent);color:inherit;font:inherit;cursor:pointer;min-height:44px}
+.map-cand small{opacity:.75}.map-cand:hover{border-color:var(--g-accent,#7aa2ff)}
+.map-origin{margin:0;font-size:.9rem;display:flex;gap:8px;align-items:center}
+.map-origin .dot{width:10px;height:10px;border-radius:50%;flex:none;background:#4ade80}.map-origin .dot.manual{background:#fbbf24}
+.map-status{margin:0;padding:10px 12px;border-radius:14px;border-left:4px solid var(--g-accent,#7aa2ff);background:color-mix(in srgb,var(--g-accent,#7aa2ff) 9%,transparent);font-size:.95rem}
+.map-status[data-state=weak],.map-status[data-state=stale],.map-status[data-state=off_route],.map-status[data-state=background],.map-status[data-state=offline],.map-status[data-state=choose],.map-status[data-state=need_origin]{border-color:#fbbf24;background:rgba(251,191,36,.12)}
+.map-status[data-state=provider],.map-status[data-state=denied],.map-status[data-state=nogps],.map-status[data-state=outside],.map-status[data-state=not_found],.map-status[data-state=quota],.map-status[data-state=no_route]{border-color:#f87171;background:rgba(248,113,113,.12)}
+.map-status[data-state=arrived],.map-status[data-state=navigating],.map-status[data-state=route]{border-color:#4ade80;background:rgba(74,222,128,.1)}
+.map-summary p{margin:0 0 4px}
+.map-steps{margin:8px 0 0;padding-left:1.3em;display:grid;gap:4px;font-size:.92rem;max-height:260px;overflow:auto}
+.map-steps small{opacity:.7}
+.map-gps{margin:0;font-size:.85rem;opacity:.85}
+.map-handoff{display:inline-flex;align-items:center;gap:6px;color:var(--g-accent,#7aa2ff);font-weight:600}
+.map-handoff svg,.map-warn svg{width:16px;height:16px;flex:none}
+.map-warn{margin:0;display:flex;gap:8px;align-items:flex-start;font-size:.82rem;opacity:.85}
+.map-note ul,.map-empty ul{margin:6px 0;padding-left:1.2em}
+.map-empty{position:absolute;inset:0;display:grid;align-content:center;gap:8px;padding:24px;max-width:560px;margin:auto}
+.map-attr{font-size:.75rem;opacity:.85;margin:0}
+.map-stop{background:#b91c1c!important;color:#fff!important;border-color:#b91c1c!important}
+.map-pin{width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.map-pin.pin-dest{background:#ef4444;width:22px;height:22px}
+.map-pin.pin-me{background:#3b82f6}
+.map-pin.pin-origin{background:#f59e0b}
+.map-canvas .maplibregl-ctrl-attrib{font-size:11px;background:rgba(255,255,255,.88);color:#111}
+.map-canvas .maplibregl-ctrl-attrib a{color:#0b3d91}
+@media (max-width:640px){.map-canvas{min-height:52vh;border-radius:18px}.map-search{flex-direction:column}.map-search .button{width:100%}.map-row .button{flex:1 1 auto}}
+.map-page{padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-reduced-motion:reduce){.map-page *{transition:none!important;animation:none!important}}
+:root[data-map-nav] .map-status{font-size:1.05rem;font-weight:600}

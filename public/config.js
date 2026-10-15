@@ -24,7 +24,7 @@ window.DALI_CONFIG = Object.freeze({
     {route:'vision',label:'Vision Board',icon:'image',group:'principal',searchTerms:['aspiraciones','collage'],mobilePriority:0},
     {route:'tendencias',label:'Tendencias',icon:'chart-scatter',group:'principal',searchTerms:['insights','estadisticas','horas','analisis'],mobilePriority:0},
     {route:'logros',label:'Logros',icon:'trophy',group:'principal',searchTerms:['insignias','premios','medallas'],mobilePriority:0},
-    {route:'automatizaciones',label:'Automatizaciones',icon:'zap',group:'herramientas',searchTerms:['atajos','sitios','paginas','enlaces','web','abrir'],mobilePriority:0},{route:'subir',label:'Subir',icon:'upload',group:'herramientas',searchTerms:['importar','json','chatgpt'],mobilePriority:3},
+    {route:'automatizaciones',label:'Automatizaciones',icon:'zap',group:'herramientas',searchTerms:['atajos','sitios','paginas','enlaces','web','abrir'],mobilePriority:0},{route:'mapa',label:'Mapa',icon:'map',group:'herramientas',searchTerms:['ruta','rutas','navegacion','navegación','gps','ciudad guzman','ciudad guzmán','como llego','cómo llego','direcciones'],mobilePriority:0},{route:'subir',label:'Subir',icon:'upload',group:'herramientas',searchTerms:['importar','json','chatgpt'],mobilePriority:3},
     {route:'perfil',label:'Mi perfil',icon:'user-round',group:'cuenta',searchTerms:['identidad','foto'],mobilePriority:0},
     {route:'configuracion',label:'Configuración',icon:'settings-2',group:'cuenta',searchTerms:['respaldo','exportar','tema'],mobilePriority:0},
     {route:'personalizada',label:'Configuración personalizada',icon:'sliders-horizontal',group:'cuenta',searchTerms:['perfil evie','tono','estilo','zona horaria','preferencias'],mobilePriority:0}
