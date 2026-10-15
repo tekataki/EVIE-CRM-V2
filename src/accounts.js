@@ -6,6 +6,7 @@ import { createAssistant } from './assistant.js'
 import { createKisha } from './kisha.js'
 import { createResearch } from './research.js'
 import { createGoogleAuth } from './google-auth.js'
+import { createMemory } from './memory.js'
 import { createProfile } from './profile.js'
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -178,6 +179,7 @@ export function createAccounts({fetcher=fetch}={}) {
  api.route('/connections',createConnections({fetcher,seal,unseal,authenticate:async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}}))
  const bound=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
  api.route('/profile',createProfile({authenticate:bound,seal,unseal}))
+ api.route('/memory',createMemory({authenticate:bound,seal,unseal}))
  api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal}))
  api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal}))
  api.route('/info',createResearch({fetcher,authenticate:bound,unseal}))
