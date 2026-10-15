@@ -31,7 +31,9 @@ window.FormSafety=(()=>{
  document.addEventListener('focusin',ev=>{const r=pageRoot(ev.target);if(r&&!pages.has(r))pages.set(r,snap(r));},true);
  document.addEventListener('focusout',()=>settle(),true);
  // Generic page forms: submitting is the explicit commit; manual forms (data-draft-manual) clean themselves after a successful save.
- document.addEventListener('submit',ev=>{const f=ev.target;if(pages.has(f)&&!f.hasAttribute('data-draft-manual'))queueMicrotask(()=>cleanPage(f));},true);
+ // Synchronous (capture phase, before the form's own handler): handlers often re-render immediately, and the
+ // submitted values must already count as committed so stash() does not carry a stale baseline forward.
+ document.addEventListener('submit',ev=>{const f=ev.target;if(pages.has(f)&&!f.hasAttribute('data-draft-manual')){pages.set(f,snap(f));queueMicrotask(settle);}},true);
  /** Safety net for foreground renders: remember dirty page forms (by id) and put the draft back afterwards. */
  function save(){const out=[];const a=document.activeElement;for(const [r,b] of pages){if(!r.isConnected||!r.id||snap(r)===b)continue;out.push({id:r.id,base:b,values:items(r).map(x=>({k:x.name||x.id,v:['checkbox','radio'].includes(x.type)?x.checked:x.value})),focus:r.contains(a)?(a.name||a.id):null,sel:r.contains(a)&&'selectionStart' in a?[a.selectionStart,a.selectionEnd]:null});}
   stash=out.length?{list:out,y:scrollY,section:window.UI?.section}:null;return stash;}
