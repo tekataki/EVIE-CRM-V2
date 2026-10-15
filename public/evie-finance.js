@@ -89,15 +89,18 @@ window.EvieFinance=(()=>{
  const CUR='(?:\\s*(?:pesos|peso|mxn|varos|\\$))?';
  function toCents(s){let v=String(s).trim();if(/^\d{1,3}([.,]\d{3})+$/.test(v))v=v.replace(/[.,]/g,'');else if(/^\d{1,3}([.,]\d{3})+[.,]\d{1,2}$/.test(v))v=v.slice(0,-3).replace(/[.,]/g,'')+'.'+v.slice(-2);else v=v.replace(',','.');return Math.round(Number(v)*100);}
  const WAKE=/^(?:oye |hey |hola )?(?:ivi|ivy|evie|evi|ibi|libi)[, ]+/;
- const ACC_PREP=/\s(?:de|desde|con|en)\s+(?:mi cuenta |la cuenta |mi tarjeta |la tarjeta |mi |mis |la |el )?(dinero fisico|efectivo|cash|cartera digital|tarjeta de credito|tarjeta de debito|[a-z0-9]+(?: [a-z0-9]+)?)(?=\s)/g;
- function parse(text){const q=F().norm(text).replace(WAKE,'').trim();if(!q)return null;
+ // Like FinanceCore.norm but keeps decimal/thousand separators between digits (1,250.50).
+ const pnorm=t=>String(t||'').replace(/(\d)[.,](?=\d)/g,(m,d)=>d+(m.slice(-1)===','?'\u0001':'\u0002')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9 \u0001\u0002]/g,' ').replace(/\s+/g,' ').trim().replace(/\u0001/g,',').replace(/\u0002/g,'.');
+ function parse(text){const q=pnorm(text).replace(WAKE,'').trim();if(!q)return null;
   let m=q.match(new RegExp('^(?:pasa|pase|transfiere|transferi|mueve|movi)\\s+\\$?'+NUM+CUR+'\\s+(?:de|desde)\\s+(?:mi |la |el )?(.+?)\\s+(?:a|al|hacia)\\s+(?:mi |la |el )?(.+)$'));
   if(m)return {kind:'transfer',amount:toCents(m[1]),from:m[2],to:m[3]};
   let type='expense';m=q.match(new RegExp('^(?:gaste|pague|compre|me gaste|(?:registra|agrega|anota|apunta|pon)(?:r|me)?\\s+un gasto de|un gasto de|gasto de)\\s+\\$?'+NUM+CUR+'(.*)$'));
   if(!m){type='income';m=q.match(new RegExp('^(?:recibi|me pagaron|cobre|me depositaron|me transfirieron|gane|me entraron|(?:registra|agrega|anota|apunta|pon)(?:r|me)?\\s+un ingreso de|un ingreso de|ingreso de)\\s+\\$?'+NUM+CUR+'(.*)$'));}
   if(!m)return null;const amount=toCents(m[1]);let rest=' '+m[2].trim()+' ',account=null;
-  for(const seg of rest.match(ACC_PREP)||[]){const w=seg.replace(/^\s(?:de|desde|con|en)\s+(?:mi cuenta |la cuenta |mi tarjeta |la tarjeta |mi |mis |la |el )?/,'').trim();const r=F().resolveAccount(accounts(),w,{fallback:'none'});
-   if(r.status==='unique'||(r.status==='ambiguous'&&/efectivo|fisico|cash|tarjeta|cuenta/.test(w))||/^(dinero fisico|efectivo|cash)$/.test(w)){account=w;rest=rest.replace(seg,' ');break;}}
+  {const w=rest.trim().split(' ');const PREP=new Set(['de','desde','con','en']),FILL=new Set(['mi','mis','la','el','cuenta','tarjeta']);
+   outer:for(let i=0;i<w.length;i++){if(!PREP.has(w[i]))continue;let j=i+1;while(j<w.length&&FILL.has(w[j]))j++;
+    for(let len=Math.min(3,w.length-j);len>=1;len--){const phrase=w.slice(j,j+len).join(' ');if(w.slice(j,j+len).some(x=>PREP.has(x)||x==='en'||x==='por'||x==='para'))continue;const r=F().resolveAccount(accounts(),phrase,{fallback:'none'});
+     if(r.status==='unique'||/^(dinero fisico|efectivo|cash)$/.test(phrase)){account=phrase;w.splice(i,j+len-i);rest=' '+w.join(' ')+' ';break outer;}}}}
   const title=rest.replace(/\s+/g,' ').trim().replace(/^(?:en|por|de|para|del)\s+(?:un |una |el |la |los |las |unos |unas )?/,'').trim();
   return {kind:'tx',type,amount,account,title:cap(title||(type==='expense'?'Gasto':'Ingreso')).slice(0,140)};}
  let pending=null; // one short clarification at a time (which account)
