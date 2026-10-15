@@ -55,7 +55,7 @@ window.EvieProfile=(()=>{
   setTimeout(mount,0);
   return shell+`<section class="panel evp" id="evp-root" aria-busy="true"><p class="evp-loading">Cargando tu configuración…</p></section>`;}
  async function mount(){const root=document.getElementById('evp-root');if(!root)return;const p=await load();if(!root.isConnected)return;root.removeAttribute('aria-busy');
-  root.innerHTML=`<form id="evp-form" class="evp-form" novalidate>
+  root.innerHTML=`<form id="evp-form" class="evp-form" novalidate data-draft-manual>
    <div class="evp-top">
     <label class="evp-switch"><input type="checkbox" name="enabled" ${p.enabled!==false?'checked':''}><span><strong>Usar mi configuración en las respuestas</strong><small>Si lo apagas, EVIE responde con un trato neutral.</small></span></label>
     <aside class="evp-preview" aria-live="polite"><span class="eyebrow">VISTA PREVIA</span><p id="evp-preview">${e(preview(p))}</p><small>Ejemplo local; no consume IA.</small></aside>
@@ -67,11 +67,11 @@ window.EvieProfile=(()=>{
    <p class="evp-privacy">${Views.icon('shield-check')} ${cloud()?'Se guarda cifrado en el servidor y ligado a tu sesión. Nadie más con una cuenta EVIE puede verlo.':'Modo local: se guarda solo en este navegador.'}</p>
    <div class="evp-actions"><button class="button primary" type="submit">Guardar</button><button class="button" type="button" data-evp="export">Exportar JSON</button><button class="button danger" type="button" data-evp="delete">Borrar mi configuración</button></div>
   </form>`;
-  window.lucide?.createIcons({root});const form=root.querySelector('form');
+  window.lucide?.createIcons({root});const form=root.querySelector('form');queueMicrotask(()=>FormSafety.adopt(form));
   const read=()=>{const o={};for(const el of form.elements){if(!el.name)continue;if(el.type==='checkbox')o[el.name]=el.checked;else if(el.value.trim())o[el.name]=el.type==='number'?Number(el.value):el.value.trim();}return o;};
   form.addEventListener('input',()=>{document.getElementById('evp-preview').textContent=preview(read());});
-  form.onsubmit=async ev=>{ev.preventDefault();const b=form.querySelector('[type=submit]');b.disabled=true;try{await save(read());App.toast('Configuración guardada. EVIE la usará desde tu próxima pregunta.','success');}catch(err){App.toast(err.message||'No se pudo guardar.','error');}finally{b.disabled=false;}};
+  form.onsubmit=async ev=>{ev.preventDefault();const b=form.querySelector('[type=submit]');b.disabled=true;try{await save(read());FormSafety.cleanPage(form);App.toast('Configuración guardada. EVIE la usará desde tu próxima pregunta.','success');}catch(err){App.toast(err.message||'No se pudo guardar.','error');}finally{b.disabled=false;}};
   root.querySelector('[data-evp=export]').onclick=()=>{const blob=new Blob([JSON.stringify({format:'evie.profile',version:1,exported_at:new Date().toISOString(),profile:read()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='evie-configuracion-personalizada.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
-  root.querySelector('[data-evp=delete]').onclick=async()=>{if(!confirm('¿Borrar tu configuración personalizada? Tus registros no se tocan.'))return;try{await remove();App.toast('Configuración borrada.','success');mount();}catch(err){App.toast(err.message||'No se pudo borrar.','error');}};}
+  root.querySelector('[data-evp=delete]').onclick=async()=>{if(!confirm('¿Borrar tu configuración personalizada? Tus registros no se tocan.'))return;try{await remove();FormSafety.cleanPage(form);App.toast('Configuración borrada.','success');mount();}catch(err){App.toast(err.message||'No se pudo borrar.','error');}};}
  return Object.freeze({view,load,save,remove,current,reset,preview});
 })();

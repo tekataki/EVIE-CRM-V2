@@ -5,7 +5,11 @@ window.AccountUI=(()=>{
  function isolate(){for(const node of document.body.children){if(node===gate||['SCRIPT','STYLE','LINK'].includes(node.tagName))continue;if(!background.has(node))background.set(node,node.inert);node.inert=true;}}
  function sessionClosed(){conceal();screen('<h1>La sesión cambió</h1><p>Este espacio se bloqueó. Tus cambios locales siguen en la caché de su cuenta. Verifica la sesión antes de continuar.</p><button class="button primary" id="session-reload">Verificar sesión</button>');gate.querySelector('button').onclick=()=>location.reload();}
  EvieAccounts.subscribe(user=>{if(openedOwner&&user?.id!==openedOwner)sessionClosed();});
- async function refreshSession(){if(checking||!openedOwner||!navigator.onLine||document.hidden)return;checking=true;try{if(await EvieAccounts.verify()){const before=Store.get()?.revision;await sync?.sync();/* Re-render only when remote data actually changed; never while EVIE is mid-turn. */if(Store.get()&&Store.get().revision!==before&&!FormSafety.dirty()&&!gate&&!document.querySelector('dialog[open]')&&!['listening','thinking','speaking'].includes(document.documentElement.dataset.evie))App.render();}}catch{status('Sin conexión · cambios locales conservados');}finally{checking=false;}}
+ /* Background-triggered renders (session refresh, remote sync, SW update) never rebuild the page while
+    the user edits, a dialog is open or EVIE is mid-turn: they are deferred until the draft is saved/discarded. */
+ const voiceBusy=()=>['listening','thinking','speaking'].includes(document.documentElement.dataset.evie);
+ function softRender(reason){const run=()=>{if(!Store.get()||gate)return;if(FormSafety.busy()||voiceBusy()){FormSafety.whenIdle(run,reason);return;}App.render();};run();}
+ async function refreshSession(){if(checking||!openedOwner||!navigator.onLine||document.hidden)return;checking=true;try{if(await EvieAccounts.verify()){const before=Store.get()?.revision;await sync?.sync();/* Re-render only when remote data actually changed; never while EVIE is mid-turn. */if(Store.get()&&Store.get().revision!==before&&!gate)softRender('remote');}}catch{status('Sin conexión · cambios locales conservados');}finally{checking=false;}}
  document.addEventListener('keydown',event=>{if(!gate)return;event.stopImmediatePropagation();if(event.target?.closest?.('[role=tablist]')&&['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const t=gate.querySelector('[aria-selected=false][data-auth-tab]');t?.click();return;}if(event.key==='Escape'){event.preventDefault();if(!EvieAccounts.config()?.accountsEnabled&&started)unlock();return;}if(event.key==='Tab'){const nodes=[...gate.querySelectorAll('input,select,button,a[href]')].filter(n=>!n.disabled&&!n.hidden),first=nodes[0],last=nodes.at(-1);if(event.shiftKey&&(document.activeElement===first||!gate.contains(document.activeElement))){event.preventDefault();last?.focus();}else if(!event.shiftKey&&(document.activeElement===last||!gate.contains(document.activeElement))){event.preventDefault();first?.focus();}}},true);
  const e=s=>Domain.escape(String(s));
  function status(text){const el=document.getElementById('sync-status');if(el){el.textContent=text;el.onclick=open;}}
@@ -45,11 +49,14 @@ window.AccountUI=(()=>{
  function registerPWA(){if(window.evieDesktop||!('serviceWorker'in navigator)||!location.protocol.startsWith('http'))return;
   // Installed iOS PWAs can stay open for days: check for a new shell on boot and when returning to the app,
   // and switch to it only when nothing is being edited, so old UI (intro/renderer/logo) does not linger.
-  const had=!!navigator.serviceWorker.controller;let reloading=false;
-  const apply=reg=>{const w=reg.waiting;if(!w||!had)return;if(window.FormSafety?.dirty?.()||document.querySelector('dialog[open]'))return;w.postMessage('evie-skip-waiting');};
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!had||reloading)return;reloading=true;location.reload();});
-  navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(reg=>{apply(reg);reg.addEventListener('updatefound',()=>{const n=reg.installing;n?.addEventListener('statechange',()=>{if(n.state==='installed')apply(reg);});});document.addEventListener('visibilitychange',()=>{if(!document.hidden)reg.update().then(()=>apply(reg)).catch(()=>{});});}).catch(()=>{});}
+  const had=!!navigator.serviceWorker.controller;let reloading=false,reg0=null;
+  const apply=reg=>{const w=reg.waiting;if(!w||!had)return;if(window.FormSafety?.busy?.()||voiceBusy()){FormSafety.whenIdle(()=>apply(reg),'update');return;}w.postMessage('evie-skip-waiting');};
+  const reloadSafe=()=>{if(!had||reloading)return;if(window.FormSafety?.busy?.()||voiceBusy()){FormSafety.whenIdle(reloadSafe,'update');return;}reloading=true;location.reload();};navigator.serviceWorker.addEventListener('controllerchange',reloadSafe);
+  navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(reg=>{reg0=reg;apply(reg);reg.addEventListener('updatefound',()=>{const n=reg.installing;n?.addEventListener('statechange',()=>{if(n.state==='installed')apply(reg);});});document.addEventListener('visibilitychange',()=>{if(!document.hidden)reg.update().then(()=>apply(reg)).catch(()=>{});});}).catch(()=>{});}
  window.addEventListener('online',refreshSession);window.addEventListener('focus',refreshSession);window.addEventListener('pagehide',()=>{clearInterval(poll);sync?.stop();});
  // A different tab signing in must never retarget this tab's requests to that user.
- return {boot,open,signOut,conceal,onboarding,sync:()=>sync,status};
+ return {boot,open,signOut,conceal,onboarding,sync:()=>sync,status,
+  /* QA hooks (used by tools/e2e-drafts.mjs): emulate a waiting worker / run one background refresh now. */
+  swUpdateReady:()=>{const w={postMessage:()=>{window.__swActivated=(window.__swActivated||0)+1;}};const run=()=>{if(FormSafety.busy()||voiceBusy()){FormSafety.whenIdle(run,'update');return;}w.postMessage('evie-skip-waiting');};run();},
+  refreshNow:(fake)=>{openedOwner=openedOwner||EvieAccounts.current()?.id||null;if(fake)sync=fake;return refreshSession();}};
 })();
