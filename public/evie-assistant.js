@@ -5,7 +5,7 @@
    Read tools run here against the local-first Store. Writes are DRAFTS confirmed by the user (IvyCommandBus). */
 window.EvieAssistant=(()=>{
  const e=s=>Domain.escape(String(s??''));
- let lastResearch=null,googleDraft=null,recurringDraft=null,habitDraft=null,panel=null,inlineLast={you:'',evie:''},history=[],busy=false,clapOff=null,draft=null,voiceInline=false;
+ let lastMemoryUsed=null,lastResearch=null,googleDraft=null,recurringDraft=null,habitDraft=null,panel=null,inlineLast={you:'',evie:''},history=[],busy=false,clapOff=null,draft=null,voiceInline=false;
  const pref=()=>({clapWake:false,conversation:true,muted:false,cloudVoice:true,cloudAI:true,voiceId:'',...(Store.get()?.preferences?.evie||{})});
  const runtime=()=>window.EvieAccounts?.config?.()||{};
  const cloud=()=>!!(window.EvieAccounts?.current?.())&&runtime().accountsEnabled;
@@ -79,7 +79,7 @@ window.EvieAssistant=(()=>{
  };
  function makeDraft(intent,params){try{const cmd=IvyCommandBus.envelope(intent,params,'voice','write');const p=IvyCommandBus.prepare(cmd);draft={token:p.token,fields:p.fields,route:p.route};renderDraft();return {status:'draft_shown',needs_user_confirmation:true,fields:p.fields};}catch(err){return {status:'invalid',error:err.message};}}
  /* ---------- local fast-path (free, no network) ---------- */
- function tryLocal(text){const q=IvyTools.norm(text).replace(/[¿?¡!.,]/g,'').replace(/^(oye |hey |hola )?evie[, ]*/,'').trim();
+ function tryLocal(text){const speakLater=t=>{if(t){append('evie',t);if(!pref().muted)Voice.speak(t,Voice.begin());}};if(window.EvieMemory){const mm=EvieMemory.intent(text,{say:speakLater});if(mm!==null)return mm;}if(window.EvieMap){const mp=EvieMap.intent(text,{say:speakLater});if(mp!==null)return mp;}const q=IvyTools.norm(text).replace(/[¿?¡!.,]/g,'').replace(/^(oye |hey |hola )?(?:evie|evi|ivi|ivy|ibi)[, ]+/,'').trim();
   let m=q.match(/^(?:activa|activar|pon|entra en|cambia a)(?: el)? modo (\w+)/);if(m){const r=window.EvieModes.set(m[1]);return r.ok?r.say:'No conozco el modo '+m[1]+'. Tengo enfoque, gym, negocio, cierre, noche y normal.';}
   if(/^(?:desactiva|salir? del?|quita)(?: el)? modo/.test(q)){window.EvieModes.set('normal');return 'Listo, volví al modo normal.';}
   m=q.match(/^(?:marca|completa|ya (?:hice|fui a|fui al|termine))(?: el| la| mi)? (?:habito )?(.+)$/);if(m&&window.EvieLife){const r=tools.draft_habit_check({title:m[1]});if(r.status==='draft_shown')return 'Te dejo la confirmación en pantalla.';}
@@ -137,15 +137,15 @@ window.EvieAssistant=(()=>{
   history.push({role:'user',content:text});history=history.slice(-14);
   window.EvieProfile?.load?.().catch(()=>{});const context={name:name(),timezone:zone(),currency:DALI_CONFIG.currency};let input=[...history];
   for(let step=0;step<4;step++){
-   const r=await EvieAccounts.request('ai/chat',{method:'POST',body:{input,context},signal});if(signal?.aborted)throw Object.assign(Error('cancelado'),{name:'AbortError'});
-   if(!r.calls?.length){const say=(r.text||'').trim()||'Listo.';history.push({role:'assistant',content:say.slice(0,3900)});return {text:say,spoken:(r.spoken||say).trim(),sources:Array.isArray(r.sources)?r.sources:[],checked:r.checked_at||null,webUnavailable:!!r.web_unavailable};}
+   const r=await EvieAccounts.request('ai/chat',{method:'POST',body:{input,context,private:!!window.EvieMemory?.isPrivate?.()},signal});if(r.memory_used)lastMemoryUsed=r.memory_used;if(signal?.aborted)throw Object.assign(Error('cancelado'),{name:'AbortError'});
+   if(!r.calls?.length){const say=(r.text||'').trim()||'Listo.';history.push({role:'assistant',content:say.slice(0,3900)});return {memory:lastMemoryUsed,text:say,spoken:(r.spoken||say).trim(),sources:Array.isArray(r.sources)?r.sources:[],checked:r.checked_at||null,webUnavailable:!!r.web_unavailable};}
    input=[...input,...(r.reasoning||[]),...r.calls];
-   for(const c of r.calls){let args={};try{args=JSON.parse(c.arguments||'{}');}catch{}let out;try{out=tools[c.name]?await tools[c.name](args):{error:'unknown tool'};}catch(err){out={error:err.message};}input.push({type:'function_call_output',call_id:c.call_id,output:JSON.stringify(out).slice(0,12000)});}
+   for(const c of r.calls){let args={};try{args=JSON.parse(c.arguments||'{}');}catch{}let out;try{const fn=tools[c.name]||window.EvieMemory?.tools?.[c.name]||window.EvieMap?.tools?.[c.name];out=fn?await fn(args):{error:'unknown tool'};}catch(err){out={error:err.message};}input.push({type:'function_call_output',call_id:c.call_id,output:JSON.stringify(out).slice(0,12000)});}
   }
   return 'Necesito más contexto para eso. ¿Me lo dices de otra forma?';
  }
  async function ask(text,{speak=true,inline=false,turnToken=null}={}){
-  text=String(text||'').trim();if(!text)return;if(!turnToken)Voice.unlock();const t=turnToken||Voice.begin();if(!(inline||onStage()))open();append('user',text);busy=true;Voice.set('thinking');
+  text=String(text||'').trim();if(!text)return;window.EvieMemory?.track?.(text);if(!turnToken)Voice.unlock();const t=turnToken||Voice.begin();if(!(inline||onStage()))open();append('user',text);busy=true;Voice.set('thinking');
   let say;try{say=tryLocal(text);if(say===null){if(can('chat')&&pref().cloudAI)say=await chat(text,t.signal);else say=fallbackAnswer(text);}}catch(err){if(!Voice.alive(t.id))return;say=err.name==='AbortError'?'':err.status===429?err.message:(err.message||'No pude responder.');}
   if(!Voice.alive(t.id))return;busy=false;
   const ans=typeof say==='object'&&say?say:{text:say,spoken:say,sources:[]};
