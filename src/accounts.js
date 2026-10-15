@@ -7,6 +7,7 @@ import { createKisha } from './kisha.js'
 import { createResearch } from './research.js'
 import { createGoogleAuth } from './google-auth.js'
 import { createMemory } from './memory.js'
+import { createMap, mapStatus } from './map.js'
 import { createProfile } from './profile.js'
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -50,7 +51,7 @@ export function createAccounts({fetcher=fetch}={}) {
  const api=new Hono()
  api.use('*',async(c,next)=>{const max=c.req.path.endsWith('/data/push')?16*1024*1024:c.req.path.endsWith('/ai/stt')?4*1024*1024:256*1024;return bodyLimit({maxSize:max,onError:c=>jsonError(c,'La solicitud supera el límite.',413)})(c,next)})
  api.use('*',async(c,next)=>{c.header('Cache-Control','no-store, private');c.header('X-Content-Type-Options','nosniff');await next()})
- api.get('/runtime',c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:c.env?.EVIE_GOOGLE_AUTH==='true',passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
+ api.get('/runtime',c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:c.env?.EVIE_GOOGLE_AUTH==='true',passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,map:{configured:mapStatus(c.env).configured,traffic:mapStatus(c.env).traffic},providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
  api.use('*',async(c,next)=>{
   const env=c.env||{}
   if(env.EVIE_ACCOUNTS_ENABLED!=='true')return jsonError(c,'Las conexiones externas están desactivadas.',503)
@@ -180,6 +181,7 @@ export function createAccounts({fetcher=fetch}={}) {
  const bound=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
  api.route('/profile',createProfile({authenticate:bound,seal,unseal}))
  api.route('/memory',createMemory({authenticate:bound,seal,unseal}))
+ api.route('/map',createMap({fetcher,authenticate:bound}))
  api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal}))
  api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal}))
  api.route('/info',createResearch({fetcher,authenticate:bound,unseal}))
