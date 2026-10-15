@@ -82,7 +82,7 @@ window.EvieMap=(()=>{
     setOrigin({lat:f.lat,lon:f.lon,accuracy:f.accuracy,label:`Mi ubicación (±${Math.round(f.accuracy)} m)`});res({ok:true,accuracy:f.accuracy});},
    err=>{const denied=err.code===1;st(denied?'denied':'nogps',denied?'Sin permiso de ubicación. Elige el origen en el mapa o activa el permiso en el navegador.':'No pude obtener tu ubicación. Elige el origen en el mapa.');res({ok:false,status:denied?'denied':'nogps'});},
    {enableHighAccuracy:true,maximumAge:10000,timeout:15000});});}
- function setOrigin(o){origin=o;drawMarkers();if(dest)return calculate();st('origin','Origen listo. Ahora busca tu destino.');return Promise.resolve({ok:true});}
+ function setOrigin(o){origin=o;manualOrigin=false;drawMarkers();if(dest)return calculate();st('origin','Origen listo. Ahora busca tu destino.');return Promise.resolve({ok:true});}
  /* ---------- navigation session (foreground) ---------- */
  function speak(text,{force=false}={}){if(!text)return;lastSpoken=text;const live=document.getElementById('map-live');if(live)live.textContent=text;if(muted&&!force)return;
   const v=document.documentElement.dataset.evieVoice||'';if(/listening|transcribing|recording|arming/.test(v))return;window.EvieAssistant?.say?.(text);}
