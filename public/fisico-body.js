@@ -31,15 +31,15 @@ window.FisicoBody=(()=>{
   glutes:'M100,206 C114,204 130,208 140,220 C144,236 140,250 128,254 C116,256 106,252 100,246 Z',
   hamstrings:'M104,258 C116,258 130,258 140,262 C144,282 142,300 138,312 C128,318 116,318 110,312 C106,294 104,276 104,258 Z',
   calves:'M112,326 C124,320 138,324 144,336 C146,358 142,380 136,398 L122,400 C118,378 114,354 112,326 Z'};
- const BAND_FILL={fresh:'url(#fb-hatch-fresh)',mid:'url(#fb-hatch-mid)',ready:'url(#fb-dots-ready)',idle:'none'};
+ const BAND_FILL={fresh:'url(#fb-hatch-fresh-WHICH)',mid:'url(#fb-hatch-mid-WHICH)',ready:'url(#fb-dots-ready-WHICH)',idle:'none'};
  function view(which,{summary={},presentation='neutral',selected=null,title}={}){const R=which==='front'?FRONT:BACK;
   const parts=Object.entries(R).map(([k,d])=>{const s=summary[k]||{},b=s.band||'idle',label=`${s.label||k}: ${bandText(s)}`;
-   return `<path class="fb-m" data-m="${k}" data-band="${b}" ${selected===k?'data-selected="1"':''} d="${both(d)}" fill="${BAND_FILL[b]}" tabindex="0" role="button" aria-pressed="${selected===k}" aria-label="${esc(label)}"><title>${esc(label)}</title></path>`;}).join('');
+   return `<path class="fb-m" data-m="${k}" data-band="${b}" ${selected===k?'data-selected="1"':''} d="${both(d)}" fill="${BAND_FILL[b].replace('WHICH',which)}" tabindex="0" role="button" aria-pressed="${selected===k}" aria-label="${esc(label)}"><title>${esc(label)}</title></path>`;}).join('');
   return `<svg class="fb-svg" viewBox="0 0 200 440" role="group" aria-label="${esc(title||(which==='front'?'Vista frontal':'Vista posterior'))}"><defs>
-   <pattern id="fb-hatch-fresh" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--fb-fresh)"/><line x1="0" y1="0" x2="0" y2="5" stroke="rgba(255,255,255,.55)" stroke-width="1.6"/></pattern>
-   <pattern id="fb-hatch-mid" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="6" height="6" fill="var(--fb-mid)"/><line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,.35)" stroke-width="1"/></pattern>
-   <pattern id="fb-dots-ready" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="var(--fb-ready)"/><circle cx="3" cy="3" r="1" fill="rgba(255,255,255,.45)"/></pattern>
-   <linearGradient id="fb-glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--fb-line)" stop-opacity=".9"/><stop offset="1" stop-color="var(--fb-line)" stop-opacity=".35"/></linearGradient></defs>
+   <pattern id="fb-hatch-fresh-${which}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--fb-fresh)"/><line x1="0" y1="0" x2="0" y2="5" stroke="rgba(255,255,255,.55)" stroke-width="1.6"/></pattern>
+   <pattern id="fb-hatch-mid-${which}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="6" height="6" fill="var(--fb-mid)"/><line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,.35)" stroke-width="1"/></pattern>
+   <pattern id="fb-dots-ready-${which}" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="var(--fb-ready)"/><circle cx="3" cy="3" r="1" fill="rgba(255,255,255,.45)"/></pattern>
+   <linearGradient id="fb-glow-${which}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--fb-line)" stop-opacity=".9"/><stop offset="1" stop-color="var(--fb-line)" stop-opacity=".35"/></linearGradient></defs>
    <path class="fb-sil" d="${silhouette(presentation)}"/>
    <g class="fb-mesh" aria-hidden="true">${mesh()}</g>
    <circle class="fb-head" cx="100" cy="32" r="0" aria-hidden="true"/>

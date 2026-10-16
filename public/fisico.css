@@ -1,0 +1,51 @@
+/* Físico v4 — body map. Highlights use pattern + text + swatch (never colour alone). */
+:root{--fb-line:#8f8cff;--fb-fresh:#ff9b6a;--fb-mid:#ffd36e;--fb-ready:#6fd8b4;--fb-idle:transparent;--fb-sil:rgba(143,140,255,.08)}
+[data-theme="dark"]{--fb-line:#a9a6ff;--fb-sil:rgba(169,166,255,.10)}
+.fis-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin:.25rem 0 1rem}
+.fis-tabs .button{display:inline-flex;align-items:center;gap:.4rem}
+.fis-subheading h2{margin:0;font-size:1.15rem}
+.fis-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,1fr);gap:1rem;align-items:start}
+@media (max-width:900px){.fis-layout{grid-template-columns:1fr}}
+.fis-body{padding:1rem}
+.fis-body-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap}
+.fis-body-head h2{margin:0}
+.fis-pres{display:flex;align-items:center;gap:.5rem;font-size:.85rem}
+.fis-figures{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem;
+ background:radial-gradient(ellipse at 50% 40%,rgba(143,140,255,.16),transparent 70%);border-radius:18px}
+.fis-figure{margin:0;text-align:center}
+.fis-figure figcaption{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;opacity:.7;padding-top:.5rem}
+.fb-svg{width:100%;max-height:520px;display:block}
+.fb-sil{fill:var(--fb-sil);stroke:var(--fb-line);stroke-width:1.2;stroke-linejoin:round}
+.fb-mesh line{stroke:var(--fb-line);stroke-width:.35;opacity:.18}
+.fb-m{stroke:var(--fb-line);stroke-width:1;fill-opacity:.95;cursor:pointer;transition:stroke-width .15s,filter .15s}
+.fb-m[data-band="idle"]{fill:rgba(143,140,255,.06)}
+.fb-m:hover,.fb-m:focus-visible{stroke-width:2.2;outline:none;filter:drop-shadow(0 0 4px var(--fb-line))}
+.fb-m[data-selected]{stroke:#fff;stroke-width:2.6;filter:drop-shadow(0 0 6px var(--fb-line))}
+[data-theme="light"] .fb-m[data-selected]{stroke:#2b2870}
+.fis-legend{display:flex;flex-wrap:wrap;gap:.4rem 1rem;list-style:none;padding:0;margin:.75rem 0 0;font-size:.8rem}
+.fis-legend li{display:flex;align-items:center;gap:.35rem}
+.fis-swatch{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid var(--fb-line);flex:none}
+.fis-swatch[data-band="fresh"]{background:repeating-linear-gradient(45deg,var(--fb-fresh) 0 3px,rgba(255,255,255,.6) 3px 4.5px)}
+.fis-swatch[data-band="mid"]{background:repeating-linear-gradient(-45deg,var(--fb-mid) 0 4px,rgba(255,255,255,.4) 4px 5px)}
+.fis-swatch[data-band="ready"]{background:radial-gradient(circle,rgba(255,255,255,.5) 1px,transparent 1.5px) 0 0/5px 5px,var(--fb-ready)}
+.fis-swatch[data-band="idle"]{background:transparent;border-style:dashed}
+.fis-side{display:grid;gap:1rem}
+.fis-detail,.fis-groups,.fis-today{padding:1rem}
+.fis-detail h2,.fis-groups h2{margin:.2rem 0 .5rem;font-size:1.05rem}
+.fis-band{display:flex;align-items:center;gap:.5rem}
+.fis-sessions{list-style:none;padding:0;margin:.5rem 0 0;display:grid;gap:.5rem}
+.fis-sessions li{display:grid;grid-template-columns:1fr auto;gap:.15rem .5rem;align-items:center}
+.fis-sessions small{grid-column:1;opacity:.75}
+.fis-sessions .button{grid-row:1/3;grid-column:2}
+.fis-groups ul{list-style:none;padding:0;margin:0;display:grid;gap:.25rem}
+.fis-row{width:100%;display:grid;grid-template-columns:auto 1fr;gap:0 .55rem;align-items:center;text-align:left;background:none;border:1px solid transparent;border-radius:10px;padding:.4rem .5rem;color:inherit;cursor:pointer}
+.fis-row small{grid-column:2;opacity:.72}
+.fis-row:hover,.fis-row.on,.fis-row:focus-visible{border-color:var(--fb-line);background:rgba(143,140,255,.08);outline:none}
+.fis-row .fis-swatch{grid-row:1/3}
+.fis-today{margin-bottom:1rem}
+.fis-today p{margin:.25rem 0;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.fis-note{display:flex;gap:.5rem;font-size:.8rem;opacity:.8;margin-top:1rem;align-items:flex-start}
+.fis-map-form fieldset{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.4rem;border:0;padding:0}
+.fis-map-form label{display:flex;gap:.4rem;align-items:center}
+@media (prefers-reduced-motion:reduce){.fb-m{transition:none}}
+@media (max-width:520px){.fb-svg{max-height:380px}.fis-figures{gap:0}}
