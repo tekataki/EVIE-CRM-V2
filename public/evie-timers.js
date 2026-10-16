@@ -69,6 +69,8 @@ window.EvieTimers=(()=>{
  function parseLabel(text){const q=norm(text);const m=q.match(/(?:\bpara (?:el |la |los |las |mi |sacar |apagar |revisar )?|\bllamado |\bque se llame |\bde nombre )([a-z0-9 ]{2,40}?)(?: de \d| por \d| en \d|$)/);if(!m)return null;const l=m[1].trim();return /^(\d|un|una|dos|tres|cinco|diez|quince|veinte|treinta)\b/.test(l)?null:l;}
  /** Local voice intent. Returns spoken text or null. */
  function intent(text){const q=norm(text).replace(/^(?:oye |hey |hola |ok )?(?:evie|evi|ivi|ivy|ibi|libi|eby|evy) /,'').trim();if(!/temporizador|timer|cronometro|alarma de|avisame en|cuanto falta|cuanto le queda/.test(q))return null;
+  // «abre Finanzas y temporizadores» → several cards: leave it to the HUD multi-card path.
+  if(!parseDuration(q)&&/^(?:abre|abreme|muestra|muestrame|ensename|pon|ponme)\b/.test(q)&&/(?:,| y | e | tambien )/.test(q))return null;
   const ref=q.replace(/^.*?(?:temporizador(?:es)?|timer)\s*/,'');
   if(/^(?:cancela|cancelar|quita|borra|elimina|deten|para) (?:todos los|todos mis|los) temporizadores/.test(q))return out(cancelAll());
   if(/^(?:cancela|cancelar|quita|borra|elimina|deten|detener|apaga)\b/.test(q))return out(act('cancel',ref));

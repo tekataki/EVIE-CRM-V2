@@ -106,7 +106,7 @@ window.EvieAssistant=(()=>{
  function cardFrom(t){for(const [k,rx] of CARD_WORDS)if(rx.test(t))return k;return null;}
  /* Several cards in ONE utterance, opened in the spoken order. Returns spoken text or null (0–1 card → other paths). */
  function multiOpen(q){const parts=q.replace(/^(?:por favor )?(?:abre|abrir|abreme|muestrame|muestra|ensename|pon|ponme|dame|dime)(?: (?:el|la|los|las|mi|mis))? /,'').split(/\s*(?:,|\by tambien\b|\by luego\b|\by despues\b|\btambien\b|\by\b|\be\b)\s+/).map(s=>s.replace(/^(?:abre|abreme|muestrame|muestra|ensename|dime|dame|pon|ponme)(?: (?:el|la|los|las|mi|mis|a))? /,'').trim()).filter(Boolean);if(parts.length<2)return null;
-  const cards=[];for(const p of parts){const k=cardFrom(p);if(!k||k==='timer')return null;if(!cards.includes(k))cards.push(k);}if(cards.length<2)return null;
+  const cards=[];for(const p of parts){const k=cardFrom(p);if(!k)return null;if(!cards.includes(k))cards.push(k);}if(cards.length<2)return null;
   const said=[];for(const k of cards){if(k==='weather'){if(!cloud()){said.push('el clima (necesita tu cuenta EVIE)');continue;}tools.get_weather({place:null}).catch(()=>{});said.push('el clima');continue;}const r=EvieHUD.open(k);if(r.ok)said.push(k==='clock'?'la hora':EvieHUD.REGISTRY[k]?.title||k);}
   const t=cards.includes('clock')?' Son las '+new Intl.DateTimeFormat('es-MX',{timeZone:zone(),hour:'numeric',minute:'2-digit',hour12:true}).format(new Date())+'.':'';
   return said.length?'Te dejé '+(said.length>1?said.slice(0,-1).join(', ')+' y '+said.at(-1):said[0])+' en pantalla.'+t:null;}

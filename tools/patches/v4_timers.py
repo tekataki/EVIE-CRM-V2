@@ -33,3 +33,6 @@ edit('public/index.html',[
  ("<script defer src=\"evie-hud-cards.js\"></script>","<script defer src=\"evie-timers.js\"></script><script defer src=\"evie-hud-cards.js\"></script>","evie-timers.js"),
  ("<link rel=\"stylesheet\" href=\"fisico.css\">","<link rel=\"stylesheet\" href=\"fisico.css\"><link rel=\"stylesheet\" href=\"evie-timers.css\">","evie-timers.css"),
 ])
+# Timer card now exists: allow it in multi-card phrases («abre Finanzas y temporizadores»); a phrase with a
+# duration is handled earlier by EvieTimers.intent (it creates the timer).
+edit('public/evie-assistant.js',[("if(!k||k==='timer')return null;","if(!k)return null;","if(!k)return null;if(!cards.includes(k))")])
