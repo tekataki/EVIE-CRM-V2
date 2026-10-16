@@ -58,6 +58,41 @@ Configuración v3: ver `docs/SETUP.md §7`.
   - Paneles verticales: Cómo me habla Ivi / Quién soy / Lugar y hora / Memoria / Privacidad y datos / Salud (plegado).
   - Máximo 2 columnas, estado de guardado visible y vista previa que no tapa el formulario.
 
+## Novedades v4
+- **Finanzas por cuenta**:
+  - Cada movimiento lleva su cuenta (BBVA, Dinero Físico…), con insignia y estado «Sin cuenta».
+  - Ivi pregunta «¿De cuál cuenta…?» y, si solo hay una cuenta, la usa sola.
+  - Traspasos sin ingreso ni gasto.
+  - Un solo registro aunque se repita la petición, y siempre con deshacer.
+  - Revisión de los movimientos antiguos sin cuenta, con explicación del doble conteo.
+  - La conciliación es una línea base auditable.
+  - El límite de crédito no cuenta como efectivo.
+  - Compras y despensa pasan a su propia sección `#compras`.
+- **Físico** (antes «Salud y gym»; `#gimnasio` sigue funcionando):
+  - Cuerpo original de frente y espalda, con grupos musculares accesibles y una franja de recuperación orientativa.
+  - «Ivi, hoy entrené pecho y espalda» se registra sin duplicar.
+  - Mapeo ajustable y silueta elegible.
+  - Entrenamientos y Comidas/calorías quedan como pestañas.
+- **HUD**:
+  - Varias tarjetas por frase («abre Finanzas y Mascota Virtual»).
+  - Tarjeta de temporizadores.
+  - En la investigación, los hechos de las fuentes van separados de la interpretación de EVIE.
+- **Voz**:
+  - Temporizadores reales: varios con nombre, pausa, reanudar, persistencia y alarma suave.
+  - Un solo dueño del micrófono y micrófono flotante.
+- **Ivi edita registros**:
+  - `edit_record`: agenda, SOMA (nota y etapa) y Aprendizaje.
+  - Solo operaciones permitidas, preguntas ante ambigüedad, deshacer y auditoría.
+- **Kisha**:
+  - «Relato largo» de hasta 15 min, transcrito por partes y editable.
+  - Resumen continuo más amplio y sin bromas en temas sensibles.
+  - Personaje más fiel a la referencia tricolor.
+- **Shell de vidrio** (rieles y encabezado), en tema oscuro y claro.
+- **Auditoría de datos**: `docs/AUDIT-v4.md`.
+  - Scripts `scripts/supabase-export.mjs` y `supabase-restore.mjs`.
+  - v4 no requiere migraciones.
+- **Estado y pasos manuales**: `docs/V4-REPORT.md`.
+
 ## Arquitectura
 `public/` (frontend) + `src/` (API Hono) → `npm run build` → `dist/` con `_worker.js` → **Cloudflare Pages**. Datos: **Supabase** (`crm_records`, `user_preferences` con RLS). D1 `AUTH_DB` (`evie-auth`): sesiones, roles, invitaciones, uso de IA, tokens de conexiones.
 
