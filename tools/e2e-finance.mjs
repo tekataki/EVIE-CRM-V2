@@ -8,7 +8,7 @@ const b = await chromium.launch({ args: ['--no-sandbox', '--js-flags=--max-old-s
 const ctx = await b.newContext({ viewport: { width: W, height: W < 700 ? 844 : 900 }, serviceWorkers: 'block', isMobile: W < 700, hasTouch: W < 700 }); const p = await ctx.newPage()
 const errors = []; p.on('pageerror', (e) => errors.push(e.message))
 const checks = []; const ok = (m) => { checks.push(m); console.log('  ✓', m) }
-const until = (fn, a, ms = 15000) => p.waitForFunction(fn, a, { timeout: ms })
+const until = async (fn, a, ms = 15000) => { try { return await p.waitForFunction(fn, a, { timeout: ms }) } catch (e) { console.log('STUCK', await p.evaluate(() => ({ err: document.getElementById('form-error')?.textContent, dlg: document.getElementById('app-dialog')?.open, hash: location.hash }))); throw e } }
 await p.goto('http://localhost:3000/index.html?qa=fin' + Date.now(), { timeout: 90000 }); await p.waitForFunction(() => window.DALI_READY, null, { timeout: 60000 })
 await p.evaluate(() => { document.getElementById('evie-splash')?.remove(); Store.save((s) => { s.preferences.evieModulesChosen = true; s.preferences.evieAccounts = [{ id: 'acc-bbva', name: 'BBVA', type: 'debit', opening: 392000 }, { id: 'acc-cash', name: 'Dinero Físico', type: 'debit', opening: 100000 }]
   s.transactions.push(Store.record(Records.normalize('transactions', { title: 'Ventas de SOMA', type: 'income', amount: 92000, date: Domain.today(), category: 'Ventas', business_unit: 'personal' })), Store.record(Records.normalize('transactions', { title: 'Ajuste para equilibrar finanzas', type: 'expense', amount: 173300, date: Domain.today(), category: 'Otro', business_unit: 'personal' }))) }); location.hash = 'finanzas'; App.render() })
@@ -34,11 +34,11 @@ assert.match(await say('Ivi, recibí 500 pesos por un Intensity en BBVA'), /ingr
 // Manual form requires an account when several exist
 await p.evaluate(() => { document.querySelectorAll('.toast').forEach((t) => t.remove()); App.closeDialog?.(true) })
 await p.click('.page-heading [data-action="add-transaction"]'); await until(() => document.getElementById('money-pad-input')); await p.fill('#money-pad-input', '45'); await p.click('[data-action="amount-next"]'); await until(() => document.getElementById('field-evie_account'))
-await p.fill('#field-title', 'Papelería'); await p.click('#record-form [type=submit]'); assert.equal(await p.evaluate(() => document.getElementById('field-evie_account').validity.valid), false); ok('manual form requires choosing an account')
-await p.selectOption('#field-evie_account', 'acc-cash'); await p.click('#record-form [type=submit]'); await until(() => !document.getElementById('record-form'))
+await p.fill('#field-title', 'Papelería'); await p.dispatchEvent('#field-title', 'input'); assert.equal(await p.evaluate(() => document.getElementById('field-evie_account').validity.valid), false); assert.equal(await p.evaluate(() => document.querySelector('#record-form [type=submit]').disabled), true); ok('manual form requires choosing an account (save disabled until chosen)')
+await p.selectOption('#field-evie_account', 'acc-cash'); await until(() => !document.querySelector('#record-form [type=submit]').disabled); await p.click('#record-form [type=submit]'); await until(() => !document.getElementById('app-dialog').open)
 assert.equal((await av()).cash, 75500); assert.equal(await p.evaluate(() => Store.list('transactions').find((t) => t.title === 'Papelería').evie_account), 'acc-cash'); ok('manual movement saved against the chosen account')
 const id = await p.evaluate(() => Store.list('transactions').find((t) => t.title === 'Papelería').id)
-await p.click(`.record-row [data-action="edit"][data-id="${id}"]`); await until(() => document.getElementById('field-evie_account')); await p.selectOption('#field-evie_account', 'acc-bbva'); await p.click('#record-form [type=submit]'); await until(() => !document.getElementById('record-form'))
+await p.click(`.record-row [data-action="edit"][data-id="${id}"]`); await until(() => document.getElementById('field-evie_account')); await p.selectOption('#field-evie_account', 'acc-bbva'); await p.click('#record-form [type=submit]'); await until(() => !document.getElementById('app-dialog').open)
 s = await av(); assert.equal(s.cash, 80000); assert.equal(s.bbva, 362000 + 50000 - 4500); assert.equal(await p.evaluate(() => Store.list('transactions').filter((t) => t.title === 'Papelería').length), 1); ok('editing a movement\'s account moves it between balances (same record, no duplicate)')
 // Review legacy movements: one as «ya incluido», one counted
 const L = await p.evaluate(() => Store.list('transactions').filter((t) => !t.evie_account && !FinanceCore.isTransfer(t)).map((t) => ({ id: t.id, title: t.title })))
@@ -50,7 +50,7 @@ await openReview(); await p.selectOption(`[data-fin-pick="${adj.id}"]`, 'acc-cas
 assert.equal((await av()).cash, 80000 - 173300); ok('legacy movement «Contar» changes that balance exactly once')
 await until(() => document.querySelector('[data-fin="type-cash"]')); await p.click('[data-fin="type-cash"]'); assert.equal(await p.evaluate(() => EvieFinance.accounts().find((a) => a.id === 'acc-cash').type), 'cash'); assert.equal((await av()).cash, 80000 - 173300); ok('«Dinero Físico» corrected to Efectivo without changing its value')
 const st = await stats(); await p.click('[data-evm="acc-reconcile"][data-id="acc-cash"]'); await until(() => document.getElementById('evm-rec')); await p.fill('#evm-rec [name=real]', '650'); await p.click('#evm-rec .button.primary')
-await until(() => !document.getElementById('evm-rec')); assert.equal((await av()).cash, 65000); assert.deepEqual(await stats(), st); ok('«Ajustar saldo real» sets an auditable baseline: no income/expense, statistics unchanged')
+await until(() => !document.getElementById('app-dialog').open); assert.equal((await av()).cash, 65000); assert.deepEqual(await stats(), st); ok('«Ajustar saldo real» sets an auditable baseline: no income/expense, statistics unchanged')
 assert.equal(await p.$('#ev-shop'), null); assert.equal(await p.$('#ev-pantry'), null); assert.ok(await p.$('.fin-moved a[href="#compras"]'))
 if (SHOT) { await p.evaluate(() => scrollTo(0, 0)); await p.waitForTimeout(500); await p.screenshot({ path: `${SHOT}-finanzas.png`, fullPage: true }) }
 await p.evaluate(() => { location.hash = 'compras' }); await until(() => document.getElementById('ev-shop')); ok('Compras y despensa removed from Finanzas, available in its own section (data intact)')
