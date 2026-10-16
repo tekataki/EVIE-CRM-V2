@@ -16,3 +16,8 @@ owner-context*.json
 *.sqlite
 *.sql.gz
 evie-history.bundle
+
+# Supabase backups contain private data
+supabase-backup/
+evie-supabase-*.json
+evie-auth-*.sql
