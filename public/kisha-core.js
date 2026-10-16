@@ -22,7 +22,7 @@ window.KishaCore=(()=>{
   function go(next,why=''){if(!PHASES.includes(next))throw Error('Fase desconocida: '+next);if(next===phase)return true;if(!allowed[phase].includes(next))return false;phase=next;reason=why;if(next==='off')cue='neutral';onChange(view());return true;}
   /** Apply an AI cue. Ignored unless allow-listed; only changes the expression outside hard phases. */
   function suggest(c){if(!CUES.includes(c))return false;cue=c;if(!HARD.has(phase))onChange(view());return true;}
-  function pose(){if(phase==='speaking')return 'speaking';if(phase==='listening')return 'listening';if(phase==='thinking'||phase==='transcribing')return 'thinking';if(phase==='error')return 'confused';if(phase==='resting'||phase==='paused')return 'resting';
+  function pose(){if(phase==='greeting')return 'greet';if(phase==='speaking')return 'speaking';if(phase==='listening')return 'listening';if(phase==='thinking'||phase==='transcribing')return 'thinking';if(phase==='error')return 'confused';if(phase==='resting'||phase==='paused')return 'resting';
    if(cue==='happy')return 'happy';if(cue==='supportive'||cue==='calm')return 'supportive';if(cue==='confused')return 'confused';if(cue==='curious')return 'curious';return 'idle';}
   function view(){return {phase,cue,pose:pose(),reason};}
   return {go,suggest,view,get phase(){return phase;},get cue(){return cue;}};

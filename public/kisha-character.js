@@ -6,7 +6,7 @@
    The jaw follows REAL audio amplitude (setMouth) while speaking; nothing else can open it.
    prefers-reduced-motion or the user's "animación desactivada" freezes a stable, still pose. */
 window.KishaCharacter=(()=>{
- const POSES=['idle','listening','thinking','speaking','curious','confused','supportive','happy','resting'];
+ const POSES=['idle','listening','thinking','speaking','curious','confused','supportive','happy','resting','greet','tilt','wag','sit'];
  // Target joint values per pose. Units: degrees / unitless 0..1.
  const P={
   idle:{tilt:0,lift:0,earL:0,earR:0,brow:0,lid:0,jaw:0,tail:.25,tailAmp:.12,lie:0,breathe:1,smile:.25},
@@ -17,7 +17,11 @@ window.KishaCharacter=(()=>{
   confused:{tilt:-16,lift:0,earL:8,earR:-14,brow:-.35,lid:.05,jaw:.05,tail:.15,tailAmp:.03,lie:0,breathe:.8,smile:0},
   supportive:{tilt:-5,lift:-3,earL:10,earR:10,brow:-.3,lid:.42,jaw:0,tail:.1,tailAmp:.03,lie:0,breathe:.6,smile:.1},
   happy:{tilt:4,lift:3,earL:-8,earR:-8,brow:.15,lid:.18,jaw:.25,tail:.6,tailAmp:.32,lie:0,breathe:1.1,smile:.7},
-  resting:{tilt:0,lift:-6,earL:14,earR:14,brow:0,lid:.92,jaw:0,tail:.05,tailAmp:.02,lie:1,breathe:.5,smile:.1}
+  resting:{tilt:0,lift:-6,earL:14,earR:14,brow:0,lid:.92,jaw:0,tail:.05,tailAmp:.02,lie:1,breathe:.5,smile:.1},
+  greet:{tilt:-8,lift:5,earL:-16,earR:-16,brow:.3,lid:.12,jaw:.18,tail:.7,tailAmp:.36,lie:0,breathe:1.1,smile:.75},
+  tilt:{tilt:18,lift:2,earL:-14,earR:10,brow:.45,lid:-.05,jaw:0,tail:.35,tailAmp:.08,lie:0,breathe:.9,smile:.2},
+  wag:{tilt:3,lift:2,earL:-10,earR:-10,brow:.15,lid:.1,jaw:.12,tail:.65,tailAmp:.42,lie:0,breathe:1,smile:.6},
+  sit:{tilt:0,lift:-2,earL:-2,earR:-2,brow:0,lid:.08,jaw:0,tail:.15,tailAmp:.05,lie:.25,breathe:.8,smile:.25}
  };
  const SVG=`<svg class="kisha-svg" viewBox="0 0 400 400" role="img" aria-labelledby="kisha-title" focusable="false">
  <title id="kisha-title">Kisha, una perrita Border Collie</title>
@@ -45,11 +49,12 @@ window.KishaCharacter=(()=>{
    <path d="M222 292 C 218 314 217 338 220 352 C 224 362 248 362 252 352 C 256 340 256 318 250 292 Z" fill="url(#k-fur)"/><path d="M219 330 C 218 338 218 346 220 353 C 224 362 248 362 252 353 C 254 350 255 342 254 330 C 244 336 230 336 219 330 Z" fill="url(#k-white)"/><path d="M232 361 L232 352 M240 361 L240 352" stroke="#b9c1cc" stroke-width="1.6" stroke-linecap="round"/></g>
  </g>
  <g class="k-head-g" data-k="head">
-  <g data-k="earL"><path d="M128 120 C 112 86 116 52 132 36 C 146 50 160 82 164 108 Z" fill="url(#k-fur)"/><path data-k="tipL" d="M124 62 C 126 48 130 40 132 36 C 140 44 146 54 150 64 C 140 70 130 70 124 62 Z" fill="#14161c"/><path d="M134 104 C 126 82 128 62 134 52 C 142 64 150 84 152 102 Z" fill="#6b4b4f" opacity=".55"/></g>
-  <g data-k="earR"><path d="M272 120 C 288 86 284 52 268 36 C 254 50 240 82 236 108 Z" fill="url(#k-fur)"/><path data-k="tipR" d="M276 62 C 274 48 270 40 268 36 C 260 44 254 54 250 64 C 260 70 270 70 276 62 Z" fill="#14161c"/><path d="M266 104 C 274 82 272 62 266 52 C 258 64 250 84 248 102 Z" fill="#6b4b4f" opacity=".55"/></g>
+  <g data-k="earL"><path d="M128 120 C 112 86 116 52 132 36 C 146 50 160 82 164 108 Z" fill="url(#k-fur)"/><path data-k="tipL" d="M124 62 C 126 48 130 40 132 36 C 140 44 146 54 150 64 C 140 70 130 70 124 62 Z" fill="#14161c"/><path d="M134 104 C 126 82 128 62 134 52 C 142 64 150 84 152 102 Z" fill="#d9a29a" opacity=".55"/></g>
+  <g data-k="earR"><path d="M272 120 C 288 86 284 52 268 36 C 254 50 240 82 236 108 Z" fill="url(#k-fur)"/><path data-k="tipR" d="M276 62 C 274 48 270 40 268 36 C 260 44 254 54 250 64 C 260 70 270 70 276 62 Z" fill="#14161c"/><path d="M266 104 C 274 82 272 62 266 52 C 258 64 250 84 248 102 Z" fill="#d9a29a" opacity=".55"/></g>
   <path d="M200 64 C 140 64 112 108 116 154 C 120 196 154 226 200 228 C 246 226 280 196 284 154 C 288 108 260 64 200 64 Z" fill="url(#k-fur)"/>
   <path d="M200 70 C 192 92 186 120 184 150 C 178 168 170 184 168 200 C 180 216 192 222 200 222 C 208 222 220 216 232 200 C 230 184 222 168 216 150 C 214 120 208 92 200 70 Z" fill="url(#k-white)"/>
   <path class="k-rim" d="M200 64 C 140 64 112 108 116 154 C 118 170 124 184 132 196 C 124 150 140 96 196 68 Z" fill="url(#k-rim)"/>
+  <g class="k-tan" aria-hidden="true"><ellipse cx="156" cy="116" rx="7" ry="5" fill="#c9814a"/><ellipse cx="244" cy="116" rx="7" ry="5" fill="#c9814a"/><path d="M150 168 C 140 172 136 186 146 196 C 156 196 166 186 168 176 C 162 170 156 166 150 168 Z" fill="#b9733f" opacity=".9"/><path d="M250 168 C 260 172 264 186 254 196 C 244 196 234 186 232 176 C 238 170 244 166 250 168 Z" fill="#b9733f" opacity=".9"/></g>
   <g data-k="browL"><path d="M146 124 C 154 116 166 114 174 118" stroke="#5a5f6b" stroke-width="3" stroke-linecap="round" fill="none"/></g>
   <g data-k="browR"><path d="M254 124 C 246 116 234 114 226 118" stroke="#5a5f6b" stroke-width="3" stroke-linecap="round" fill="none"/></g>
   <g data-k="eyes">
@@ -63,6 +68,7 @@ window.KishaCharacter=(()=>{
    <path d="M186 168 C 186 160 214 160 214 168 C 214 178 206 184 200 184 C 194 184 186 178 186 168 Z" fill="#14161c"/><ellipse cx="195" cy="167" rx="5" ry="2.5" fill="#fff" opacity=".35"/>
    <path data-k="mouth" d="M200 184 L 200 194 M200 194 C 192 202 182 200 178 194 M200 194 C 208 202 218 200 222 194" stroke="#14161c" stroke-width="3" stroke-linecap="round" fill="none"/>
   </g>
+  <g class="k-freckles" aria-hidden="true" fill="#23262f"><circle cx="178" cy="190" r="1.6"/><circle cx="172" cy="196" r="1.6"/><circle cx="180" cy="198" r="1.6"/></g>
   <g data-k="blush" opacity="0"><ellipse cx="148" cy="176" rx="11" ry="6" fill="#ff9fb0" opacity=".45"/><ellipse cx="252" cy="176" rx="11" ry="6" fill="#ff9fb0" opacity=".45"/></g>
  </g>
 </svg>`;
