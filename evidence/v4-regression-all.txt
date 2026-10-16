@@ -1,0 +1,17 @@
+drafts | exit=0 | DRAFTS E2E OK (9 checks, 1440x900)
+finance | exit=0 | FINANCE E2E OK (17 checks, 1440)
+finance@390 | exit=0 | FINANCE E2E OK (17 checks, 390)
+fisico | exit=0 | 16/16 E2E FISICO OK
+fisico@390 | exit=0 | 16/16 E2E FISICO OK
+gym | exit=0 | E2E GYM OK
+hud | exit=0 |  - leaving Home detaches the HUD (workspace kept for return)
+kisha | exit=0 | KISHA E2E OK
+life | exit=0 | E2E OK (v4: listas en #compras)
+login | exit=0 | LOGIN E2E OK (7 checks, 390x844, google=true)
+map | exit=0 | MAP E2E OK (19 checks, 1440x900)
+memory | exit=0 | MEMORY E2E OK (15 checks, 1440x900)
+unit | 291/291 (npm run test:desktop)
+v31 | exit=0 | V31 E2E OK (16 checks, 1440x900)
+v4voice | exit=0 | 13/13 E2E V4 VOICE OK
+v4voice@390 | exit=0 | 13/13 E2E V4 VOICE OK (tras corregir desbordamiento de Kisha a 390 px)
+workspace | exit=0 | WORKSPACE E2E OK (13 checks, 1440x900)

@@ -1,4 +1,4 @@
-// E2E: hábitos, logros (idempotencia), compras→finanzas (sin duplicar), tendencias.
+// E2E: hábitos, logros (idempotencia), compras→finanzas (sin duplicar; v4: las listas viven en #compras), tendencias.
 import { chromium } from 'playwright'
 const b=await chromium.launch({args:['--no-sandbox']});const p=await b.newPage({viewport:{width:390,height:844}});const errs=[];p.on('pageerror',e=>errs.push(e.message))
 await p.goto('http://localhost:3000/index.html?qa=e2e-life-'+Date.now());await p.waitForFunction(()=>window.DALI_READY)
@@ -11,7 +11,7 @@ const r=await p.evaluate(async()=>{const out={};const wait=ms=>new Promise(r=>se
  out.trendEvents=EvieLife.activity(V2Domain.addDays(Domain.today(),-7)).length;
  Store.save(s=>{s.evieData.lists.push({id:'l-1',name:'Súper',items:[{id:'i-1',name:'Leche',qty:2,price:2500,bought:true},{id:'i-2',name:'Pan',qty:1,price:3000,bought:false}],budget:10000});});
  const tx0=Store.list('transactions').length;
- location.hash='finanzas';await wait(600);
+ location.hash='compras';await wait(600);
  document.querySelector('[data-evl="list-open"][data-id="l-1"]').click();await wait(200);
  document.querySelector('[data-evl="list-post"]').click();await wait(200);
  document.querySelector('#ev-post').requestSubmit();await wait(300);

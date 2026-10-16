@@ -91,3 +91,10 @@
 .kisha-subs:empty{display:none}
 .kisha-stage .kisha-status{font-size:.82rem;color:var(--g-muted);letter-spacing:.02em}
 .kisha-stage .kisha-privacy{max-width:620px;opacity:.85}
+/* v4: «Relato largo» button + mic + send must fit 360 px phones without horizontal scroll. */
+.kisha-convo{min-width:0}
+.kisha-input{min-width:0}
+.kisha-input textarea{flex:1 1 auto;min-width:0;width:auto}
+.kisha-input .icon-button{flex:0 0 auto}
+.kisha-long[aria-pressed="true"]{box-shadow:0 0 0 2px rgba(169,192,255,.8);background:rgba(169,192,255,.14)}
+@media (max-width:420px){.kisha-input{gap:6px}.kisha-input .icon-button{width:42px;height:42px;min-width:42px}}

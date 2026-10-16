@@ -1,6 +1,6 @@
 // E2E v4 voice/timers/Kisha: «pon un temporizador…» opens the timer card and counts down; pause/resume from the
 // card; several timers + ambiguity; reload keeps them; multi-card with timers; floating mic visible on modules and
-// hidden on Home/Kisha; single mic owner; Kisha shows «Relato largo», 8000-char box, tan markings; no page errors.
+// hidden on Home/Kisha (on phones the bottom orb is the mic, so the floating one stays hidden); single mic owner; Kisha shows «Relato largo», 8000-char box, tan markings; no page errors.
 import { chromium } from 'playwright'
 const W=Number(process.env.W||1440),SHOT=process.env.SHOT
 const b=await chromium.launch({args:['--no-sandbox']});const p=await b.newPage({viewport:{width:W,height:W<600?844:900}});const errs=[];p.on('pageerror',e=>errs.push(e.message))
@@ -32,6 +32,6 @@ const r2=await p.evaluate(async()=>{await new Promise(r=>setTimeout(r,600));retu
 if(SHOT){await p.evaluate(()=>{location.hash='inicio';setTimeout(()=>EvieHUD.open('timer'),300);});await p.waitForTimeout(1800);await shot(SHOT);}
 console.log(JSON.stringify({...r,...r2}),errs.length?errs:'no errors')
 const checks={say:/pasta/.test(r.say||''),card:r.card&&r.label==='pasta',counts:r.counts,pause:r.paused&&r.resumed,two:r.two,ambig:/¿Cuál\?/.test(r.ambig||''),multi:/Te dejé/.test(r.multi||''),
- fab:r.fabHome&&r.fabModule&&r.fabInView&&r.fabKisha,mic:r.micOwner==='true,true,false',kisha:r.long&&r.maxlen==='8000'&&r.tan,reload:r2.kept===2&&r2.label==='pasta',overflow:!r.overflow,errors:!errs.length}
+ fab:r.fabHome&&(W<1024?true:r.fabModule&&r.fabInView)&&r.fabKisha,mic:r.micOwner==='true,true,false',kisha:r.long&&r.maxlen==='8000'&&r.tan,reload:r2.kept===2&&r2.label==='pasta',overflow:!r.overflow,errors:!errs.length}
 const bad=Object.entries(checks).filter(([,v])=>!v).map(([k])=>k)
 console.log(Object.keys(checks).length-bad.length+'/'+Object.keys(checks).length,bad.length?'FAIL '+bad.join(','):'E2E V4 VOICE OK');await b.close();process.exitCode=bad.length?1:0
