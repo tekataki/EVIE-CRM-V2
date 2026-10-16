@@ -27,7 +27,10 @@ window.EvieMic=(()=>{
    document.body.append(b);}
   const sec=window.UI?.section||'inicio',mobile=matchMedia('(max-width:1023px)').matches,hasOrb=!!document.querySelector('.mobile-nav .evie-orb-button');
   b.hidden=sec==='inicio'||sec==='bitacora'||(mobile&&hasOrb)||!window.EvieAssistant;
-  b.dataset.state=document.documentElement.dataset.evie||'idle';}
+  b.dataset.state=document.documentElement.dataset.evie||'idle';
+  // Never cover the right context rail: sit just left of it when it is visible on wide screens.
+  const rail=document.getElementById('ivy-intelligence'),rr=rail&&getComputedStyle(rail).display!=='none'?rail.getBoundingClientRect():null;
+  b.style.right=rr&&rr.width>40&&rr.left>innerWidth/2?Math.round(innerWidth-rr.left+20)+'px':'';}
  function afterRender(){try{fab();}catch{}}
  try{new MutationObserver(()=>{const b=document.getElementById('evie-mic-fab');if(b)b.dataset.state=document.documentElement.dataset.evie||'idle';}).observe(document.documentElement,{attributes:true,attributeFilter:['data-evie']});}catch{}
  addEventListener('resize',()=>{try{fab();}catch{}},{passive:true});

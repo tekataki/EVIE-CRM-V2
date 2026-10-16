@@ -12,5 +12,4 @@
 .evie-mic-fab[data-state="listening"] .evie-mic-fab-ring{border-color:rgba(160,175,255,.8);animation:evieMicPulse 1.3s ease-out infinite}
 .evie-mic-fab[data-state="thinking"],.evie-mic-fab[data-state="transcribing"]{opacity:.85}
 @keyframes evieMicPulse{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.25);opacity:0}}
-@media (min-width:1024px){body:not(.right-collapsed) .evie-mic-fab{right:calc(max(20px,env(safe-area-inset-right)) + var(--right-rail-w,0px))}}
 @media (prefers-reduced-motion:reduce){.evie-mic-fab,.evie-mic-fab-ring{animation:none!important;transition:none}}
