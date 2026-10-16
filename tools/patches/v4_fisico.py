@@ -56,3 +56,8 @@ edit('public/index.html',[
 ])
 edit('public/tests-modules.js',[('nav[aria-label="Secciones de Gimnasio"]','nav[aria-label="Secciones de entrenamiento"]','Secciones de entrenamiento')])
 edit('public/tests-ui.js',[("['gimnasio','gymSessions']","['fisico','gymSessions']","['fisico','gymSessions']")])
+# Pantry moved to its own «Compras y despensa» section in v4 finance: fix the old hints.
+edit('public/rc-app.js',[
+ ("La despensa ahora vive en <a href=\"#finanzas\">Finanzas → Despensa</a>, junto a tus listas de compra y gastos.","La despensa ahora vive en <a href=\"#compras\">Compras y despensa</a>, junto a tus listas de compra.","href=\"#compras\">Compras y despensa</a>, junto"),
+ ("¿Inventario de comida? Está en <a href=\"#finanzas\">Finanzas → Despensa</a>.","¿Inventario de comida? Está en <a href=\"#compras\">Compras y despensa</a>.","Está en <a href=\"#compras\">"),
+])
