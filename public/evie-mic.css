@@ -1,0 +1,16 @@
+/* Floating EVIE mic (desktop modules / pages without the bottom orb). Never covers primary controls:
+   sits above the right context rail's bottom edge and respects safe areas. */
+.evie-mic-fab{position:fixed;right:max(20px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom));z-index:60;width:56px;height:56px;border-radius:50%;
+ display:grid;place-items:center;color:#fff;border:1px solid rgba(255,255,255,.28);cursor:pointer;
+ background:radial-gradient(circle at 35% 30%,#c9d6ff,#7e93ff 55%,#5a49d8);box-shadow:0 10px 28px rgba(90,73,216,.45);
+ -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:transform .15s ease,box-shadow .15s ease}
+.evie-mic-fab[hidden]{display:none}
+.evie-mic-fab:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(90,73,216,.55)}
+.evie-mic-fab:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.evie-mic-fab svg{width:22px;height:22px;stroke-width:1.8;position:relative}
+.evie-mic-fab-ring{position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(160,175,255,.0);pointer-events:none}
+.evie-mic-fab[data-state="listening"] .evie-mic-fab-ring{border-color:rgba(160,175,255,.8);animation:evieMicPulse 1.3s ease-out infinite}
+.evie-mic-fab[data-state="thinking"],.evie-mic-fab[data-state="transcribing"]{opacity:.85}
+@keyframes evieMicPulse{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.25);opacity:0}}
+@media (min-width:1024px){body:not(.right-collapsed) .evie-mic-fab{right:calc(max(20px,env(safe-area-inset-right)) + var(--right-rail-w,0px))}}
+@media (prefers-reduced-motion:reduce){.evie-mic-fab,.evie-mic-fab-ring{animation:none!important;transition:none}}

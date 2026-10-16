@@ -195,9 +195,9 @@ window.EvieAssistant=(()=>{
   function fail(stage,msg,id){if(id!=null&&!alive(id))return;note(stage,msg);if(msg)append('evie',msg);set('error');setTimeout(()=>{if(state==='error')set(last&&last.pending?'blocked':'idle');},1600);}
   function pickType(){if(!window.MediaRecorder)return '';const ok=t=>{try{return MediaRecorder.isTypeSupported?.(t);}catch{return false;}};const order=apple?['audio/mp4;codecs=mp4a.40.2','audio/mp4','audio/webm;codecs=opus','audio/webm']:['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'];return order.find(ok)||'';}
   function blobType(chunks,mr,type){const t=(chunks[0]?.type||mr.mimeType||type||'').split(';')[0];return /^audio\//.test(t)?t:(apple?'audio/mp4':'audio/webm');}
-  async function record(t){set('arming');let stream;
+  async function record(t){if(window.EvieMic&&!EvieMic.acquire('assistant',()=>rec?.stop(true)))return fail('mic','El micrófono está ocupado por otra función.',t.id);set('arming');let stream;
    try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});}
-   catch(e){return fail('mic',['NotAllowedError','SecurityError'].includes(e?.name)?'Necesito permiso de micrófono. Actívalo en los ajustes del navegador, o escríbeme.':'No pude abrir el micrófono. Puedes escribirme.',t.id);}
+   catch(e){window.EvieMic?.release('assistant');return fail('mic',['NotAllowedError','SecurityError'].includes(e?.name)?'Necesito permiso de micrófono. Actívalo en los ajustes del navegador, o escríbeme.':'No pude abrir el micrófono. Puedes escribirme.',t.id);}
    if(!alive(t.id)||document.hidden){stream.getTracks().forEach(x=>x.stop());if(alive(t.id))set('idle');return;}
    const type=pickType();let mr;try{mr=new MediaRecorder(stream,type?{mimeType:type}:{});}catch{try{mr=new MediaRecorder(stream);}catch{stream.getTracks().forEach(x=>x.stop());return fail('mic','Este navegador no puede grabar audio aquí. Escríbeme abajo.',t.id);}}
    const chunks=[],started=performance.now();let heard=false,quietSince=null,raf=null,src=null,an=null,buf=null,vadOk=false,floor=null,flat=0,done=false,discard=false;
@@ -213,7 +213,7 @@ window.EvieAssistant=(()=>{
     else{EvieNeural?.setMic(.3+Math.random()*.2);if(el>15000)return rec?.stop(false);}
     if(el>30000)return rec?.stop(false);raf=requestAnimationFrame(vad);};
    mr.ondataavailable=ev=>{if(ev.data&&ev.data.size)chunks.push(ev.data);};
-   mr.onstop=async()=>{done=true;if(raf)cancelAnimationFrame(raf);stream.getTracks().forEach(x=>x.stop());try{src?.disconnect();}catch{}EvieFX?.mic(0);rec=null;
+   mr.onstop=async()=>{done=true;if(raf)cancelAnimationFrame(raf);stream.getTracks().forEach(x=>x.stop());window.EvieMic?.release('assistant');try{src?.disconnect();}catch{}EvieFX?.mic(0);rec=null;
     const dur=(performance.now()-started)/1000;if(discard||!alive(t.id))return;
     if(vadOk&&!heard){append('evie','No te escuché. Toca el núcleo y habla cuando veas «Escuchando…».');note('vad','silence');return set('idle');}
     const blob=new Blob(chunks,{type:blobType(chunks,mr,type)});if(blob.size<800||dur<.5){append('evie','No se grabó audio. ¿Lo intentas de nuevo?');note('mic','empty');return set('idle');}
@@ -230,8 +230,8 @@ window.EvieAssistant=(()=>{
   function browserListen(t){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){append('evie','Tu navegador no permite dictado aquí. Escríbeme abajo.');return set('idle');}
    const r=new SR();r.lang='es-MX';r.interimResults=true;r.maxAlternatives=1;let final='';
    r.onresult=ev=>{let txt='';for(const x of ev.results)txt+=x[0].transcript;final=txt;const inp=panel?.querySelector('#evie-input');if(inp)inp.value=txt;EvieNeural?.setMic(.5);};
-   r.onerror=ev=>{note('stt',ev.error);};r.onend=()=>{rec=null;if(!alive(t.id))return;if(final.trim())ask(final,{turnToken:t});else set('idle');};
-   rec={stop:(drop)=>{if(drop)t.id=-1;try{r.stop();}catch{}}};try{r.start();set('listening');}catch{rec=null;set('idle');}}
+   r.onerror=ev=>{note('stt',ev.error);};r.onend=()=>{rec=null;window.EvieMic?.release('assistant');if(!alive(t.id))return;if(final.trim())ask(final,{turnToken:t});else set('idle');};
+   rec={stop:(drop)=>{if(drop)t.id=-1;try{r.stop();}catch{}}};if(window.EvieMic&&!EvieMic.acquire('assistant',()=>rec?.stop(true))){set('idle');return;}try{r.start();set('listening');}catch{rec=null;window.EvieMic?.release('assistant');set('idle');}}
   function listen(){if(rec){rec.stop(false);return;}unlock();const t=begin();
    if(can('stt')&&pref().cloudVoice&&window.MediaRecorder&&navigator.mediaDevices?.getUserMedia)return record(t);return browserListen(t);}
   function simulate(){clearInterval(simTimer);simTimer=setInterval(()=>{EvieNeural?.setOut(.35+Math.random()*.35);EvieFX?.mic(.3+Math.random()*.3);},120);}

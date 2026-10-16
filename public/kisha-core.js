@@ -13,7 +13,7 @@ window.KishaCore=(()=>{
  const EMOTIONS={alegria:'Felicidad',tristeza:'Tristeza',enojo:'Enojo',ansiedad:'Ansiedad / preocupación',calma:'Calma',miedo:'Miedo',gratitud:'Gratitud',entusiasmo:'Entusiasmo',frustracion:'Frustración',cansancio:'Cansancio',orgullo:'Orgullo',soledad:'Soledad',esperanza:'Esperanza'};
  const CORE=['alegria','tristeza','enojo','ansiedad','calma'];
  const T=(s,n)=>String(s??'').replace(/[\u0000-\u001f<>]/g,' ').trim().slice(0,n);
- const RECENT=8,MAX_TURNS=14;
+ const RECENT=8,MAX_TURNS=20,TURN_CHARS=8000,CONTEXT_CHARS=20000;
 
  /* ---------- state machine ---------- */
  function machine(onChange=()=>{}){
@@ -30,10 +30,14 @@ window.KishaCore=(()=>{
  const STATUS={off:'Lista para conversar',greeting:'Kisha te saluda',idle:'Esperando tu respuesta',listening:'Escuchando…',transcribing:'Transcribiendo…',thinking:'Pensando…',speaking:'Hablando…',blocked:'Toca para escuchar',paused:'En pausa',resting:'Descansando',error:'Algo falló',review:'Revisando tu conversación'};
 
  /* ---------- per-session context ---------- */
- function context(session){const msgs=session.messages.filter(m=>m.role==='user'||m.role==='kisha').map(m=>({role:m.role,text:T(m.text,2000)}));
+ function context(session){const msgs=session.messages.filter(m=>m.role==='user'||m.role==='kisha').map(m=>({role:m.role,text:T(m.text,TURN_CHARS)}));
   const covered=session.memoryUpTo||0,older=msgs.length-RECENT;
-  const recent=msgs.slice(Math.max(covered,msgs.length-RECENT));
-  return {messages:recent.slice(-MAX_TURNS),memory:session.memory||null,need_memory:older>covered+4};}
+  let recent=msgs.slice(Math.max(covered,msgs.length-RECENT)).slice(-MAX_TURNS);
+  // Bounded cost: keep the newest turns within CONTEXT_CHARS (always at least the last one); older turns are
+  // carried by the rolling summary (memory), which is requested again whenever turns fall out of the window.
+  let total=0,cut=recent.length;for(let k=recent.length-1;k>=0;k--){total+=recent[k].text.length;if(total>CONTEXT_CHARS&&k<recent.length-1)break;cut=k;}recent=recent.slice(cut);
+  const outside=msgs.length-recent.length;
+  return {messages:recent,memory:session.memory||null,need_memory:older>covered+4||outside>covered+1};}
  function greeting(name,hour){const n=T(name,60);const saludo=hour<12?'Buenos días':hour<19?'Buenas tardes':'Buenas noches';return `${saludo}${n?', '+n:''}. Soy Kisha. ¿Cómo estuvo tu día? Estoy aquí para escucharte.`;}
  const CLOSE='¿Quieres contarme algo más o concluimos por hoy?';
  function userWords(session){return session.messages.filter(m=>m.role==='user').map(m=>m.text).join(' ').split(/\s+/).filter(Boolean).length;}
@@ -50,8 +54,8 @@ window.KishaCore=(()=>{
   for(const x of review.emotions||[]){A(Object.hasOwn(EMOTIONS,x.key)&&!seen.has(x.key),'Emoción inválida o repetida.');A(Number.isInteger(x.value)&&x.value>=0&&x.value<=100,'Cada intensidad debe ser un entero de 0 a 100.');seen.add(x.key);
    emotions.push({key:x.key,label:EMOTIONS[x.key],intensity:x.value,basis:x.edited?'reported':'inferred',confidence:x.edited?1:.6,evidence:T(x.evidence||'Ajustado por ti en la revisión.',240)});}
   const moments=(review.moments||[]).slice(0,5).map(m=>T(m.text,240)).filter(Boolean);
-  const transcript=keepTranscript?session.messages.filter(m=>m.role==='user'||m.role==='kisha').slice(-120).map(m=>({role:m.role,text:T(m.text,2000),at:m.at||null})):null;
-  const raw=keepTranscript?transcript.filter(m=>m.role==='user').map(m=>m.text).join('\n').slice(0,15000):null;
+  const transcript=keepTranscript?session.messages.filter(m=>m.role==='user'||m.role==='kisha').slice(-120).map(m=>({role:m.role,text:T(m.text,TURN_CHARS),at:m.at||null})):null;
+  const raw=keepTranscript?transcript.filter(m=>m.role==='user').map(m=>m.text).join('\n').slice(0,40000):null;
   return {id,title,date:review.date,time_local:review.time_local,timezone:T(review.timezone,40)||'America/Mexico_City',recorded_at:now.toISOString(),
    text:raw||summary||title,raw_narrative:raw,summary:summary||'Sin resumen.',productivity:null,reason:'',source:'kisha',source_entry_id:'kisha:'+session.id,journal_version:4,kisha_version:1,
    highlights:moments,difficulties:[],learnings:[],tags:['kisha'],emotions,indicators:{},events:[],next_actions:[],
@@ -76,7 +80,7 @@ window.KishaCore=(()=>{
  /* ---------- private recoverable draft (per account) ---------- */
  function draftKey(owner){return 'evie-kisha-draft:'+String(owner||'local').replace(/[^a-zA-Z0-9-]/g,'').slice(0,64);}
  function serialize(session){return JSON.stringify({v:1,id:session.id,started_at:session.started_at,messages:session.messages.slice(-120),memory:session.memory||null,memoryUpTo:session.memoryUpTo||0,review:session.review||null,saved:session.saved||false,updated_at:new Date().toISOString()});}
- function restore(raw){try{const d=JSON.parse(raw);if(!d||d.v!==1||!/^[0-9a-f-]{36}$/i.test(d.id)||!Array.isArray(d.messages))return null;const messages=d.messages.filter(m=>m&&(m.role==='user'||m.role==='kisha')&&typeof m.text==='string').map(m=>({role:m.role,text:T(m.text,2000),at:m.at||null}));return {id:d.id,started_at:d.started_at,messages,memory:d.memory?T(d.memory,1200):null,memoryUpTo:Number.isInteger(d.memoryUpTo)?d.memoryUpTo:0,review:d.review||null,saved:!!d.saved};}catch{return null;}}
+ function restore(raw){try{const d=JSON.parse(raw);if(!d||d.v!==1||!/^[0-9a-f-]{36}$/i.test(d.id)||!Array.isArray(d.messages))return null;const messages=d.messages.filter(m=>m&&(m.role==='user'||m.role==='kisha')&&typeof m.text==='string').map(m=>({role:m.role,text:T(m.text,TURN_CHARS),at:m.at||null}));return {id:d.id,started_at:d.started_at,messages,memory:d.memory?T(d.memory,1200):null,memoryUpTo:Number.isInteger(d.memoryUpTo)?d.memoryUpTo:0,review:d.review||null,saved:!!d.saved};}catch{return null;}}
 
  return Object.freeze({CUES,PHASES,STATUS,EMOTIONS,CORE,CLOSE,machine,context,greeting,userWords,toEntry,existing,isKisha,isLegacy,excerpt,filter,groupByDay,trends,draftKey,serialize,restore,newId});
 })();

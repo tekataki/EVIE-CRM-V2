@@ -39,8 +39,8 @@ window.KishaView=(()=>{
  function convoHTML(){return `<div class="kisha-convo" id="kisha-convo">
    <ol class="kisha-log" id="kisha-log" aria-label="Transcripción de la conversación">${session.messages.map(msgHTML).join('')}</ol>
    <div class="kisha-replay" id="kisha-replay" hidden><button class="button primary" data-kisha="replay">${i('volume-2')}Tocar para escuchar</button></div>
-   <form class="kisha-input" id="kisha-form" autocomplete="off"><label class="sr-only" for="kisha-text">Escribe tu mensaje para Kisha</label><textarea id="kisha-text" rows="1" maxlength="2000" placeholder="Escribe o usa el micrófono" enterkeyhint="send"></textarea>
-    <button type="button" class="icon-button kisha-mic" data-kisha="mic" aria-label="Hablar con Kisha" aria-pressed="false">${i('mic')}</button><button class="icon-button primary" id="kisha-send" aria-label="Enviar">${i('send')}</button></form>
+   <form class="kisha-input" id="kisha-form" autocomplete="off"><label class="sr-only" for="kisha-text">Escribe tu mensaje para Kisha</label><textarea id="kisha-text" rows="1" maxlength="8000" placeholder="Escribe o usa el micrófono" enterkeyhint="send"></textarea>
+    <button type="button" class="icon-button kisha-long" data-kisha="long" aria-pressed="false" aria-label="Relato largo: grabar varios minutos" title="Relato largo (hasta 15 min)">${i('audio-lines')}</button><button type="button" class="icon-button kisha-mic" data-kisha="mic" aria-label="Hablar con Kisha" aria-pressed="false">${i('mic')}</button><button class="icon-button primary" id="kisha-send" aria-label="Enviar">${i('send')}</button></form>
    ${controlsHTML()}</div>`;}
  function controlsHTML(){const p=pref(),paused=machine?.phase==='paused';return `<div class="kisha-controls" role="toolbar" aria-label="Controles de la conversación">
     <button class="button" data-kisha="pause" aria-pressed="${paused}">${paused?i('play')+'Reanudar':i('pause')+'Pausar'}</button>
@@ -145,6 +145,19 @@ window.KishaView=(()=>{
   if(machine.phase==='paused')return;v.unlock();v.stopPlayback();abort();if(['speaking','blocked','error','greeting'].includes(machine.phase))machine.go('idle');ctl=new AbortController();const sig=ctl.signal;
   try{const text=await v.record(sig);if(sig.aborted||!session)return;if(!text){if(!['paused','idle'].includes(machine.phase))machine.go('idle');return;}if(machine.phase!=='idle')machine.go('idle');add('user',text);await reply();}
   catch(err){if(sig.aborted||!session)return;machine.go('error');note(err.message);setTimeout(()=>{if(machine?.phase==='error')machine.go('idle');},1600);document.getElementById('kisha-text')?.focus();}}
+ /* Relato largo: the transcript fills the (editable) text box segment by segment; the person reviews/corrects
+    and sends it with the normal Send button. Failed parts can be retried from audio still in memory. */
+ async function longTalk(){if(!session)return;const v=ensureVoice();if(v.recording()){v.stopRecording();return;}if(machine.phase==='paused')return;
+  v.unlock();v.stopPlayback();abort();if(['speaking','blocked','error','greeting'].includes(machine.phase))machine.go('idle');ctl=new AbortController();const sig=ctl.signal;
+  const ta=document.getElementById('kisha-text'),btn=document.querySelector('[data-kisha=long]'),st=document.getElementById('kisha-status'),base=ta?.value.trim()||'';btn?.setAttribute('aria-pressed','true');
+  const fmtT=ms=>{const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};const fit=()=>{if(ta){ta.style.height='auto';ta.style.height=Math.min(220,ta.scrollHeight)+'px';}};
+  try{const r=await v.recordLong(sig,{onPartial:p=>{if(ta){ta.value=((base?base+' ':'')+p.text).trim();fit();}},onTime:ms=>{if(st)st.textContent='Grabando relato '+fmtT(ms)+' · toca de nuevo para terminar';}});
+   btn?.setAttribute('aria-pressed','false');if(sig.aborted||!session||!r)return;if(machine.phase!=='idle')machine.go('idle');
+   if(ta){ta.value=((base?base+' ':'')+r.text).trim();ta.disabled=false;ta.focus();fit();}
+   const mins=Math.max(1,Math.round(r.seconds/60));
+   note(r.failed?`Transcribí tu relato, pero ${r.failed} parte${r.failed>1?'s':''} no se pudo transcribir.`:`Listo: transcribí ${mins} min de relato. Revísalo, corrige lo que quieras y envíalo.`,r.failed?`<button class="button" data-kisha-long-retry>${i('rotate-cw')}Reintentar esas partes</button>`:'');App.icons();
+   const rb=document.querySelector('[data-kisha-long-retry]');if(rb)rb.onclick=async()=>{rb.disabled=true;const x=await r.retry();if(ta){ta.value=((base?base+' ':'')+x.text).trim();fit();}rb.remove();if(x.failed)note('Aún faltan '+x.failed+' partes. Puedes escribirlas tú.');};}
+  catch(err){btn?.setAttribute('aria-pressed','false');if(sig.aborted||!session)return;if(machine.phase!=='idle'&&machine.phase!=='error')machine.go('error');note(err.message);setTimeout(()=>{if(machine?.phase==='error')machine.go('idle');},1600);ta?.focus();}}
  function pause(){if(!session)return;if(machine.phase==='paused')machine.go('idle');else{abort();voice?.stopRecording();voice?.stopPlayback();clearTimeout(closeTimer);if(machine.phase!=='idle')machine.go('idle');machine.go('paused');}persist();const c=document.querySelector('.kisha-controls');if(c){c.outerHTML=controlsHTML();App.icons();}onView(machine.view());}
  async function finish(){if(!session)return;abort();voice?.stopRecording();voice?.stopPlayback();clearTimeout(closeTimer);
   if(!session.messages.some(m=>m.role==='user')){App.confirmAction('Concluir conversación','Aún no contaste nada. ¿Quieres terminar sin guardar?',()=>discard(true),'Terminar sin guardar');return;}
@@ -189,7 +202,7 @@ window.KishaView=(()=>{
  document.addEventListener('click',ev=>{const b=ev.target.closest('[data-kisha]');if(!b)return;const a=b.dataset.kisha;
   try{if(a==='start')start();else if(a==='resume')resume();
    else if(a==='discard-draft')App.confirmAction('Descartar conversación','Se borrará la conversación sin terminar de este dispositivo. No se guardará nada.',()=>clearDraft(),'Descartar');
-   else if(a==='mic')mic();else if(a==='pause')pause();
+   else if(a==='mic')mic();else if(a==='long')longTalk();else if(a==='pause')pause();
    else if(a==='stop-audio'){abort();voice?.stopPlayback();if(['speaking','blocked','thinking'].includes(machine?.phase))machine.go('idle');}
    else if(a==='mute'){setPref({muted:!pref().muted});if(pref().muted){abort();voice?.stopPlayback();if(['speaking','blocked'].includes(machine?.phase))machine.go('idle');}const c=document.querySelector('.kisha-controls');if(c){c.outerHTML=controlsHTML();App.icons();}}
    else if(a==='replay'){abort();ctl=new AbortController();voice?.replay(ctl.signal).then(r=>{if(r==='blocked')machine.go('blocked');else if(['speaking','blocked'].includes(machine.phase))machine.go('idle');syncReplay();});}
