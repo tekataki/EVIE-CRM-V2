@@ -115,6 +115,7 @@ window.EvieFinance=(()=>{
   const r=p.kind==='transfer'?transfer(args):log(args);
   if(r.status==='needs'){if(['account','from','to'].includes(r.field)){if(r.field==='account')delete args.account;pending={kind:p.kind,field:r.field,args,at:Date.now()};}return r.question;}
   return finish(r);}
- function finish(r){if(r.status==='created'){App.render?.();App.toast?.(r.say.replace(/^Listo: /,''),'success',r.undo);window.EvieSounds?.play?.('confirm');return r.say;}if(r.status==='duplicate')return r.say;return r.error||r.question||'No pude registrarlo.';}
- return Object.freeze({log,transfer,reconcile,setAccount,reviewQueue,suggestions,setType,parse,intent,pickAccount,accounts,balanceText,accountLabel,undoIds,toCents,clearPending:()=>{pending=null;},hasPending:()=>!!pending});
+ let lastUndoFn=null;
+ function finish(r){if(r.status==='created'){lastUndoFn=r.undo;App.render?.();App.toast?.(r.say.replace(/^Listo: /,''),'success',r.undo);window.EvieSounds?.play?.('confirm');return r.say;}if(r.status==='duplicate')return r.say;return r.error||r.question||'No pude registrarlo.';}
+ return Object.freeze({lastUndo:()=>lastUndoFn,setLastUndo:f=>{lastUndoFn=f;},log,transfer,reconcile,setAccount,reviewQueue,suggestions,setType,parse,intent,pickAccount,accounts,balanceText,accountLabel,undoIds,toCents,clearPending:()=>{pending=null;},hasPending:()=>!!pending});
 })();

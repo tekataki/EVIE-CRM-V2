@@ -5,7 +5,7 @@
    Read tools run here against the local-first Store. Writes are DRAFTS confirmed by the user (IvyCommandBus). */
 window.EvieAssistant=(()=>{
  const e=s=>Domain.escape(String(s??''));
- let lastMemoryUsed=null,lastResearch=null,googleDraft=null,recurringDraft=null,habitDraft=null,panel=null,inlineLast={you:'',evie:''},history=[],busy=false,clapOff=null,draft=null,voiceInline=false;
+ let lastUndo=null,lastMemoryUsed=null,lastResearch=null,googleDraft=null,recurringDraft=null,habitDraft=null,panel=null,inlineLast={you:'',evie:''},history=[],busy=false,clapOff=null,draft=null,voiceInline=false;
  const pref=()=>({clapWake:false,conversation:true,muted:false,cloudVoice:true,cloudAI:true,voiceId:'',...(Store.get()?.preferences?.evie||{})});
  const runtime=()=>window.EvieAccounts?.config?.()||{};
  const cloud=()=>!!(window.EvieAccounts?.current?.())&&runtime().accountsEnabled;
@@ -52,6 +52,12 @@ window.EvieAssistant=(()=>{
   navigate({route}){if(DALI_CONFIG.sections.some(s=>s.route===route)){location.hash=route;return {ok:true,opened:route};}return {ok:false};},
   set_mode({mode}){return window.EvieModes.set(mode);},
   draft_task({title,date,time}){return makeDraft('agenda.create',{title,...(V2Domain.date(date)?{date}:{}),...(time&&/^\d{2}:\d{2}$/.test(time)&&V2Domain.date(date)?{time}:{})});},
+  list_accounts(){const av=FinanceCore.available(EvieFinance.accounts(),live('transactions'),{today:today()});return {accounts:av.accounts.map(a=>({name:a.name,type:a.type,estimated_balance:moneyStr(a.balance)})),credit:av.credit.map(c=>({name:c.name,used:moneyStr(c.used),available_credit:moneyStr(c.available_credit)})),available_total:moneyStr(av.cents),unassigned_movements:av.unassigned_count,note:'Estimaciones con registros del usuario; no es el saldo del banco.'};},
+  log_transaction(a={},call){const client=a.soma_client_name?Store.list('clients').filter(c=>IvyTools.norm(c.title)===IvyTools.norm(a.soma_client_name)):[];if(a.soma_client_name&&client.length!==1)return {status:'needs_client',question:client.length?'Hay varios clientes con ese nombre. ¿Cuál?':'No encontré a ese cliente en SOMA. ¿Lo registro sin vincular?'};
+   const r=EvieFinance.log({type:a.type,amount:Math.round(Number(a.amount)*100),title:a.title,account:a.account||'',category:a.category,date:a.date,soma_client:client[0]?.id,op_id:call?.call_id,source:'ivi-ai'});
+   if(r.status==='needs')return {status:r.field==='account'?'needs_account':'needs_'+r.field,question:r.question,accounts:r.candidates?.map(c=>c.name)};if(r.status==='created'){App.render();App.toast(r.say.replace(/^Listo: /,''),'success',r.undo);window.EvieSounds?.play?.('confirm');lastUndo=r.undo;EvieFinance.setLastUndo(r.undo);}
+   return {status:r.status,account:r.account||null,balance:r.balance||null,summary:r.say||r.error};},
+  transfer_money(a={},call){const r=EvieFinance.transfer({amount:Math.round(Number(a.amount)*100),from:a.from_account,to:a.to_account,date:a.date,op_id:call?.call_id,source:'ivi-ai'});if(r.status==='created'){App.render();App.toast('Traspaso registrado.','success',r.undo);lastUndo=r.undo;EvieFinance.setLastUndo(r.undo);}return {status:r.status,question:r.question,summary:r.say||r.error};},
   draft_transaction({type,amount,title,date}){return makeDraft('finance.create',{type,amount:Math.round(Number(amount)*100),title,date:V2Domain.date(date)?date:today()});},
   draft_journal_note({title,text}){return makeDraft('journal.create',{title,text,date:today()});},
   draft_habit_check({title}){const l=window.EvieLife?.todayList()||[],q=IvyTools.norm(String(title||'')),m=l.filter(x=>IvyTools.norm(x.h.title).includes(q)||q.includes(IvyTools.norm(x.h.title)));if(m.length!==1)return {status:'invalid',error:m.length?'Hay varios hábitos parecidos.':'No encontré ese hábito hoy.',options:l.map(x=>x.h.title)};if(m[0].done)return {status:'already_done'};habitDraft=m[0].h;draft={token:'habit',fields:{Hábito:m[0].h.title,Acción:'Marcar como cumplido hoy'},route:'habitos'};renderDraft();return {status:'draft_shown',needs_user_confirmation:true};},
@@ -79,7 +85,7 @@ window.EvieAssistant=(()=>{
  };
  function makeDraft(intent,params){try{const cmd=IvyCommandBus.envelope(intent,params,'voice','write');const p=IvyCommandBus.prepare(cmd);draft={token:p.token,fields:p.fields,route:p.route};renderDraft();return {status:'draft_shown',needs_user_confirmation:true,fields:p.fields};}catch(err){return {status:'invalid',error:err.message};}}
  /* ---------- local fast-path (free, no network) ---------- */
- function tryLocal(text){const speakLater=t=>{if(t){append('evie',t);if(!pref().muted)Voice.speak(t,Voice.begin());}};if(window.EvieMemory){const mm=EvieMemory.intent(text,{say:speakLater});if(mm!==null)return mm;}if(window.EvieMap){const mp=EvieMap.intent(text,{say:speakLater});if(mp!==null)return mp;}const q=IvyTools.norm(text).replace(/[¿?¡!.,]/g,'').replace(/^(oye |hey |hola )?(?:evie|evi|ivi|ivy|ibi)[, ]+/,'').trim();
+ function tryLocal(text){const speakLater=t=>{if(t){append('evie',t);if(!pref().muted)Voice.speak(t,Voice.begin());}};if(window.EvieMemory){const mm=EvieMemory.intent(text,{say:speakLater});if(mm!==null)return mm;}if(window.EvieMap){const mp=EvieMap.intent(text,{say:speakLater});if(mp!==null)return mp;}if(/^(?:(?:oye |hey )?(?:ivi|ivy|evie|evi|ibi|libi)[, ]+)?(?:deshaz|deshacer|desase) (?:lo ultimo|el ultimo (?:movimiento|registro|gasto|ingreso)|eso)$/.test(IvyTools.norm(text).replace(/[¿?¡!.,]/g,''))){const u=lastUndo||window.EvieFinance?.lastUndo?.();if(!u)return 'No tengo un registro reciente que deshacer.';u();lastUndo=null;window.EvieFinance?.setLastUndo?.(null);return 'Listo, lo deshice.';}if(window.EvieFinance){const fi=EvieFinance.intent(text);if(fi!==null)return fi;}const q=IvyTools.norm(text).replace(/[¿?¡!.,]/g,'').replace(/^(oye |hey |hola )?(?:evie|evi|ivi|ivy|ibi)[, ]+/,'').trim();
   let m=q.match(/^(?:activa|activar|pon|entra en|cambia a)(?: el)? modo (\w+)/);if(m){const r=window.EvieModes.set(m[1]);return r.ok?r.say:'No conozco el modo '+m[1]+'. Tengo enfoque, gym, negocio, cierre, noche y normal.';}
   if(/^(?:desactiva|salir? del?|quita)(?: el)? modo/.test(q)){window.EvieModes.set('normal');return 'Listo, volví al modo normal.';}
   m=q.match(/^(?:marca|completa|ya (?:hice|fui a|fui al|termine))(?: el| la| mi)? (?:habito )?(.+)$/);if(m&&window.EvieLife){const r=tools.draft_habit_check({title:m[1]});if(r.status==='draft_shown')return 'Te dejo la confirmación en pantalla.';}
@@ -140,7 +146,7 @@ window.EvieAssistant=(()=>{
    const r=await EvieAccounts.request('ai/chat',{method:'POST',body:{input,context,private:!!window.EvieMemory?.isPrivate?.()},signal});if(r.memory_used)lastMemoryUsed=r.memory_used;if(signal?.aborted)throw Object.assign(Error('cancelado'),{name:'AbortError'});
    if(!r.calls?.length){const say=(r.text||'').trim()||'Listo.';history.push({role:'assistant',content:say.slice(0,3900)});return {memory:lastMemoryUsed,text:say,spoken:(r.spoken||say).trim(),sources:Array.isArray(r.sources)?r.sources:[],checked:r.checked_at||null,webUnavailable:!!r.web_unavailable};}
    input=[...input,...(r.reasoning||[]),...r.calls];
-   for(const c of r.calls){let args={};try{args=JSON.parse(c.arguments||'{}');}catch{}let out;try{const fn=tools[c.name]||window.EvieMemory?.tools?.[c.name]||window.EvieMap?.tools?.[c.name];out=fn?await fn(args):{error:'unknown tool'};}catch(err){out={error:err.message};}input.push({type:'function_call_output',call_id:c.call_id,output:JSON.stringify(out).slice(0,12000)});}
+   for(const c of r.calls){let args={};try{args=JSON.parse(c.arguments||'{}');}catch{}let out;try{const fn=tools[c.name]||window.EvieMemory?.tools?.[c.name]||window.EvieMap?.tools?.[c.name];out=fn?await fn(args,c):{error:'unknown tool'};}catch(err){out={error:err.message};}input.push({type:'function_call_output',call_id:c.call_id,output:JSON.stringify(out).slice(0,12000)});}
   }
   return 'Necesito más contexto para eso. ¿Me lo dices de otra forma?';
  }
