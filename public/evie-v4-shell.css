@@ -1,0 +1,31 @@
+/* EVIE v4 shell — frosted glass for the left rail (.sidebar), the top header (.topbar) and the right context
+   rail (.ivy-intelligence), in dark and light themes. Loaded last; layout/positions are NOT changed (only
+   surfaces), so nothing new can overlap content. Falls back to solid surfaces when backdrop-filter is missing
+   or the user prefers reduced transparency. Also styles the v4 research facts/inference blocks. */
+:root{--v4-glass:rgba(16,20,36,.58);--v4-glass-strong:rgba(14,18,32,.74);--v4-edge:rgba(255,255,255,.10);--v4-edge-hi:rgba(255,255,255,.18);
+ --v4-blur:22px;--v4-sat:150%;--v4-text:#eef2ff;--v4-muted:#aab4cc;--v4-accent:#a9c0ff;--v4-active:rgba(169,192,255,.16)}
+[data-theme="light"]{--v4-glass:rgba(255,255,255,.62);--v4-glass-strong:rgba(255,255,255,.80);--v4-edge:rgba(20,30,60,.10);--v4-edge-hi:rgba(20,30,60,.16);
+ --v4-text:#16203a;--v4-muted:#55607a;--v4-accent:#4757c9;--v4-active:rgba(71,87,201,.10)}
+.sidebar,.topbar,.ivy-intelligence{background:var(--v4-glass)!important;-webkit-backdrop-filter:blur(var(--v4-blur)) saturate(var(--v4-sat));backdrop-filter:blur(var(--v4-blur)) saturate(var(--v4-sat));color:var(--v4-text)}
+.sidebar{border-right:1px solid var(--v4-edge)!important;box-shadow:inset -1px 0 0 rgba(255,255,255,.03)}
+.topbar{border-bottom:1px solid var(--v4-edge)!important;box-shadow:0 1px 0 rgba(255,255,255,.03),0 8px 24px rgba(0,0,0,.12)}
+.ivy-intelligence{border-left:1px solid var(--v4-edge)!important}
+/* Home keeps its transparent header over the HUD (existing evie-hud.css rule wins there). */
+body.hud-home .topbar{background:transparent!important;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+.sidebar .nav-item{border-radius:12px;transition:background .15s ease,color .15s ease}
+.sidebar .nav-item:hover{background:rgba(255,255,255,.05)}
+[data-theme="light"] .sidebar .nav-item:hover{background:rgba(20,30,60,.05)}
+.sidebar .nav-item.active,.sidebar .nav-item[aria-current="page"]{background:var(--v4-active)!important;box-shadow:inset 0 0 0 1px var(--v4-edge-hi)}
+.sidebar .nav-item:focus-visible,.topbar button:focus-visible,.topbar a:focus-visible,.ivy-intelligence a:focus-visible,.ivy-intelligence button:focus-visible{outline:2px solid var(--v4-accent);outline-offset:2px}
+.ivy-intelligence .ivy-rail-section{border-color:var(--v4-edge)!important}
+.ivy-intelligence small,.ivy-intelligence .ivy-rail-heading{color:var(--v4-muted)}
+/* Phones / tablets: the drawer sidebar and the right rail overlay get a stronger, more opaque glass. */
+@media (max-width:1023px){.sidebar,.ivy-intelligence{background:var(--v4-glass-strong)!important}}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.sidebar,.topbar,.ivy-intelligence{background:var(--v4-glass-strong)!important}}
+@media (prefers-reduced-transparency:reduce){.sidebar,.topbar,.ivy-intelligence{background:var(--v4-glass-strong)!important;-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (prefers-reduced-motion:reduce){.sidebar .nav-item{transition:none}}
+/* Research card v4 */
+.hud-facts h4,.hud-inference h4{margin:.6rem 0 .3rem;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--v4-muted)}
+.hud-inference{margin-top:.5rem;padding:.55rem .7rem;border-radius:12px;border:1px dashed var(--v4-edge-hi);background:rgba(169,192,255,.06)}
+.hud-inference h4 small{text-transform:none;letter-spacing:0;font-weight:400}
+.hud-inference p{margin:0;font-style:italic}
