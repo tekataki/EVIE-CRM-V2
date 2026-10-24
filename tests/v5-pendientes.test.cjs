@@ -1,0 +1,20 @@
+'use strict';
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+function load(){const s={console,structuredClone,Intl,document:{documentElement:{dataset:{}},addEventListener(){}},addEventListener(){}};s.window=s;vm.createContext(s);for(const f of ['domain.js','soma-payments.js','evie-pendientes.js'])vm.runInContext(fs.readFileSync(path.join(root,'public',f),'utf8'),s);return s;}
+const base=()=>({clients:[{id:'c1',title:'Intensity',date:'2026-01-01',stage:'Cliente',amount:0,payments:[],deliverables:[],nextDate:'2026-10-13',nextAction:'Enviar propuesta'}],bills:[],loans:[],goals:[],agendaItems:[],transactions:[]});
+test('open SOMA tasks appear once; matching client nextAction is not double counted',()=>{const s=load(),st=base();
+ st.evieTasks=[{id:'t1',client_id:'c1',title:'Enviar  propuésta',status:'open',due_date:'2026-10-13',due_time:'10:00',priority:'normal'},{id:'t2',client_id:null,title:'Llamar banco',status:'open',due_date:null},{id:'t3',client_id:'c1',title:'Hecha',status:'done',due_date:'2026-10-12'}];
+ const L=s.EviePendientes.build(st,{today:'2026-10-12',now:'09:00',agenda:null,life:null});
+ const keys=JSON.parse(JSON.stringify(L.map(x=>x.key)));
+ assert.ok(keys.includes('task:t1'));assert.ok(keys.includes('task:t2'));assert.ok(!keys.includes('task:t3'));
+ assert.ok(!keys.some(k=>k.startsWith('client:c1')),'nextAction duplicate skipped');
+ assert.equal(L.find(x=>x.key==='task:t1').detail,'Intensity');assert.equal(L.find(x=>x.key==='task:t1').route,'soma/c1');});
+test('a different nextAction still appears; no tasks = previous behavior',()=>{const s=load(),st=base();
+ st.evieTasks=[{id:'t1',client_id:'c1',title:'Otra cosa',status:'open',due_date:'2026-10-14'}];
+ let keys=JSON.parse(JSON.stringify(s.EviePendientes.build(st,{today:'2026-10-12',agenda:null,life:null}).map(x=>x.key)));
+ assert.ok(keys.includes('client:c1:2026-10-13'));assert.ok(keys.includes('task:t1'));
+ delete st.evieTasks;keys=JSON.parse(JSON.stringify(s.EviePendientes.build(st,{today:'2026-10-12',agenda:null,life:null}).map(x=>x.key)));
+ assert.deepEqual(keys,['client:c1:2026-10-13']);});
+test('tasks beyond the horizon are excluded',()=>{const s=load(),st=base();st.evieTasks=[{id:'far',title:'Lejos',status:'open',due_date:'2027-01-01'}];
+ assert.ok(!s.EviePendientes.build(st,{today:'2026-10-12',agenda:null,life:null}).some(x=>x.key==='task:far'));});

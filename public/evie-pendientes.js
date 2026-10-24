@@ -26,7 +26,12 @@ window.EviePendientes=(()=>{
   for(const b of live('bills').filter(b=>outstanding(b)>0&&b.date<=limit))push({key:'bill:'+b.id,source:'Finanzas',kind:'Pago',title:b.title,detail:'Por pagar '+money(outstanding(b)),date:b.date,time:null,route:'finanzas',action:'Abrir Finanzas'});
   for(const l of live('loans').filter(l=>outstanding(l)>0&&l.date&&l.date<=limit))push({key:'loan:'+l.id,source:'Finanzas',kind:'Préstamo',title:l.title,detail:'Saldo '+money(outstanding(l)),date:l.date,time:null,route:'finanzas',action:'Abrir Finanzas'});
   for(const g of live('goals').filter(g=>!g.archived&&g.progress<g.target&&g.date&&g.date<=limit))push({key:'goal:'+g.id,source:'Objetivos',kind:'Objetivo',title:g.title,detail:g.progress+' / '+g.target,date:g.date,time:null,route:'objetivos',action:'Abrir Objetivos'});
-  for(const c of live('clients').filter(c=>c.nextDate&&c.nextAction&&c.nextDate<=limit))push({key:'client:'+c.id+':'+c.nextDate,source:'SOMA',kind:'Seguimiento',title:c.title,detail:c.nextAction,date:c.nextDate,time:null,route:'soma/'+c.id,action:'Abrir cliente'});
+  /* v5 canonical SOMA tasks (server evie_tasks mirrored into state.evieTasks). They come first so a
+     client's nextAction with the same text/date is not counted twice. */
+  const nt=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  const taskKeys=new Set();
+  for(const t of (s.evieTasks||window.EvieV5?.cachedTasks?.()||[]).filter(t=>t&&t.status==='open'&&(!t.due_date||t.due_date<=limit))){if(t.client_id)taskKeys.add(t.client_id+'|'+nt(t.title));const cl=t.client_id?(s.clients||[]).find(c=>c.id===t.client_id):null;push({key:'task:'+t.id,source:'SOMA',kind:'Tarea',title:t.title,detail:cl?cl.title:(t.priority==='high'?'Prioridad alta':'Tarea'),date:t.due_date||null,time:t.due_time||null,route:t.client_id?'soma/'+t.client_id:'pendientes',action:t.client_id?'Abrir cliente':'Ver tarea',task_id:t.id});}
+  for(const c of live('clients').filter(c=>c.nextDate&&c.nextAction&&c.nextDate<=limit&&!taskKeys.has(c.id+'|'+nt(c.nextAction))))push({key:'client:'+c.id+':'+c.nextDate,source:'SOMA',kind:'Seguimiento',title:c.title,detail:c.nextAction,date:c.nextDate,time:null,route:'soma/'+c.id,action:'Abrir cliente'});
   if(life&&s.evieData)try{for(const x of life.todayList())if(!x.done)push({key:'habit:'+x.h.id+':'+today,source:'Hábitos',kind:'Hábito',title:x.h.title,detail:'Programado hoy',date:today,time:x.h.time||null,route:'habitos',action:'Abrir Hábitos'});}catch{}
   return out.sort((a,b)=>rank[a.severity]-rank[b.severity]||(a.date||'9').localeCompare(b.date||'9')||(a.time||'99').localeCompare(b.time||'99')||a.title.localeCompare(b.title));
  }
