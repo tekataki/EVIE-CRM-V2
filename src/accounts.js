@@ -7,6 +7,7 @@ import { createKisha } from './kisha.js'
 import { createResearch } from './research.js'
 import { createGoogleAuth } from './google-auth.js'
 import { createMemory } from './memory.js'
+import { createMemoryV2 } from './memory-v2.js'
 import { createMap, mapStatus } from './map.js'
 import { createProfile } from './profile.js'
 import { ensureV5 } from './v5-schema.js'
@@ -198,6 +199,7 @@ export function createAccounts({fetcher=fetch}={}) {
  const bound=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
  api.route('/profile',createProfile({authenticate:bound,seal,unseal}))
  api.route('/memory',createMemory({authenticate:bound,seal,unseal}))
+ api.route('/memory-v2',createMemoryV2({authenticate:bound,seal,unseal}))
  api.route('/map',createMap({fetcher,authenticate:bound}))
  api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal}))
  api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal}))
