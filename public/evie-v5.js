@@ -51,7 +51,7 @@ window.EvieV5=(()=>{
   if(r.status==='needs_location'){const h=await here();if(h){body.here=h;r=await api('map/route-query',{method:'POST',body});}}
   lastRoute={text,body,result:r};
   if(r.status==='ambiguous'){openPanel('route');}
-  if(r.status==='ok'){try{window.EvieHUD?.open('mapa',{route:{origin:r.origin,destination:r.destination,mode:r.mode,trip:r.trip}});}catch{}}
+  /* The route is answered by voice + shown in the panel; the existing map card does not yet draw a server trip (Sonnet/next step). */
   return ans(r.say+(r.traffic_note&&!/tr[aá]fico/i.test(r.say||'')?' '+r.traffic_note:''));}
  async function chooseRoute(which,idx){if(!lastRoute)return;const c=lastRoute.result.candidates?.[idx];if(!c)return;const body={...lastRoute.body,choice:{...(lastRoute.body.choice||{}),[which]:{lat:c.lat,lon:c.lon}}};const r=await api('map/route-query',{method:'POST',body});lastRoute={...lastRoute,body,result:r};renderPanel();window.EvieAssistant?.say?.(r.say);}
 
@@ -113,7 +113,7 @@ window.EvieV5=(()=>{
  let lastMeta=null;
  function chatExtras(){const t=takeOnceTier();return t?{tier:t}:{};}
  function chatMeta(r){if(!r||!r.tier)return;lastMeta={tier:r.tier,fallback:r.tier_fallback||null,suggest:r.suggest_tier||null,changed:r.tier_changed||null,request_id:r.request_id};if(r.tier_changed)tierInfo={...(tierInfo||{}),tier:r.tier_changed};document.dispatchEvent(new CustomEvent('evie:tier',{detail:lastMeta}));}
- function metaNote(){if(!lastMeta)return '';if(lastMeta.fallback)return `Respondí con ${lastMeta.tier.label} porque ${lastMeta.fallback.reason==='timeout'?'el nivel pedido tardó demasiado':lastMeta.fallback.reason==='budget'?'se alcanzó el presupuesto':'el nivel pedido no estaba disponible'}.`;if(lastMeta.suggest)return 'Sugerencia: esta pregunta podría ir mejor en nivel Profundo. Dime «usa profundo solo para esta pregunta».';return '';}
+ function metaNote(){if(!lastMeta)return '';if(lastMeta.fallback)return `Respondí con ${lastMeta.tier.label} porque ${({timeout:'el nivel pedido tardó demasiado',account_budget:'se alcanzó tu presupuesto diario de IA',daily_limit:'se alcanzó el límite diario de Profundo',guest:'Profundo no está disponible para invitados'})[lastMeta.fallback.reason]||'el nivel pedido no estaba disponible'}.`;if(lastMeta.suggest)return 'Sugerencia: esta pregunta podría ir mejor en nivel Profundo. Dime «usa profundo solo para esta pregunta».';return '';}
  function reportMetrics(marks,tier){if(!enabled())return;api('ai/metrics',{method:'POST',body:{marks,...(tier?{tier}:{})}}).catch(()=>{});}
 
  /* ---------- minimal panel (functional; Sonnet restyles) ---------- */
