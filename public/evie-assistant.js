@@ -13,7 +13,8 @@ window.EvieAssistant=(()=>{
  const name=()=>{const x=window.EvieProfile?.current?.();if(x&&x.enabled!==false&&x.preferred_name)return x.preferred_name;const p=Store.get()?.profile||{};return (p.preferred||p.name||'').trim();};
  const zone=()=>{const x=window.EvieProfile?.current?.();return (x&&x.timezone)||DALI_CONFIG.timezone;};
  let prevPhase='idle';
- function setPhase(p){if(p!==prevPhase){if(p==='listening')window.EvieSounds?.play('listen');else if(p==='thinking'&&prevPhase==='listening')window.EvieSounds?.play('process');else if(p==='error')window.EvieSounds?.play('error');if(['speaking','thinking','listening'].includes(p))window.EvieWake?.pause(4000);if(prevPhase==='speaking')window.EvieWake?.pause(900);prevPhase=p;}document.documentElement.dataset.evie=p;const map={idle:'idle',listening:'listening',thinking:'thinking',speaking:'speaking',error:'error'};document.querySelectorAll('[data-evie-phase]').forEach(n=>n.textContent=({idle:'Lista',listening:'Escuchando…',thinking:'Pensando…',speaking:'Hablando…',error:'Algo falló'})[p]||'');try{const cur=IvyState.get().phase,next={listening:'listening',thinking:'thinking',speaking:'speaking',idle:'idle',error:'error'}[map[p]];if(cur!==next){if(cur==='listening'&&next==='thinking')IvyState.transition('transcribing');IvyState.transition(next);}}catch{}window.EvieNeural?.kick();}
+ let lastSpokeEnd=0;
+ function setPhase(p){if(p!==prevPhase){if(prevPhase==='speaking')lastSpokeEnd=Date.now();if(p==='transcribing'||p==='thinking')document.documentElement.dataset.evieStage=p;if(p==='listening')window.EvieSounds?.play('listen');else if(p==='thinking'&&prevPhase==='listening')window.EvieSounds?.play('process');else if(p==='error')window.EvieSounds?.play('error');if(['speaking','thinking','listening'].includes(p))window.EvieWake?.pause(4000);if(prevPhase==='speaking')window.EvieWake?.pause(900);prevPhase=p;}document.documentElement.dataset.evie=p;const map={idle:'idle',listening:'listening',thinking:'thinking',speaking:'speaking',error:'error'};document.querySelectorAll('[data-evie-phase]').forEach(n=>n.textContent=({idle:'Lista',listening:'Escuchando…',thinking:'Pensando…',speaking:'Hablando…',error:'Algo falló'})[p]||'');try{const cur=IvyState.get().phase,next={listening:'listening',thinking:'thinking',speaking:'speaking',idle:'idle',error:'error'}[map[p]];if(cur!==next){if(cur==='listening'&&next==='thinking')IvyState.transition('transcribing');IvyState.transition(next);}}catch{}window.EvieNeural?.kick();}
  /* ---------- local read tools (shared contract with src/assistant.js TOOLS) ---------- */
  const live=c=>Store.list(c)||[];
  const dateOf=r=>window.Agenda?.dateOf?.(r)||null;
@@ -150,23 +151,27 @@ window.EvieAssistant=(()=>{
   return null;}
  function speakOverview(){const o=tools.get_today_overview(),n=o.name?o.name+', ':'',p=o.pending_today;let s=p.length?`${n}hoy tienes ${p.length} pendiente${p.length>1?'s':''}: ${p.slice(0,3).map(x=>x.title+(x.time?' a las '+x.time:'')).join(', ')}${p.length>3?' y más':''}.`:`${n}no tienes pendientes fechados para hoy.`;if(o.overdue.length)s+=` Ojo: ${o.overdue.length} vencido${o.overdue.length>1?'s':''}.`;if(o.bills_due_soon.length)s+=` Pagos próximos: ${o.bills_due_soon.map(b=>b.title).slice(0,2).join(' y ')}.`;return s;}
  /* ---------- OpenAI loop via server ---------- */
- async function chat(text,signal){
+ async function chat(text,signal,lc=null){
   history.push({role:'user',content:text});history=history.slice(-14);
   window.EvieProfile?.load?.().catch(()=>{});const context={name:name(),timezone:zone(),currency:DALI_CONFIG.currency};let input=[...history];
   for(let step=0;step<4;step++){
-   const r=await EvieAccounts.request('ai/chat',{method:'POST',body:{input,context,private:!!window.EvieMemory?.isPrivate?.()},signal});if(r.memory_used)lastMemoryUsed=r.memory_used;if(signal?.aborted)throw Object.assign(Error('cancelado'),{name:'AbortError'});
+   const r=await EvieAccounts.request('ai/chat',{method:'POST',body:{input,context,private:!!window.EvieMemory?.isPrivate?.(),...(lc?{request_id:lc.id}:{}),...(step===0?(window.EvieV5?.chatExtras?.()||{}):{})},signal});window.EvieV5?.chatMeta?.(r);if(r.memory_used)lastMemoryUsed=r.memory_used;if(signal?.aborted)throw Object.assign(Error('cancelado'),{name:'AbortError'});
    if(!r.calls?.length){const say=(r.text||'').trim()||'Listo.';history.push({role:'assistant',content:say.slice(0,3900)});return {memory:lastMemoryUsed,text:say,spoken:(r.spoken||say).trim(),sources:Array.isArray(r.sources)?r.sources:[],checked:r.checked_at||null,webUnavailable:!!r.web_unavailable};}
    input=[...input,...(r.reasoning||[]),...r.calls];
+   lc?.emit(r.calls.some(c=>/search|research|web/.test(c.name))?'searching':'tool_running',{tool:r.calls[0]?.name||''});
    for(const c of r.calls){let args={};try{args=JSON.parse(c.arguments||'{}');}catch{}let out;try{const fn=tools[c.name]||window.EvieMemory?.tools?.[c.name]||window.EvieMap?.tools?.[c.name];out=fn?await fn(args,c):{error:'unknown tool'};}catch(err){out={error:err.message};}input.push({type:'function_call_output',call_id:c.call_id,output:JSON.stringify(out).slice(0,12000)});}
   }
   return 'Necesito más contexto para eso. ¿Me lo dices de otra forma?';
  }
  async function ask(text,{speak=true,inline=false,turnToken=null}={}){
   text=String(text||'').trim();if(!text)return;window.EvieMemory?.track?.(text);if(!turnToken)Voice.unlock();const t=turnToken||Voice.begin();if(!(inline||onStage()))open();append('user',text);busy=true;Voice.set('thinking');
-  let say;try{say=tryLocal(text);if(say===null){if(can('chat')&&pref().cloudAI)say=await chat(text,t.signal);else say=fallbackAnswer(text);}}catch(err){if(!Voice.alive(t.id))return;say=err.name==='AbortError'?'':err.status===429?err.message:(err.message||'No pude responder.');}
+  const lc=window.EvieV5?.lifecycle?.()||null;lc?.emit('thinking');
+  let say;try{say=window.EvieDictation&&/^(?:(?:oye |hey )?(?:ivi|ivy|evie|libi)[ ,]+)?(?:modo dictado|dictado largo|voy a dictar|quiero dictar)\b/i.test(text.normalize('NFD').replace(/[\u0300-\u036f]/g,''))?(setTimeout(()=>window.EvieDictation.open(),900),'Te escucho. Dicta todo lo que necesites; toca «Terminar» y revisas el texto antes de enviarlo.'):null;if(say===null)say=window.EvieV5?(await window.EvieV5.handle(text)):null;if(say===null)say=tryLocal(text);if(say===null){if(can('chat')&&pref().cloudAI)say=await chat(text,t.signal,lc);else say=fallbackAnswer(text);}}catch(err){if(!Voice.alive(t.id)){lc?.emit('failed',{code:'aborted'});return;}say=err.name==='AbortError'?'':err.status===429?err.message:(err.message||'No pude responder.');if(err.name!=='AbortError')lc?.emit('failed',{code:String(err.status||'error')});}
+  if(!Voice.alive(t.id)){lc?.emit('failed',{code:'superseded'});return;}
   if(!Voice.alive(t.id))return;busy=false;
   const ans=typeof say==='object'&&say?say:{text:say,spoken:say,sources:[]};
-  if(ans.text){append('evie',ans.text,ans);if(speak&&!pref().muted)await Voice.speak(ans.spoken||ans.text,t);}
+  if(ans.text){append('evie',ans.text,ans);if(speak&&!pref().muted){lc?.emit('speaking');await Voice.speak(ans.spoken||ans.text,t);}}
+  lc?.emit('completed');
   if(!Voice.alive(t.id))return;if(Voice.state!=='blocked')Voice.set('idle');
   if(speak&&pref().conversation&&(panel?.dataset.voice==='1'||voiceInline)&&!draft&&ans.text&&/\?\s*$/.test(ans.text)&&Voice.state==='idle')listen({inline:true});
  }
@@ -218,7 +223,7 @@ window.EvieAssistant=(()=>{
     const dur=(performance.now()-started)/1000;if(discard||!alive(t.id))return;
     if(vadOk&&!heard){append('evie','No te escuché. Toca el núcleo y habla cuando veas «Escuchando…».');note('vad','silence');return set('idle');}
     const blob=new Blob(chunks,{type:blobType(chunks,mr,type)});if(blob.size<800||dur<.5){append('evie','No se grabó audio. ¿Lo intentas de nuevo?');note('mic','empty');return set('idle');}
-    set('transcribing');let text='';
+    set('transcribing');document.dispatchEvent(new CustomEvent('evie:lifecycle',{detail:{request_id:null,stage:'transcribing',at_ms:0}}));let text='';
     try{const hint=encodeURIComponent(['EVIE',name(),'SOMA','ALVENTO','BBVA','bitácora','pendiente'].filter(Boolean).join(', '));const to=setTimeout(()=>ctl?.abort(),30000);
      const res=await fetch('/api/ai/stt',{method:'POST',credentials:'same-origin',signal:t.signal,headers:{'Content-Type':blob.type,'X-Evie-Request':'1','X-Evie-User':EvieAccounts.current().id,'X-Evie-Duration':String(Math.ceil(dur)),'X-Evie-Hint':hint},body:blob});clearTimeout(to);
      const j=await res.json().catch(()=>({}));if(!res.ok){note('stt',res.status);throw Error(j.error||'No se pudo transcribir.');}text=String(j.text||'').trim();}
@@ -305,7 +310,7 @@ window.EvieAssistant=(()=>{
   stop(){clapOff?.();clapOff=null;IvyAudio.stop('evie-wake');delete document.documentElement.dataset.evieWake;},active:()=>!!clapOff};
  document.addEventListener('visibilitychange',()=>{if(document.hidden)Wake.stop();else if(pref().clapWake&&Store.get())Wake.start();});
  // Wake word: per-account opt-in, on-device only (EvieWake refuses remote recognizers).
- function wakeWord(on=pref().wakeWord){if(!window.EvieWake)return;if(!on||!Store.get()){EvieWake.stop();return;}EvieWake.start(cmd=>{window.EvieSounds?.play('listen');if(cmd&&cmd.length>1)ask(cmd,{speak:!pref().muted,inline:true});else listen({inline:true});});}
+ function wakeWord(on=pref().wakeWord){if(!window.EvieWake)return;if(!on||!Store.get()){EvieWake.stop();return;}EvieWake.start(cmd=>{const g=window.EvieV5Core?.wakeGate?.({phase:document.documentElement.dataset.evie||'idle',speakingEndedAt:lastSpokeEnd,turnOpen:busy||!!window.EvieDictation?.active});if(g&&!g.allow)return;window.EvieSounds?.play('listen');if(cmd&&cmd.length>1)ask(cmd,{speak:!pref().muted,inline:true});else listen({inline:true});});}
  // Deep link / PWA shortcut: /#inicio?evie=listen or ?evie=1
  function fromUrl(){const q=new URLSearchParams(location.search);if(q.get('evie')==='listen'||q.get('evie')==='1'){history.replaceState(null,'',location.pathname+location.hash);setTimeout(()=>open(true),400);}}
  setPhase('idle');
