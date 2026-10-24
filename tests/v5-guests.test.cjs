@@ -46,7 +46,8 @@ test('expiry per request; sessions revoked; complete, auditable, content-free cl
  f.db.prepare('UPDATE guest_accounts SET expires_at=?').run(Date.now()-1);
  assert.equal((await f.call(g,'/tasks')).status,401);assert.equal((await f.call(g,'/auth/session')).json.user,null);
  assert.equal(f.db.prepare('SELECT COUNT(*) n FROM auth_sessions WHERE owner_id=?').get(g.id).n,0);
- const c=await f.call('a','/auth/guest/cleanup','POST',{});assert.equal(c.json.results[0].ok,true,JSON.stringify(c.json));
+ const c=await f.call('a','/auth/guest/cleanup','POST',{});assert.equal(c.status,200);// the lazy sweep may already have cleaned it
+ if(c.json.results.length)assert.equal(c.json.results[0].ok,true,JSON.stringify(c.json));
  for(const tb of ['evie_tasks','evie_memories','evie_user_settings','ai_usage','evie_metrics'])assert.equal(f.db.prepare(`SELECT COUNT(*) n FROM ${tb} WHERE owner_id=?`).get(g.id).n,0,tb);
  assert.ok(f.sent.storage.includes(g.id+'/foto.jpg')&&f.sent.storage.includes(g.id+'/voice/nota.webm'));assert.ok(f.files.has(A+'/owner.jpg'));
  assert.ok(f.sent.admin.some(x=>x.op==='delete'&&x.id===g.id));
