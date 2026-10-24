@@ -9,6 +9,9 @@ import { createGoogleAuth } from './google-auth.js'
 import { createMemory } from './memory.js'
 import { createMap, mapStatus } from './map.js'
 import { createProfile } from './profile.js'
+import { ensureV5 } from './v5-schema.js'
+import { createGuests, guestOf, sweepGuests, GUEST_MS } from './guests.js'
+import { createV5 } from './v5-routes.js'
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export function normalizeUsername(value) {
@@ -63,6 +66,9 @@ export function createAccounts({fetcher=fetch}={}) {
    if(!c.req.path.endsWith('/ai/stt')&&c.req.method!=='DELETE'&&!c.req.header('Content-Type')?.startsWith('application/json'))return jsonError(c,'Usa JSON.',415)
   }
   await ensureSchema(env.AUTH_DB)
+  await ensureV5(env.AUTH_DB)
+  // Lazy guest expiry sweep (hosted deploys have no cron): ~5% of requests, off the response path.
+  if(Math.random()<0.05){const p=sweepGuests(env,{fetcher}).catch(e=>console.error('GUEST_SWEEP',String(e?.message||e).slice(0,60)));try{c.executionCtx.waitUntil(p)}catch{}}
   await next()
  })
  async function remote(c,path,{method='GET',body,access,headers={}}={}){
@@ -72,6 +78,10 @@ export function createAccounts({fetcher=fetch}={}) {
  async function auth(c){
   const raw=getCookie(c,cookie);if(!raw||!/^[0-9a-f]{64}$/.test(raw))return null
   const hash=await digest(raw),record=await c.env.AUTH_DB.prepare('SELECT * FROM auth_sessions WHERE id=? AND expires_at>?').bind(hash,Date.now()).first();if(!record)return null
+  // Temporary guests: access ends exactly at expires_at (72 h after redemption). Enforced on every request,
+  // BEFORE any token refresh; all of the guest's sessions are revoked and the cleanup sweep picks it up.
+  const guest=await guestOf(c.env.AUTH_DB,record.owner_id)
+  if(guest?.expired){await c.env.AUTH_DB.prepare('DELETE FROM auth_sessions WHERE owner_id=?').bind(record.owner_id).run();await c.env.AUTH_DB.prepare("UPDATE guest_accounts SET status='expired' WHERE owner_id=? AND status='active'").bind(record.owner_id).run();return null}
   let tokens=await unseal(record.tokens,c.env.EVIE_SESSION_KEY)
   if(!Number.isSafeInteger(tokens.expires_at)||typeof tokens.access_token!=='string'||!tokens.access_token||typeof tokens.refresh_token!=='string'||!tokens.refresh_token)throw Error('Invalid stored session')
   if(tokens.expires_at<Date.now()+60000){
@@ -86,6 +96,7 @@ export function createAccounts({fetcher=fetch}={}) {
   }
   const verified=await remote(c,'/auth/v1/user',{access:tokens.access_token});if(!verified.ok)return null;const u=await verified.json();if(!UUID.test(u.id)||u.id!==record.owner_id)return null
   if(c.req.header('X-Evie-User')&&c.req.header('X-Evie-User')!==u.id)return null
+  if(guest)return {id:hash,user:{id:u.id,username:record.username,role:'guest',display_name:guest.display_name,expires_at:guest.expires_at},tokens}
   const acct=await c.env.AUTH_DB.prepare('SELECT role FROM auth_accounts WHERE owner_id=?').bind(u.id).first().catch(()=>null)
   return {id:hash,user:{id:u.id,username:record.username,role:acct?.role||'member'},tokens}
  }
@@ -108,13 +119,16 @@ export function createAccounts({fetcher=fetch}={}) {
  async function providerError(r){let code='';try{const j=await r.json();code=String(j.error_code||j.code||j.error||'').slice(0,60)}catch{}console.error('SUPABASE_AUTH_REJECTED',r.status,code);return code}
  const accounts=c=>c.env.AUTH_DB.prepare('SELECT COUNT(*) AS n FROM auth_accounts').bind().first()
  const release=(c,invite)=>invite?c.env.AUTH_DB.prepare('UPDATE auth_invites SET used_at=NULL WHERE id=?').bind(invite.id).run():null
- async function issueSession(c,result,username){
+ async function issueSession(c,result,username,{expiresAt=null}={}){
   let verifiedTokens;try{verifiedTokens=providerTokens(result)}catch{return false}
-  const sid=[...crypto.getRandomValues(new Uint8Array(32))].map(x=>x.toString(16).padStart(2,'0')).join(''),expires=Date.now()+30*86400000
+  // A guest's session can never outlive the guest account (<= 72 h); everyone else keeps 30 days.
+  const g=expiresAt?null:await guestOf(c.env.AUTH_DB,result.user.id).catch(()=>null)
+  if(g?.expired)return false
+  const sid=[...crypto.getRandomValues(new Uint8Array(32))].map(x=>x.toString(16).padStart(2,'0')).join(''),expires=Math.min(Date.now()+30*86400000,expiresAt||g?.expires_at||Infinity)
   const tokens=await seal(verifiedTokens,c.env.EVIE_SESSION_KEY)
   const old=getCookie(c,cookie);if(old)await c.env.AUTH_DB.prepare('DELETE FROM auth_sessions WHERE id=?').bind(await digest(old)).run()
   await c.env.AUTH_DB.prepare('INSERT INTO auth_sessions(id,owner_id,username,tokens,expires_at,refresh_until) VALUES(?,?,?,?,?,0)').bind(await digest(sid),result.user.id,username,tokens,expires).run()
-  setCookie(c,cookie,sid,{httpOnly:true,secure:true,sameSite:'Strict',path:'/',maxAge:30*86400})
+  setCookie(c,cookie,sid,{httpOnly:true,secure:true,sameSite:'Strict',path:'/',maxAge:Math.max(60,Math.floor((expires-Date.now())/1000))})
   return true
  }
  async function enter(c,signup){
@@ -131,8 +145,8 @@ export function createAccounts({fetcher=fetch}={}) {
    if(typeof data.invite==='string'&&c.env.EVIE_BOOTSTRAP_TOKEN&&n===0&&data.invite===c.env.EVIE_BOOTSTRAP_TOKEN)role='owner'
    else if(typeof data.invite==='string'){
     const id=await digest('invite:'+data.invite.trim().toUpperCase())
-    invite=await c.env.AUTH_DB.prepare('UPDATE auth_invites SET used_at=? WHERE id=? AND used_at IS NULL AND expires_at>? RETURNING id').bind(Date.now(),id,Date.now()).first()
-    if(!invite)return jsonError(c,'La invitación no es válida, ya se usó o expiró. Pide una nueva.',403)
+    invite=await c.env.AUTH_DB.prepare("UPDATE auth_invites SET used_at=? WHERE id=? AND used_at IS NULL AND expires_at>? AND kind<>'guest' RETURNING id").bind(Date.now(),id,Date.now()).first()
+    if(!invite){const g=await c.env.AUTH_DB.prepare("SELECT 1 AS x FROM auth_invites WHERE id=? AND kind='guest'").bind(id).first();return jsonError(c,g?'Ese código es de invitado temporal: usa «Entrar con invitación» (solo tu nombre, sin contraseña).':'La invitación no es válida, ya se usó o expiró. Pide una nueva.',403)}
    }else if(c.env.EVIE_OPEN_SIGNUP!=='true')return jsonError(c,'El registro es solo por invitación. Pide un código a quien administra EVIE.',403)
    else if(n===0)role='owner'
   }
@@ -156,20 +170,23 @@ export function createAccounts({fetcher=fetch}={}) {
  const passwordOff=c=>c.env.EVIE_PASSWORD_LOGIN==='off'?jsonError(c,'El acceso con contraseña se retiró. Entra con Google.',410):null
  api.post('/auth/signup',c=>passwordOff(c)||enter(c,true));api.post('/auth/signin',c=>passwordOff(c)||enter(c,false))
  const verified=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
+ const notGuest=async c=>{const s=await verified(c);if(!s)return [null,jsonError(c,'Inicia sesión de nuevo.',401)];if(s.user.role==='guest')return [null,jsonError(c,'Esta función no está disponible para invitados.',403)];return [s,null]}
  const owner=async c=>{const s=await verified(c);if(!s)return [null,jsonError(c,'Inicia sesión de nuevo.',401)];if(s.user.role!=='owner')return [null,jsonError(c,'Solo el propietario puede administrar personas.',403)];return [s,null]}
  // Existing accounts (created before invitations) can claim ownership once with the bootstrap token.
- api.post('/auth/claim-owner',async c=>{const s=await verified(c);if(!s)return jsonError(c,'Inicia sesión de nuevo.',401);let b;try{b=await c.req.json()}catch{b={}}
+ api.post('/auth/claim-owner',async c=>{const [s,ge]=await notGuest(c);if(ge)return ge;let b;try{b=await c.req.json()}catch{b={}}
   if(!c.env.EVIE_BOOTSTRAP_TOKEN||typeof b?.token!=='string'||b.token!==c.env.EVIE_BOOTSTRAP_TOKEN)return jsonError(c,'Código de propietario no válido.',403)
   const existing=await c.env.AUTH_DB.prepare("SELECT owner_id FROM auth_accounts WHERE role='owner'").bind().first();if(existing&&existing.owner_id!==s.user.id)return jsonError(c,'Ya existe un propietario.',409)
   await c.env.AUTH_DB.prepare("INSERT INTO auth_accounts(owner_id,username,role,created_at) VALUES(?,?,'owner',?) ON CONFLICT(owner_id) DO UPDATE SET role='owner'").bind(s.user.id,s.user.username,Date.now()).run();return c.json({ok:true,role:'owner'})})
  api.post('/auth/invites',async c=>{const [s,e]=await owner(c);if(e)return e;let b;try{b=await c.req.json()}catch{return jsonError(c,'Solicitud inválida.')}const label=typeof b?.label==='string'?b.label.trim().slice(0,40):''
   const pending=await c.env.AUTH_DB.prepare('SELECT COUNT(*) AS n FROM auth_invites WHERE used_at IS NULL AND expires_at>?').bind(Date.now()).first();if(pending.n>=5)return jsonError(c,'Ya tienes 5 invitaciones activas. Revócalas primero.',429)
+  const kind=b?.kind==='guest'?'guest':'member'
   const code=[...crypto.getRandomValues(new Uint8Array(12))].map(x=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[x%32]).join('').replace(/(.{4})(?=.)/g,'$1-')
-  const expires=Date.now()+72*3600000;await c.env.AUTH_DB.prepare('INSERT INTO auth_invites(id,created_by,label,expires_at) VALUES(?,?,?,?)').bind(await digest('invite:'+code),s.user.id,label,expires).run()
-  return c.json({code,expires_at:expires,label})})
- api.get('/auth/members',async c=>{const [,e]=await owner(c);if(e)return e;const members=await c.env.AUTH_DB.prepare('SELECT username,role,created_at FROM auth_accounts ORDER BY created_at').bind().all();const invites=await c.env.AUTH_DB.prepare('SELECT COUNT(*) AS n FROM auth_invites WHERE used_at IS NULL AND expires_at>?').bind(Date.now()).first();return c.json({members:members.results||[],activeInvites:invites.n})})
+  // Unused code expires 72 h after creation (independent of the guest account's own 72 h, which starts at redemption).
+  const expires=Date.now()+72*3600000;await c.env.AUTH_DB.prepare('INSERT INTO auth_invites(id,created_by,label,expires_at,kind) VALUES(?,?,?,?,?)').bind(await digest('invite:'+code),s.user.id,label,expires,kind).run()
+  return c.json({code,expires_at:expires,label,kind,access_hours:kind==='guest'?GUEST_MS/3600000:null})})
+ api.get('/auth/members',async c=>{const [,e]=await owner(c);if(e)return e;const members=await c.env.AUTH_DB.prepare('SELECT username,role,created_at FROM auth_accounts ORDER BY created_at').bind().all();const invites=await c.env.AUTH_DB.prepare('SELECT COUNT(*) AS n FROM auth_invites WHERE used_at IS NULL AND expires_at>?').bind(Date.now()).first();const guests=await c.env.AUTH_DB.prepare("SELECT COUNT(*) AS n FROM guest_accounts WHERE status='active' AND expires_at>?").bind(Date.now()).first();return c.json({members:members.results||[],activeInvites:invites.n,activeGuests:guests?.n||0})})
  api.post('/auth/invites/revoke',async c=>{const [,e]=await owner(c);if(e)return e;await c.env.AUTH_DB.prepare('DELETE FROM auth_invites WHERE used_at IS NULL').bind().run();return c.json({ok:true})})
- api.post('/auth/password',async c=>{const s=await verified(c);if(!s)return jsonError(c,'Inicia sesión de nuevo.',401);let b;try{b=await c.req.json();if(Object.keys(b).join()!=='password'||typeof b.password!=='string'||b.password.length<10||b.password.length>128)throw Error()}catch{return jsonError(c,'Usa una contraseña de 10 a 128 caracteres.')}
+ api.post('/auth/password',async c=>{const [s,ge]=await notGuest(c);if(ge)return ge;let b;try{b=await c.req.json();if(Object.keys(b).join()!=='password'||typeof b.password!=='string'||b.password.length<10||b.password.length>128)throw Error()}catch{return jsonError(c,'Usa una contraseña de 10 a 128 caracteres.')}
   const r=await remote(c,'/auth/v1/user',{method:'PUT',access:s.tokens.access_token,body:{password:b.password}});b.password='';if(!r.ok){const code=await providerError(r);return jsonError(c,code==='same_password'?'La nueva contraseña debe ser distinta.':'No se pudo cambiar la contraseña.',400)}return c.json({ok:true})})
  api.get('/auth/session',async c=>{const s=await auth(c);return c.json({user:s?.user||null})})
  api.post('/auth/signout',async c=>{let body;try{body=await c.req.json();if(!body||Array.isArray(body)||Object.keys(body).some(k=>k!=='all')||(body.all!==undefined&&typeof body.all!=='boolean'))throw Error()}catch{return jsonError(c,'Solicitud de cierre inválida.')}
@@ -177,7 +194,7 @@ export function createAccounts({fetcher=fetch}={}) {
  api.use('/data/*',async(c,next)=>{const s=await auth(c);if(!s||c.req.header('X-Evie-User')!==s.user.id)return jsonError(c,'La sesión cambió. Inicia sesión de nuevo.',401);c.set('account',s);await next()})
  api.post('/data/pull',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||typeof b.after!=='string'||b.after.length>200||Object.keys(b).some(k=>k!=='after'))return jsonError(c,'Cursor inválido.');const r=await remote(c,'/rest/v1/rpc/evie_pull',{method:'POST',access:s.tokens.access_token,body:{after_key:b.after}});if(!r.ok)return jsonError(c,'No se pudo leer la cuenta.',502);const rows=await r.json();return c.json({owner:s.user.id,rows,next:rows.length===500?rows.at(-1).collection+'/'+rows.at(-1).record_id:''})})
  api.post('/data/push',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||!Array.isArray(b.changes)||!b.changes.length||b.changes.length>5000||Object.keys(b).some(k=>k!=='changes'))return jsonError(c,'Lote de 1 a 5000 cambios requerido.');const r=await remote(c,'/rest/v1/rpc/evie_apply',{method:'POST',access:s.tokens.access_token,body:{changes:b.changes}});if(!r.ok)return jsonError(c,r.status===409?'Otro dispositivo cambió estos registros.':'No se pudieron guardar los cambios.',r.status===409?409:422);return c.json({owner:s.user.id,rows:await r.json()})})
- api.route('/connections',createConnections({fetcher,seal,unseal,authenticate:async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}}))
+ api.route('/connections',createConnections({fetcher,seal,unseal,authenticate:async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id&&s.user.role!=='guest'?s:null}}))
  const bound=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
  api.route('/profile',createProfile({authenticate:bound,seal,unseal}))
  api.route('/memory',createMemory({authenticate:bound,seal,unseal}))
@@ -185,7 +202,9 @@ export function createAccounts({fetcher=fetch}={}) {
  api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal}))
  api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal}))
  api.route('/info',createResearch({fetcher,authenticate:bound,unseal}))
- api.route('/auth/google',createGoogleAuth({remote,issueSession,verified,seal,unseal,digest,limited}))
+ api.route('/auth/google',createGoogleAuth({remote,issueSession,verified:async c=>{const s=await verified(c);return s&&s.user.role!=='guest'?s:null},seal,unseal,digest,limited}))
+ api.route('/auth/guest',createGuests({fetcher,remote,issueSession,digest,limited,owner}))
+ api.route('/',createV5({authenticate:bound,seal,unseal}))
  api.onError((err,c)=>{
   console.error('EVIE_ACCOUNTS_ERROR', err?.stack || err?.message || String(err))
   return jsonError(c,'Servicio temporalmente no disponible. No se han descartado cambios locales.',503)

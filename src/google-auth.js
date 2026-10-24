@@ -76,7 +76,7 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
       const n = (await db(c).prepare('SELECT COUNT(*) AS n FROM auth_accounts').bind().first())?.n || 0
       let role = null
       if (st.invite && c.env.EVIE_BOOTSTRAP_TOKEN && n === 0 && st.invite === c.env.EVIE_BOOTSTRAP_TOKEN) role = 'owner'
-      else if (st.invite) { const invite = await db(c).prepare('UPDATE auth_invites SET used_at=?,used_by=? WHERE id=? AND used_at IS NULL AND expires_at>? RETURNING id').bind(Date.now(), id, await digest('invite:' + st.invite.toUpperCase()), Date.now()).first(); if (invite) role = 'member' }
+      else if (st.invite) { const invite = await db(c).prepare("UPDATE auth_invites SET used_at=?,used_by=? WHERE id=? AND used_at IS NULL AND expires_at>? AND kind<>'guest' RETURNING id").bind(Date.now(), id, await digest('invite:' + st.invite.toUpperCase()), Date.now()).first(); if (invite) role = 'member' }
       if (!role) {
         // Not invited: no EVIE session. Remove the orphan Supabase user when the admin key exists.
         if (c.env.SUPABASE_SERVICE_ROLE_KEY) await remote(c, '/auth/v1/admin/users/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + c.env.SUPABASE_SERVICE_ROLE_KEY, apikey: c.env.SUPABASE_SERVICE_ROLE_KEY } }).catch(() => null)
