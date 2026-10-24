@@ -1,0 +1,41 @@
+'use strict';
+// v5 · Memoria v2: tipos, proyecto, confianza, historial de ediciones (corrige), búsqueda híbrida con incertidumbre,
+// incógnito, opt-ins de categorías sensibles, aislamiento por cuenta, registros v1 migrados, sin texto plano en D1.
+const {test}=require('node:test');const assert=require('node:assert/strict');const {fixture}=require('./v5-fixture.cjs');
+test('typed memories with project; sealed at rest; v1 records keep working as type fact',async t=>{const f=await fixture(t);
+ await f.call('a','/memory/items','POST',{text:'Mi color favorito es azul'});// v1 path
+ let r=await f.call('a','/memory-v2/items','POST',{text:'El plan de SOMA es cerrar 3 clientes en noviembre',type:'current_plan',project:'SOMA'});assert.equal(r.status,201);assert.equal(r.json.type,'current_plan');
+ r=await f.call('a','/memory-v2/items','POST',{text:'Ayer revisamos precios de SOMA con Intensity',type:'dated_summary'});assert.equal(r.json.project,'SOMA','project detected from text');
+ const list=(await f.call('a','/memory-v2')).json;assert.equal(list.items.length,3);assert.ok(list.items.some(x=>x.type==='fact'&&x.text.includes('azul')),'v1 row appears as fact');
+ assert.deepEqual(list.projects,['SOMA']);assert.equal((await f.call('a','/memory-v2?type=current_plan')).json.items.length,1);
+ assert.ok(!/SOMA|azul|Intensity/.test(JSON.stringify(f.db.prepare('SELECT data,keys,project FROM evie_memories').all())),'no plaintext');});
+test('"¿te acuerdas de lo que hablamos sobre SOMA?" — grounded hybrid search; unknown topics admit no memory',async t=>{const f=await fixture(t);
+ await f.call('a','/memory-v2/items','POST',{text:'El plan de SOMA es cerrar 3 clientes en noviembre',type:'current_plan',project:'SOMA'});
+ await f.call('a','/memory-v2/items','POST',{text:'Mi perro se llama Toby'});
+ let r=await f.call('a','/memory-v2/search','POST',{question:'¿te acuerdas del plan sobre SOMA?'});assert.equal(r.json.items[0].type,'current_plan');assert.match(r.json.say,/cerrar 3 clientes/);
+ r=await f.call('a','/memory-v2/search','POST',{question:'¿qué te dije de clientes?'});assert.ok(r.json.items.some(x=>/clientes/.test(x.text)),'stem/prefix match');
+ r=await f.call('a','/memory-v2/search','POST',{question:'¿te acuerdas de mi viaje a Japón?'});assert.equal(r.json.items.length,0);assert.equal(r.json.uncertain,true);assert.match(r.json.say,/No lo voy a inventar/);});
+test('corrige: edit history is kept (sealed) and confidence returns to 1',async t=>{const f=await fixture(t);
+ const id=(await f.call('a','/memory-v2/items','POST',{text:'Mi junta semanal es el lunes',source:'inferred'})).json.id;
+ assert.equal((await f.call('a','/memory-v2')).json.items[0].confidence,0.6);
+ const r=await f.call('a','/memory-v2/items/'+id+'/correct','POST',{text:'Mi junta semanal es el martes'});assert.equal(r.json.previous,'Mi junta semanal es el lunes');
+ const h=(await f.call('a','/memory-v2/items/'+id+'/history')).json;assert.equal(h.text,'Mi junta semanal es el martes');assert.equal(h.history[0].text,'Mi junta semanal es el lunes');
+ const it=(await f.call('a','/memory-v2')).json.items[0];assert.equal(it.confidence,1);assert.equal(it.edits,1);assert.equal(it.source,'corrected');
+ assert.ok(!/lunes|martes/.test(JSON.stringify(f.db.prepare('SELECT data FROM evie_memories').all())));});
+test('incognito never reads or writes; sensitive needs opt-in + confirmation; locations refused; export v2',async t=>{const f=await fixture(t);
+ let r=await f.call('a','/memory-v2/items','POST',{text:'Mi color es verde',private:true});assert.equal(r.json.stored,false);assert.equal(f.db.prepare('SELECT COUNT(*) n FROM evie_memories').get().n,0);
+ r=await f.call('a','/memory-v2/search','POST',{question:'color',private:true});assert.equal(r.json.incognito,true);
+ assert.equal((await f.call('a','/memory-v2/items','POST',{text:'Tomo medicamento para la presión arterial'})).json.needs_permission,true);
+ await f.call('a','/memory/settings','PUT',{settings:{allow_health:true}});
+ assert.equal((await f.call('a','/memory-v2/items','POST',{text:'Tomo medicamento para la presión arterial'})).json.needs_confirmation,true);
+ assert.equal((await f.call('a','/memory-v2/items','POST',{text:'Tomo medicamento para la presión arterial',confirm_sensitive:true})).status,201);
+ assert.equal((await f.call('a','/memory-v2/items','POST',{text:'Vivo en la calle Juárez 58'})).json.refused,true);
+ const ex=(await f.call('a','/memory-v2/export')).json;assert.equal(ex.version,2);assert.equal(ex.items.length,1);});
+test('tenant isolation: B never sees, searches or corrects A memories',async t=>{const f=await fixture(t);
+ const id=(await f.call('a','/memory-v2/items','POST',{text:'El plan de SOMA es secreto'})).json.id;
+ assert.equal((await f.call('b','/memory-v2')).json.items.length,0);assert.equal((await f.call('b','/memory-v2/search','POST',{question:'plan de SOMA'})).json.items.length,0);
+ assert.equal((await f.call('b','/memory-v2/items/'+id+'/correct','POST',{text:'hackeado ok'})).status,404);assert.equal((await f.call('b','/memory-v2/items/'+id+'/history')).status,404);});
+test('pure hybrid score: project and recency raise, unrelated is 0',async()=>{const m=await import('../src/memory-v2.js');
+ const base={qKeys:['a'],qPrefix:[],rowKeys:'a b',ageDays:1,mtype:'fact'};assert.ok(m.hybridScore(base)>0);
+ assert.ok(m.hybridScore({...base,projectMatch:true})>m.hybridScore(base));assert.ok(m.hybridScore(base)>m.hybridScore({...base,ageDays:120}));
+ assert.equal(m.hybridScore({...base,rowKeys:'z'}),0);assert.equal(m.projectOf('lo que hablamos ayer sobre SOMA'),'SOMA');});
