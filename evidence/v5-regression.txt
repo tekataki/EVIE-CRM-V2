@@ -1,0 +1,5 @@
+finance | exit=0 | FINANCE E2E OK (17 checks, 1440)
+fisico | exit=0 | 16/16 E2E FISICO OK
+gym | exit=0 | E2E GYM OK
+v4voice | exit=0 | 13/13 E2E V4 VOICE OK
+hud | exit=0 |  - leaving Home detaches the HUD (workspace kept for return)
