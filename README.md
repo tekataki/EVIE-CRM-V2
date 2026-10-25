@@ -93,6 +93,16 @@ Configuración v3: ver `docs/SETUP.md §7`.
   - v4 no requiere migraciones.
 - **Estado y pasos manuales**: `docs/V4-REPORT.md`.
 
+## Novedades v5 (backend; diseño visual pendiente)
+- **Niveles de IA** Chispa / Enfoque / Profundo por cuenta (distintos del modo de trabajo «Enfoque»), «solo para esta pregunta», fallback avisado y topes diarios de gasto.
+- **Invitados 72 h**: «Entrar con invitación» (nombre + código, sin contraseña); acceso y datos se eliminan al vencer.
+- **Tareas SOMA** canónicas integradas en Pendientes sin duplicados; voz para crear, completar y listar.
+- **Preparar mi día** con aprobación explícita (nunca escribe en Google Calendar) y «¿qué sigue?».
+- **Escenas** («Ivi, modo SOMA»), **rutas por voz**, **memoria v2** (tipos, proyecto, confianza, historial), **dictado largo** editable, palabra clave de un turno y eventos de ciclo de vida sin contenido.
+- Panel de herramientas: Ajustes de EVIE → «Herramientas de Ivi» (o Alt+Shift+I).
+- Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
+- Pruebas: 343/343 unitarias, 14/14 E2E. No desplegado.
+
 ## Arquitectura
 `public/` (frontend) + `src/` (API Hono) → `npm run build` → `dist/` con `_worker.js` → **Cloudflare Pages**. Datos: **Supabase** (`crm_records`, `user_preferences` con RLS). D1 `AUTH_DB` (`evie-auth`): sesiones, roles, invitaciones, uso de IA, tokens de conexiones.
 

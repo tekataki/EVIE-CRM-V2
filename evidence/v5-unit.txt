@@ -6,389 +6,389 @@ TAP version 13
 # Subtest: cross-tab notification invalidates only and never selects an account from storage
 ok 1 - cross-tab notification invalidates only and never selects an account from storage
   ---
-  duration_ms: 5033.55569
+  duration_ms: 4452.026376
   type: 'test'
   ...
 # Subtest: 401 locks account but a revision conflict does not log the user out
 ok 2 - 401 locks account but a revision conflict does not log the user out
   ---
-  duration_ms: 2.956407
+  duration_ms: 3.78803
   type: 'test'
   ...
 # Subtest: session verification never silently switches to another account
 ok 3 - session verification never silently switches to another account
   ---
-  duration_ms: 3.017849
+  duration_ms: 3.887697
   type: 'test'
   ...
 # Subtest: Electron adapter preserves HTTP status and respects pre-aborted requests
 ok 4 - Electron adapter preserves HTTP status and respects pre-aborted requests
   ---
-  duration_ms: 1.803823
+  duration_ms: 1.772118
   type: 'test'
   ...
 # Subtest: restoring an expired session clears the former account identity
 ok 5 - restoring an expired session clears the former account identity
   ---
-  duration_ms: 2.485119
+  duration_ms: 2.460767
   type: 'test'
   ...
 # Subtest: username canonicalization and strict account namespaces
 ok 6 - username canonicalization and strict account namespaces
   ---
-  duration_ms: 64.117076
+  duration_ms: 94.715817
   type: 'test'
   ...
 # Subtest: disabled adapter makes no authentication call and does not manufacture a session
 ok 7 - disabled adapter makes no authentication call and does not manufacture a session
   ---
-  duration_ms: 4.788655
+  duration_ms: 3.5162
   type: 'test'
   ...
 # Subtest: session restore scopes cached data; clear cancels late responses
 ok 8 - session restore scopes cached data; clear cancels late responses
   ---
-  duration_ms: 3.068202
+  duration_ms: 1.955278
   type: 'test'
   ...
 # Subtest: auth API remains closed without configuration, makes no provider request
 ok 9 - auth API remains closed without configuration, makes no provider request
   ---
-  duration_ms: 33.944667
+  duration_ms: 15.686078
   type: 'test'
   ...
 # Subtest: AES-GCM session storage is authenticated and not plaintext
 ok 10 - AES-GCM session storage is authenticated and not plaintext
   ---
-  duration_ms: 14.20853
+  duration_ms: 16.267345
   type: 'test'
   ...
 # Subtest: module preferences retain hidden data and fixed entry routes
 ok 11 - module preferences retain hidden data and fixed entry routes
   ---
-  duration_ms: 4.116319
+  duration_ms: 8.021112
   type: 'test'
   ...
 # Subtest: favorites lead navigation in module order without duplicate or mutated catalog entries
 ok 12 - favorites lead navigation in module order without duplicate or mutated catalog entries
   ---
-  duration_ms: 2.124009
+  duration_ms: 2.065499
   type: 'test'
   ...
 # Subtest: manual module reordering changes favorite order without changing the pinned set
 ok 13 - manual module reordering changes favorite order without changing the pinned set
   ---
-  duration_ms: 1.861861
+  duration_ms: 1.962084
   type: 'test'
   ...
 # Subtest: hidden favorite remains pinned and returns on show without touching other preferences
 ok 14 - hidden favorite remains pinned and returns on show without touching other preferences
   ---
-  duration_ms: 2.08965
+  duration_ms: 2.181844
   type: 'test'
   ...
 # Subtest: favorite maximum is five and removing one releases a slot
 ok 15 - favorite maximum is five and removing one releases a slot
   ---
-  duration_ms: 2.558598
+  duration_ms: 2.746528
   type: 'test'
   ...
 # Subtest: mandatory routes survive malformed hidden/order settings and another account has no inherited pins
 ok 16 - mandatory routes survive malformed hidden/order settings and another account has no inherited pins
   ---
-  duration_ms: 1.733195
+  duration_ms: 1.901737
   type: 'test'
   ...
 # Subtest: navigation markup exposes exactly one current page and safely labels favorites
 ok 17 - navigation markup exposes exactly one current page and safely labels favorites
   ---
-  duration_ms: 1.948198
+  duration_ms: 1.940075
   type: 'test'
   ...
 # Subtest: offline diff preserves non-UUID IDs and tombstones
 ok 18 - offline diff preserves non-UUID IDs and tombstones
   ---
-  duration_ms: 1.550678
+  duration_ms: 1.777493
   type: 'test'
   ...
 # Subtest: same-record conflicts never silently discard unsynced local edits
 ok 19 - same-record conflicts never silently discard unsynced local edits
   ---
-  duration_ms: 1.089864
+  duration_ms: 1.13191
   type: 'test'
   ...
 # Subtest: sync rejects another owner and cancellation prevents late writes
 ok 20 - sync rejects another owner and cancellation prevents late writes
   ---
-  duration_ms: 1.663382
+  duration_ms: 1.651746
   type: 'test'
   ...
 # Subtest: JSONB key ordering does not create false conflicts or writes
 ok 21 - JSONB key ordering does not create false conflicts or writes
   ---
-  duration_ms: 0.956377
+  duration_ms: 1.03032
   type: 'test'
   ...
 # Subtest: two devices merge different records and surface a same-record conflict
 ok 22 - two devices merge different records and surface a same-record conflict
   ---
-  duration_ms: 10.570077
+  duration_ms: 16.963258
   type: 'test'
   ...
 # Subtest: incomplete acknowledgement never clears pending local mutations
 ok 23 - incomplete acknowledgement never clears pending local mutations
   ---
-  duration_ms: 1.358058
+  duration_ms: 3.561939
   type: 'test'
   ...
 # Subtest: wrong-owner acknowledgement never enters the durable shadow
 ok 24 - wrong-owner acknowledgement never enters the durable shadow
   ---
-  duration_ms: 1.631086
+  duration_ms: 4.581301
   type: 'test'
   ...
 # Subtest: edit during an in-flight push stays queued after acknowledgement
 ok 25 - edit during an in-flight push stays queued after acknowledgement
   ---
-  duration_ms: 16.966849
+  duration_ms: 22.017983
   type: 'test'
   ...
 # Subtest: repeating pagination fails closed without replacing the Store
 ok 26 - repeating pagination fails closed without replacing the Store
   ---
-  duration_ms: 1.916419
+  duration_ms: 2.522401
   type: 'test'
   ...
 # Subtest: SQL rejects SQL NULL, JSON null, empty or malformed mutation batches
 ok 27 - SQL rejects SQL NULL, JSON null, empty or malformed mutation batches
   ---
-  duration_ms: 24.803237
+  duration_ms: 32.079403
   type: 'test'
   ...
 # Subtest: SQL requires typed identity and safe integer expected revisions
 ok 28 - SQL requires typed identity and safe integer expected revisions
   ---
-  duration_ms: 60.684583
+  duration_ms: 39.718974
   type: 'test'
   ...
 # Subtest: SQL requires integer transaction cents even when amount is absent or JSON null
 ok 29 - SQL requires integer transaction cents even when amount is absent or JSON null
   ---
-  duration_ms: 25.722976
+  duration_ms: 30.894214
   type: 'test'
   ...
 # Subtest: SQL state metadata rejects absent or wrong version, profile and preferences shapes
 ok 30 - SQL state metadata rejects absent or wrong version, profile and preferences shapes
   ---
-  duration_ms: 22.075079
+  duration_ms: 21.15733
   type: 'test'
   ...
 # Subtest: SQL valid metadata keeps a neutral profile and uses the same CAS contract
 ok 31 - SQL valid metadata keeps a neutral profile and uses the same CAS contract
   ---
-  duration_ms: 9.8502
+  duration_ms: 7.701998
   type: 'test'
   ...
 # Subtest: SQL invalid linked operation rolls back records and metadata together
 ok 32 - SQL invalid linked operation rolls back records and metadata together
   ---
-  duration_ms: 9.968275
+  duration_ms: 6.934577
   type: 'test'
   ...
 # Subtest: SQL text IDs retain case and the maximum 80-byte identifier
 ok 33 - SQL text IDs retain case and the maximum 80-byte identifier
   ---
-  duration_ms: 9.226471
+  duration_ms: 6.167888
   type: 'test'
   ...
 # Subtest: SQL constraints reject missing payload identity even for privileged maintenance writes
 ok 34 - SQL constraints reject missing payload identity even for privileged maintenance writes
   ---
-  duration_ms: 6.458808
+  duration_ms: 4.136699
   type: 'test'
   ...
 # Subtest: Storage migration makes an existing public user-media bucket private
 ok 35 - Storage migration makes an existing public user-media bucket private
   ---
-  duration_ms: 2.292533
+  duration_ms: 1.657487
   type: 'test'
   ...
 # Subtest: Storage RLS isolates object CRUD even with an unrelated permissive policy
 ok 36 - Storage RLS isolates object CRUD even with an unrelated permissive policy
   ---
-  duration_ms: 39.317597
+  duration_ms: 45.669163
   type: 'test'
   ...
 # Subtest: Storage RLS rejects traversal, encoded paths and non-image names
 ok 37 - Storage RLS rejects traversal, encoded paths and non-image names
   ---
-  duration_ms: 17.577321
+  duration_ms: 11.863487
   type: 'test'
   ...
 # Subtest: Storage anonymous requests cannot read or insert user media without blocking other buckets
 ok 38 - Storage anonymous requests cannot read or insert user media without blocking other buckets
   ---
-  duration_ms: 8.423061
+  duration_ms: 4.960659
   type: 'test'
   ...
 # Subtest: SQL preserves text identity exactly and account B cannot read A
 ok 39 - SQL preserves text identity exactly and account B cannot read A
   ---
-  duration_ms: 13.785366
+  duration_ms: 9.579431
   type: 'test'
   ...
 # Subtest: SQL RLS forbids owner substitution and anonymous private reads
 ok 40 - SQL RLS forbids owner substitution and anonymous private reads
   ---
-  duration_ms: 11.692893
+  duration_ms: 9.362701
   type: 'test'
   ...
 # Subtest: SQL CAS makes linked batches atomic and rejects stale writes
 ok 41 - SQL CAS makes linked batches atomic and rejects stale writes
   ---
-  duration_ms: 13.223945
+  duration_ms: 6.634002
   type: 'test'
   ...
 # Subtest: SQL rejects non-integer cents, invalid IDs and unknown collections
 ok 42 - SQL rejects non-integer cents, invalid IDs and unknown collections
   ---
-  duration_ms: 6.994255
+  duration_ms: 5.414506
   type: 'test'
   ...
 # Subtest: new SQL profiles contain no owner identity and usernames are unique
 ok 43 - new SQL profiles contain no owner identity and usernames are unique
   ---
-  duration_ms: 2.777508
+  duration_ms: 2.732597
   type: 'test'
   ...
 # Subtest: only allow-listed operations; bad args rejected and nothing written
 ok 44 - only allow-listed operations; bad args rejected and nothing written
   ---
-  duration_ms: 4.133774
+  duration_ms: 5.02976
   type: 'test'
   ...
 # Subtest: agenda create → toast with undo; duplicate and op_id retry write once
 ok 45 - agenda create → toast with undo; duplicate and op_id retry write once
   ---
-  duration_ms: 2.33356
+  duration_ms: 3.205028
   type: 'test'
   ...
 # Subtest: ambiguous / not found → one question, no write; unique partial match resolves
 ok 46 - ambiguous / not found → one question, no write; unique partial match resolves
   ---
-  duration_ms: 2.909708
+  duration_ms: 4.107621
   type: 'test'
   ...
 # Subtest: update / delete restore exactly on undo
 ok 47 - update / delete restore exactly on undo
   ---
-  duration_ms: 3.090813
+  duration_ms: 5.020971
   type: 'test'
   ...
 # Subtest: SOMA note + stage, learning task + done; audit keeps titles only
 ok 48 - SOMA note + stage, learning task + done; audit keeps titles only
   ---
-  duration_ms: 2.259561
+  duration_ms: 3.280188
   type: 'test'
   ...
 # Subtest: 15th and 30th each month until December: exact dates, February uses its last day once
 ok 49 - 15th and 30th each month until December: exact dates, February uses its last day once
   ---
-  duration_ms: 3.417891
+  duration_ms: 3.275224
   type: 'test'
   ...
 # Subtest: year resolution never goes to the past
 ok 50 - year resolution never goes to the past
   ---
-  duration_ms: 0.39643
+  duration_ms: 0.410091
   type: 'test'
   ...
 # Subtest: weekly by weekdays with interval, end date and per-occurrence cancellation
 ok 51 - weekly by weekdays with interval, end date and per-occurrence cancellation
   ---
-  duration_ms: 1.097703
+  duration_ms: 1.086737
   type: 'test'
   ...
 # Subtest: daily, yearly and non-recurring
 ok 52 - daily, yearly and non-recurring
   ---
-  duration_ms: 1.391187
+  duration_ms: 1.693811
   type: 'test'
   ...
 # Subtest: not a monthly phrase → null (EVIE asks instead of inventing)
 ok 53 - not a monthly phrase → null (EVIE asks instead of inventing)
   ---
-  duration_ms: 0.267557
+  duration_ms: 0.284323
   type: 'test'
   ...
-# (node:3182) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:4856) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: AI routes require a session and status never exposes keys
 ok 54 - AI routes require a session and status never exposes keys
   ---
-  duration_ms: 215.974329
+  duration_ms: 286.89465
   type: 'test'
   ...
 # Subtest: chat sends strict tools, store:false and the registered name; returns text
 ok 55 - chat sends strict tools, store:false and the registered name; returns text
   ---
-  duration_ms: 45.718938
+  duration_ms: 78.463026
   type: 'test'
   ...
 # Subtest: chat rejects system roles, unknown tool calls and empty input
 ok 56 - chat rejects system roles, unknown tool calls and empty input
   ---
-  duration_ms: 32.183127
+  duration_ms: 46.463457
   type: 'test'
   ...
 # Subtest: model tool calls outside the allowlist are dropped
 ok 57 - model tool calls outside the allowlist are dropped
   ---
-  duration_ms: 39.867771
+  duration_ms: 45.330309
   type: 'test'
   ...
 # Subtest: daily chat limit returns 429 without calling OpenAI
 ok 58 - daily chat limit returns 429 without calling OpenAI
   ---
-  duration_ms: 14.803279
+  duration_ms: 22.43682
   type: 'test'
   ...
 # Subtest: missing OpenAI key degrades with a clear 503
 ok 59 - missing OpenAI key degrades with a clear 503
   ---
-  duration_ms: 9.947439
+  duration_ms: 19.771497
   type: 'test'
   ...
 # Subtest: STT forwards audio to Groq in Spanish and meters the 10 s minimum
 ok 60 - STT forwards audio to Groq in Spanish and meters the 10 s minimum
   ---
-  duration_ms: 18.762773
+  duration_ms: 29.571218
   type: 'test'
   ...
 # Subtest: TTS uses the Fish Audio free model and configured voice; ignores unsafe voice ids
 ok 61 - TTS uses the Fish Audio free model and configured voice; ignores unsafe voice ids
   ---
-  duration_ms: 18.079047
+  duration_ms: 32.190839
   type: 'test'
   ...
 # Subtest: voice pipeline end to end: Groq transcript -> OpenAI tool call -> function output -> answer -> Fish speech
 ok 62 - voice pipeline end to end: Groq transcript -> OpenAI tool call -> function output -> answer -> Fish speech
   ---
-  duration_ms: 25.179142
+  duration_ms: 33.705213
   type: 'test'
   ...
-# (node:3194) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:4868) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: Hono signup emits only identity and an opaque secure cookie; SQLite stores encrypted tokens
 ok 63 - Hono signup emits only identity and an opaque secure cookie; SQLite stores encrypted tokens
   ---
-  duration_ms: 158.145279
+  duration_ms: 202.461019
   type: 'test'
   ...
 # Subtest: Hono rejects origin and content-type violations before provider calls
 ok 64 - Hono rejects origin and content-type violations before provider calls
   ---
-  duration_ms: 8.44102
+  duration_ms: 10.659791
   type: 'test'
   ...
 # SUPABASE_AUTH_REJECTED 400 sensitive-provider-detail
@@ -402,25 +402,25 @@ ok 64 - Hono rejects origin and content-type violations before provider calls
 # Subtest: Auth attempt limit is persisted in SQLite and stores no plaintext IP
 ok 65 - Auth attempt limit is persisted in SQLite and stores no plaintext IP
   ---
-  duration_ms: 48.992299
+  duration_ms: 66.839395
   type: 'test'
   ...
 # Subtest: Signin rotates the opaque cookie and removes the previous local session
 ok 66 - Signin rotates the opaque cookie and removes the previous local session
   ---
-  duration_ms: 39.52342
+  duration_ms: 37.848998
   type: 'test'
   ...
 # Subtest: Data requests require both valid cookie and matching X-Evie-User
 ok 67 - Data requests require both valid cookie and matching X-Evie-User
   ---
-  duration_ms: 13.842363
+  duration_ms: 17.501984
   type: 'test'
   ...
 # Subtest: Refresh encrypts rotated tokens, releases lease and verifies the resulting user
 ok 68 - Refresh encrypts rotated tokens, releases lease and verifies the resulting user
   ---
-  duration_ms: 16.291579
+  duration_ms: 20.385583
   type: 'test'
   ...
 # EVIE_ACCOUNTS_ERROR Error: Sesión actualizándose.
@@ -437,7 +437,7 @@ ok 68 - Refresh encrypts rotated tokens, releases lease and verifies the resulti
 # Subtest: Concurrent refresh uses a lease and cannot reuse the same refresh token
 ok 69 - Concurrent refresh uses a lease and cannot reuse the same refresh token
   ---
-  duration_ms: 3030.212667
+  duration_ms: 3048.721567
   type: 'test'
   ...
 # EVIE_ACCOUNTS_ERROR Error: Provider refresh unavailable
@@ -454,7 +454,7 @@ ok 69 - Concurrent refresh uses a lease and cannot reuse the same refresh token
 # Subtest: Transient refresh failure preserves the encrypted session and allows retry
 ok 70 - Transient refresh failure preserves the encrypted session and allows retry
   ---
-  duration_ms: 32.346857
+  duration_ms: 30.022535
   type: 'test'
   ...
 # EVIE_ACCOUNTS_ERROR Error: Invalid provider session
@@ -471,680 +471,680 @@ ok 70 - Transient refresh failure preserves the encrypted session and allows ret
 # Subtest: Malformed refresh tokens are never persisted and always release the lease
 ok 71 - Malformed refresh tokens are never persisted and always release the lease
   ---
-  duration_ms: 24.673241
+  duration_ms: 31.493881
   type: 'test'
   ...
 # Subtest: Rejected refresh revokes the D1 session without exposing provider details
 ok 72 - Rejected refresh revokes the D1 session without exposing provider details
   ---
-  duration_ms: 19.407448
+  duration_ms: 23.691517
   type: 'test'
   ...
 # Subtest: Malformed provider expiry or token types never create a persisted session
 ok 73 - Malformed provider expiry or token types never create a persisted session
   ---
-  duration_ms: 16.837612
+  duration_ms: 24.399441
   type: 'test'
   ...
 # Subtest: Provider user mismatch fails closed and never reaches the data RPC
 ok 74 - Provider user mismatch fails closed and never reaches the data RPC
   ---
-  duration_ms: 23.264351
+  duration_ms: 21.704236
   type: 'test'
   ...
 # Subtest: Local logout revokes only one session; global logout revokes only that owner
 ok 75 - Local logout revokes only one session; global logout revokes only that owner
   ---
-  duration_ms: 21.436556
+  duration_ms: 22.780122
   type: 'test'
   ...
 # Subtest: Failed global logout preserves sessions and does not report remote success
 ok 76 - Failed global logout preserves sessions and does not report remote success
   ---
-  duration_ms: 17.823102
+  duration_ms: 16.619769
   type: 'test'
   ...
 # Subtest: Old-tab logout cannot clear the new account cookie or revoke its session
 ok 77 - Old-tab logout cannot clear the new account cookie or revoke its session
   ---
-  duration_ms: 21.249059
+  duration_ms: 17.449093
   type: 'test'
   ...
 # Subtest: Data payload rejects caller-selected owner and preserves text IDs in RPC forwarding
 ok 78 - Data payload rejects caller-selected owner and preserves text IDs in RPC forwarding
   ---
-  duration_ms: 18.703421
+  duration_ms: 17.227258
   type: 'test'
   ...
 # Subtest: Signup is invite-only; invite codes are single use, hashed and owner-issued
 ok 79 - Signup is invite-only; invite codes are single use, hashed and owner-issued
   ---
-  duration_ms: 28.346174
+  duration_ms: 24.981098
   type: 'test'
   ...
 # SUPABASE_AUTH_REJECTED 422 user_already_exists
 # Subtest: Provider rejection releases the invite; expired invites are rejected
 ok 80 - Provider rejection releases the invite; expired invites are rejected
   ---
-  duration_ms: 18.1292
+  duration_ms: 31.794436
   type: 'test'
   ...
 # Subtest: Signup with email confirmation on returns actionable 409, never a fake session
 ok 81 - Signup with email confirmation on returns actionable 409, never a fake session
   ---
-  duration_ms: 9.410831
+  duration_ms: 14.514102
   type: 'test'
   ...
 # Subtest: Service-role admin creation confirms synthetic email, then signs in
 ok 82 - Service-role admin creation confirms synthetic email, then signs in
   ---
-  duration_ms: 8.012141
+  duration_ms: 9.608845
   type: 'test'
   ...
 # Subtest: upgrades an old D1 (only 0001 applied) automatically: signup with bootstrap works
 ok 83 - upgrades an old D1 (only 0001 applied) automatically: signup with bootstrap works
   ---
-  duration_ms: 8.292838
+  duration_ms: 9.999649
   type: 'test'
   ...
-# (node:3206) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:4880) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: catalog requires a session and shows honest statuses without secrets
 ok 84 - catalog requires a session and shows honest statuses without secrets
   ---
-  duration_ms: 155.647283
+  duration_ms: 223.837608
   type: 'test'
   ...
 # Subtest: needs_setup when Google client is missing and start is refused
 ok 85 - needs_setup when Google client is missing and start is refused
   ---
-  duration_ms: 21.267947
+  duration_ms: 30.773994
   type: 'test'
   ...
 # Subtest: OAuth: PKCE S256 + state; callback stores sealed tokens for the starting account only; state is single-use
 ok 86 - OAuth: PKCE S256 + state; callback stores sealed tokens for the starting account only; state is single-use
   ---
-  duration_ms: 32.943183
+  duration_ms: 48.72351
   type: 'test'
   ...
 # Subtest: rejects callback without the requested scope and forged state
 ok 87 - rejects callback without the requested scope and forged state
   ---
-  duration_ms: 25.133285
+  duration_ms: 46.589565
   type: 'test'
   ...
 # Subtest: events are per account, filtered to the day, and plain data; disconnect revokes and deletes
 ok 88 - events are per account, filtered to the day, and plain data; disconnect revokes and deletes
   ---
-  duration_ms: 54.899287
+  duration_ms: 61.844442
   type: 'test'
   ...
 # Subtest: write: narrow scope on request, preview+confirm required, idempotent, only the owner account can create
 ok 89 - write: narrow scope on request, preview+confirm required, idempotent, only the owner account can create
   ---
-  duration_ms: 36.179067
+  duration_ms: 36.915476
   type: 'test'
   ...
 # Subtest: desktop account transport is disabled without configuration
 ok 90 - desktop account transport is disabled without configuration
   ---
-  duration_ms: 1.901794
+  duration_ms: 1.983038
   type: 'test'
   ...
 # Subtest: desktop data requests use only the server-verified account; 401 locks it
 ok 91 - desktop data requests use only the server-verified account; 401 locks it
   ---
-  duration_ms: 57.09469
+  duration_ms: 54.358775
   type: 'test'
   ...
 # Subtest: configured desktop accounts never fall back to the legacy local profile
 ok 92 - configured desktop accounts never fall back to the legacy local profile
   ---
-  duration_ms: 0.966586
+  duration_ms: 0.933864
   type: 'test'
   ...
 # Subtest: desktop grants and microphone consent are per-user and per-device
 ok 93 - desktop grants and microphone consent are per-user and per-device
   ---
-  duration_ms: 4.220879
+  duration_ms: 4.36804
   type: 'test'
   ...
 # Subtest: a delayed permission prompt cannot grant access to a different account
 ok 94 - a delayed permission prompt cannot grant access to a different account
   ---
-  duration_ms: 2.814267
+  duration_ms: 5.778324
   type: 'test'
   ...
 # Subtest: late data responses are cancelled when the desktop account changes
 ok 95 - late data responses are cancelled when the desktop account changes
   ---
-  duration_ms: 1.777786
+  duration_ms: 4.29929
   type: 'test'
   ...
 # Subtest: rejects unknown actions, extra fields, paths and raw URLs
 ok 96 - rejects unknown actions, extra fields, paths and raw URLs
   ---
-  duration_ms: 2.645378
+  duration_ms: 2.858249
   type: 'test'
   ...
 # Subtest: web/non-Windows reports unavailable instead of pretending
 ok 97 - web/non-Windows reports unavailable instead of pretending
   ---
-  duration_ms: 0.669651
+  duration_ms: 0.633381
   type: 'test'
   ...
 # Subtest: Spotify opens by protocol; WhatsApp falls back to the official web URL
 ok 98 - Spotify opens by protocol; WhatsApp falls back to the official web URL
   ---
-  duration_ms: 3.01827
+  duration_ms: 2.110501
   type: 'test'
   ...
 # Subtest: media keys go through the helper and are reported as submitted, not verified
 ok 99 - media keys go through the helper and are reported as submitted, not verified
   ---
-  duration_ms: 0.554517
+  duration_ms: 0.296772
   type: 'test'
   ...
 # Subtest: message: prepare opens nothing; confirm opens prefilled chat once; never "sent"
 ok 100 - message: prepare opens nothing; confirm opens prefilled chat once; never "sent"
   ---
-  duration_ms: 1.567853
+  duration_ms: 0.871799
   type: 'test'
   ...
 # Subtest: message confirmation expires and can be cancelled
 ok 101 - message confirmation expires and can be cancelled
   ---
-  duration_ms: 0.705437
+  duration_ms: 0.468704
   type: 'test'
   ...
 # Subtest: main process wires the validated desktop IPC, deep link and keeps secure window settings
 ok 102 - main process wires the validated desktop IPC, deep link and keeps secure window settings
   ---
-  duration_ms: 0.918783
+  duration_ms: 1.195099
   type: 'test'
   ...
 # Subtest: registry defines 33 typed capabilities, no generic execution
 ok 103 - registry defines 33 typed capabilities, no generic execution
   ---
-  duration_ms: 2.982046
+  duration_ms: 3.202106
   type: 'test'
   ...
 # Subtest: strict arguments reject commands, raw paths, coercion and prototype pollution
 ok 104 - strict arguments reject commands, raw paths, coercion and prototype pollution
   ---
-  duration_ms: 0.718518
+  duration_ms: 0.763749
   type: 'test'
   ...
 # Subtest: HTTPS exact domain, no credentials, subdomains, local protocols or custom ports
 ok 105 - HTTPS exact domain, no credentials, subdomains, local protocols or custom ports
   ---
-  duration_ms: 0.446457
+  duration_ms: 0.451705
   type: 'test'
   ...
 # Subtest: contracts reject nonobjects, inherited fields and oversized text
 ok 106 - contracts reject nonobjects, inherited fields and oversized text
   ---
-  duration_ms: 0.463336
+  duration_ms: 0.467485
   type: 'test'
   ...
 # Subtest: rate limit is enforced
 ok 107 - rate limit is enforced
   ---
-  duration_ms: 0.243391
+  duration_ms: 0.243429
   type: 'test'
   ...
 # Subtest: write only commits after confirmation and cancellation never commits
 ok 108 - write only commits after confirmation and cancellation never commits
   ---
-  duration_ms: 1.972778
+  duration_ms: 2.030761
   type: 'test'
   ...
 # Subtest: cancelling while confirmation is open invalidates execution
 ok 109 - cancelling while confirmation is open invalidates execution
   ---
-  duration_ms: 13.926861
+  duration_ms: 12.291345
   type: 'test'
   ...
 # Subtest: read query bypasses confirmation, preserves real result
 ok 110 - read query bypasses confirmation, preserves real result
   ---
-  duration_ms: 0.544077
+  duration_ms: 0.371017
   type: 'test'
   ...
 # Subtest: malicious tool is rejected before executor
 ok 111 - malicious tool is rejected before executor
   ---
-  duration_ms: 0.629756
+  duration_ms: 0.521359
   type: 'test'
   ...
 # Subtest: Ollama parser accepts validated deterministic calls, rejects raw execution
 ok 112 - Ollama parser accepts validated deterministic calls, rejects raw execution
   ---
-  duration_ms: 0.659913
+  duration_ms: 0.655763
   type: 'test'
   ...
 # Subtest: Ollama network stays on loopback with redirects rejected
 ok 113 - Ollama network stays on loopback with redirects rejected
   ---
-  duration_ms: 0.618515
+  duration_ms: 0.599553
   type: 'test'
   ...
 # Subtest: conversation uses real read result and explicitly selected model
 ok 114 - conversation uses real read result and explicitly selected model
   ---
-  duration_ms: 31.047166
+  duration_ms: 65.043939
   type: 'test'
   ...
 # Subtest: missing local model is a genuine failure
 ok 115 - missing local model is a genuine failure
   ---
-  duration_ms: 1.402606
+  duration_ms: 2.281944
   type: 'test'
   ...
 # Subtest: PCM WAV validation rejects fake bytes and sample rates
 ok 116 - PCM WAV validation rejects fake bytes and sample rates
   ---
-  duration_ms: 0.894062
+  duration_ms: 1.151016
   type: 'test'
   ...
 # Subtest: voice state machine keeps illegal transitions blocked
 ok 117 - voice state machine keeps illegal transitions blocked
   ---
-  duration_ms: 2.136685
+  duration_ms: 3.347014
   type: 'test'
   ...
 # Subtest: audit omits sensitive free text and argument values
 ok 118 - audit omits sensitive free text and argument values
   ---
-  duration_ms: 2.36436
+  duration_ms: 5.707859
   type: 'test'
   ...
 # Subtest: available balance uses cash/debit accounts, excludes credit limits and future-dated items
 ok 119 - available balance uses cash/debit accounts, excludes credit limits and future-dated items
   ---
-  duration_ms: 1.773966
+  duration_ms: 2.67468
   type: 'test'
   ...
 # Subtest: transfers between own accounts do not change totals or period income/expense
 ok 120 - transfers between own accounts do not change totals or period income/expense
   ---
-  duration_ms: 1.697463
+  duration_ms: 2.270668
   type: 'test'
   ...
 # Subtest: without accounts it falls back to an explicitly labelled ledger estimate
 ok 121 - without accounts it falls back to an explicitly labelled ledger estimate
   ---
-  duration_ms: 0.309342
+  duration_ms: 0.449834
   type: 'test'
   ...
 # Subtest: chart buckets match the period totals exactly (7/30/90, narrow aggregation)
 ok 122 - chart buckets match the period totals exactly (7/30/90, narrow aggregation)
   ---
-  duration_ms: 3.066339
+  duration_ms: 5.10871
   type: 'test'
   ...
 # Subtest: 3,920 BBVA + 1,000 cash = 4,920; a 200 cash expense → cash 800, total 4,720, period expense +200
 ok 123 - 3,920 BBVA + 1,000 cash = 4,920; a 200 cash expense → cash 800, total 4,720, period expense +200
   ---
-  duration_ms: 10.063808
+  duration_ms: 10.629821
   type: 'test'
   ...
 # Subtest: income «en BBVA» records one income against BBVA; no SOMA link unless explicit
 ok 124 - income «en BBVA» records one income against BBVA; no SOMA link unless explicit
   ---
-  duration_ms: 2.594857
+  duration_ms: 2.621544
   type: 'test'
   ...
 # Subtest: no account named with two accounts → asks which one; the answer completes exactly one movement
 ok 125 - no account named with two accounts → asks which one; the answer completes exactly one movement
   ---
-  duration_ms: 2.618172
+  duration_ms: 2.327012
   type: 'test'
   ...
 # Subtest: unknown answer re-asks once; «cancela» writes nothing
 ok 126 - unknown answer re-asks once; «cancela» writes nothing
   ---
-  duration_ms: 3.937139
+  duration_ms: 3.074815
   type: 'test'
   ...
 # Subtest: exactly one account → it is used without asking
 ok 127 - exactly one account → it is used without asking
   ---
-  duration_ms: 1.826514
+  duration_ms: 1.650266
   type: 'test'
   ...
 # Subtest: repeated utterance / network retry creates only one movement (op window and explicit op_id)
 ok 128 - repeated utterance / network retry creates only one movement (op window and explicit op_id)
   ---
-  duration_ms: 2.1368
+  duration_ms: 2.07942
   type: 'test'
   ...
 # Subtest: cash → BBVA transfer keeps the combined total and does not inflate income/expenses
 ok 129 - cash → BBVA transfer keeps the combined total and does not inflate income/expenses
   ---
-  duration_ms: 2.453211
+  duration_ms: 2.08228
   type: 'test'
   ...
 # Subtest: undo removes exactly what the operation created
 ok 130 - undo removes exactly what the operation created
   ---
-  duration_ms: 1.542926
+  duration_ms: 1.619989
   type: 'test'
   ...
 # Subtest: legacy unassigned movements stay unassigned and do not change balances when the new code loads
 ok 131 - legacy unassigned movements stay unassigned and do not change balances when the new code loads
   ---
-  duration_ms: 13.472412
+  duration_ms: 13.289382
   type: 'test'
   ...
 # Subtest: reconciliation is a baseline, never income/expense, and earlier movements are not double counted
 ok 132 - reconciliation is a baseline, never income/expense, and earlier movements are not double counted
   ---
-  duration_ms: 3.756209
+  duration_ms: 6.964897
   type: 'test'
   ...
 # Subtest: legacy adjustment transactions keep their balance effect but leave monthly statistics
 ok 133 - legacy adjustment transactions keep their balance effect but leave monthly statistics
   ---
-  duration_ms: 1.363547
+  duration_ms: 3.900155
   type: 'test'
   ...
 # Subtest: credit limit is never spendable; type correction keeps value and history
 ok 134 - credit limit is never spendable; type correction keeps value and history
   ---
-  duration_ms: 2.039626
+  duration_ms: 5.879292
   type: 'test'
   ...
 # Subtest: amount formats: 1,250.50 · 1.250 · 300.5 and «en gasolina con BBVA»
 ok 135 - amount formats: 1,250.50 · 1.250 · 300.5 and «en gasolina con BBVA»
   ---
-  duration_ms: 1.707109
+  duration_ms: 2.873761
   type: 'test'
   ...
 # Subtest: phrase → ordered groups, combos and accents
 ok 136 - phrase → ordered groups, combos and accents
   ---
-  duration_ms: 6.803626
+  duration_ms: 11.705805
   type: 'test'
   ...
 # Subtest: «Ivi, hoy entrené pecho y espalda» creates ONE partial session; repeating does not duplicate
 ok 137 - «Ivi, hoy entrené pecho y espalda» creates ONE partial session; repeating does not duplicate
   ---
-  duration_ms: 3.144371
+  duration_ms: 8.285529
   type: 'test'
   ...
 # Subtest: later «también hice hombros» merges into the same voice session; already-covered groups are skipped
 ok 138 - later «también hice hombros» merges into the same voice session; already-covered groups are skipped
   ---
-  duration_ms: 2.269885
+  duration_ms: 6.458231
   type: 'test'
   ...
 # Subtest: a detailed session for the day already covering the groups → no new record; op_id retry is idempotent
 ok 139 - a detailed session for the day already covering the groups → no new record; op_id retry is idempotent
   ---
-  duration_ms: 2.870294
+  duration_ms: 8.908261
   type: 'test'
   ...
 # Subtest: «ayer entrené pierna» uses yesterday; undo removes it; future dates rejected; no muscles → question
 ok 140 - «ayer entrené pierna» uses yesterday; undo removes it; future dates rejected; no muscles → question
   ---
-  duration_ms: 1.827324
+  duration_ms: 7.411715
   type: 'test'
   ...
 # Subtest: summary: last date, secondary = partial, readiness band and override wins
 ok 141 - summary: last date, secondary = partial, readiness band and override wins
   ---
-  duration_ms: 14.133734
+  duration_ms: 32.875259
   type: 'test'
   ...
 # Subtest: original SVG body: one accessible region per group, unique pattern ids per view, text label per band
 ok 142 - original SVG body: one accessible region per group, unique pattern ids per view, text label per band
   ---
-  duration_ms: 2.620878
+  duration_ms: 5.01725
   type: 'test'
   ...
 # Subtest: presentation preference only changes the silhouette and defaults to neutral
 ok 143 - presentation preference only changes the silhouette and defaults to neutral
   ---
-  duration_ms: 2.688979
+  duration_ms: 4.705487
   type: 'test'
   ...
 # Subtest: legacy «gimnasio» preferences migrate to «fisico» without losing order
 ok 144 - legacy «gimnasio» preferences migrate to «fisico» without losing order
   ---
-  duration_ms: 1.653245
+  duration_ms: 2.812832
   type: 'test'
   ...
-# (node:3261) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:4935) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: random Google account without invitation gets no session and no account
 ok 145 - random Google account without invitation gets no session and no account
   ---
-  duration_ms: 160.804463
+  duration_ms: 296.346391
   type: 'test'
   ...
 # Subtest: PKCE: verifier is sent to Supabase and state is single-use
 ok 146 - PKCE: verifier is sent to Supabase and state is single-use
   ---
-  duration_ms: 20.007873
+  duration_ms: 30.461158
   type: 'test'
   ...
 # Subtest: existing legacy account that never linked Google cannot enter through Google (no email merge)
 ok 147 - existing legacy account that never linked Google cannot enter through Google (no email merge)
   ---
-  duration_ms: 19.929332
+  duration_ms: 20.976388
   type: 'test'
   ...
 # Subtest: signed-in Naomi links Google to HER id; afterwards Google opens only Naomi
 ok 148 - signed-in Naomi links Google to HER id; afterwards Google opens only Naomi
   ---
-  duration_ms: 36.275844
+  duration_ms: 44.045888
   type: 'test'
   ...
 # Subtest: link callback that returns a different user is refused (no cross-account linking)
 ok 149 - link callback that returns a different user is refused (no cross-account linking)
   ---
-  duration_ms: 27.228388
+  duration_ms: 34.700048
   type: 'test'
   ...
 # Subtest: link requires a verified session bound to X-Evie-User
 ok 150 - link requires a verified session bound to X-Evie-User
   ---
-  duration_ms: 16.034334
+  duration_ms: 18.559735
   type: 'test'
   ...
 # Subtest: new Google user with a valid owner invitation becomes a member; invite is single use
 ok 151 - new Google user with a valid owner invitation becomes a member; invite is single use
   ---
-  duration_ms: 17.023351
+  duration_ms: 15.418012
   type: 'test'
   ...
 # Subtest: desktop handoff: code is useless without the app nonce and is consumed on first use
 ok 152 - desktop handoff: code is useless without the app nonce and is consumed on first use
   ---
-  duration_ms: 21.20053
+  duration_ms: 20.410128
   type: 'test'
   ...
 # Subtest: desktop handoff success issues a session for the linked owner
 ok 153 - desktop handoff success issues a session for the linked owner
   ---
-  duration_ms: 17.78703
+  duration_ms: 19.009395
   type: 'test'
   ...
 # Subtest: password login can be retired only by explicit flag
 ok 154 - password login can be retired only by explicit flag
   ---
-  duration_ms: 10.856157
+  duration_ms: 5.863924
   type: 'test'
   ...
 # Subtest: Google disabled by default returns 503 and opens nothing
 ok 155 - Google disabled by default returns 503 and opens nothing
   ---
-  duration_ms: 6.027606
+  duration_ms: 5.96193
   type: 'test'
   ...
 # Subtest: user cancels at Google: callback returns google=denied and the state cannot be reused
 ok 156 - user cancels at Google: callback returns google=denied and the state cannot be reused
   ---
-  duration_ms: 10.576615
+  duration_ms: 8.650611
   type: 'test'
   ...
 # Subtest: parseDetail understands weight x reps and bodyweight sets
 ok 157 - parseDetail understands weight x reps and bodyweight sets
   ---
-  duration_ms: 2.991554
+  duration_ms: 9.140251
   type: 'test'
   ...
 # Subtest: manual session is valid for the shared validator and computes volume
 ok 158 - manual session is valid for the shared validator and computes volume
   ---
-  duration_ms: 1.643409
+  duration_ms: 4.715098
   type: 'test'
   ...
 # Subtest: manual form rejects future dates, empty sessions and bad set counts
 ok 159 - manual form rejects future dates, empty sessions and bad set counts
   ---
-  duration_ms: 0.4216
+  duration_ms: 1.201086
   type: 'test'
   ...
 # Subtest: monthly day 31 clamps to short months and respects installments
 ok 160 - monthly day 31 clamps to short months and respects installments
   ---
-  duration_ms: 10.493205
+  duration_ms: 11.903706
   type: 'test'
   ...
 # Subtest: 15 y 30, biweekly and validation
 ok 161 - 15 y 30, biweekly and validation
   ---
-  duration_ms: 1.738314
+  duration_ms: 1.802108
   type: 'test'
   ...
 # Subtest: confirming creates exactly one Finance income, is idempotent and supports partials
 ok 162 - confirming creates exactly one Finance income, is idempotent and supports partials
   ---
-  duration_ms: 23.184263
+  duration_ms: 22.284472
   type: 'test'
   ...
 # Subtest: forecast is projected only (no transactions) and only for flagged schedules
 ok 163 - forecast is projected only (no transactions) and only for flagged schedules
   ---
-  duration_ms: 2.502542
+  duration_ms: 3.054175
   type: 'test'
   ...
 # Subtest: receipt without its matching client payment fails validation
 ok 164 - receipt without its matching client payment fails validation
   ---
-  duration_ms: 1.313051
+  duration_ms: 1.42503
   type: 'test'
   ...
 # Subtest: Pendientes: severity, ordering, settled items excluded
 ok 165 - Pendientes: severity, ordering, settled items excluded
   ---
-  duration_ms: 4.881354
+  duration_ms: 4.805249
   type: 'test'
   ...
 # Subtest: Pendientes of one account never include another account state
 ok 166 - Pendientes of one account never include another account state
   ---
-  duration_ms: 1.435819
+  duration_ms: 1.282946
   type: 'test'
   ...
 # Subtest: wake word accepts natural variants and rejects broad false positives
 ok 167 - wake word accepts natural variants and rejects broad false positives
   ---
-  duration_ms: 1.928166
+  duration_ms: 2.163152
   type: 'test'
   ...
 # Subtest: device phases win over AI cues; illegal transitions are refused
 ok 168 - device phases win over AI cues; illegal transitions are refused
   ---
-  duration_ms: 1.443392
+  duration_ms: 1.456604
   type: 'test'
   ...
 # Subtest: context sends recent turns plus memory and asks to refresh memory in long sessions
 ok 169 - context sends recent turns plus memory and asks to refresh memory in long sessions
   ---
-  duration_ms: 0.739396
+  duration_ms: 0.734241
   type: 'test'
   ...
 # Subtest: a confirmed review becomes a journal v4 record accepted by the existing validator
 ok 170 - a confirmed review becomes a journal v4 record accepted by the existing validator
   ---
-  duration_ms: 2.4261
+  duration_ms: 2.032053
   type: 'test'
   ...
 # Subtest: validation rejects out-of-range or invented emotion keys, missing title and bad dates
 ok 171 - validation rejects out-of-range or invented emotion keys, missing title and bad dates
   ---
-  duration_ms: 0.650453
+  duration_ms: 0.643161
   type: 'test'
   ...
 # Subtest: duplicate-save prevention and legacy records stay distinguishable
 ok 172 - duplicate-save prevention and legacy records stay distinguishable
   ---
-  duration_ms: 0.456083
+  duration_ms: 0.452662
   type: 'test'
   ...
 # Subtest: history filters by title and date, groups several entries per day newest first
 ok 173 - history filters by title and date, groups several entries per day newest first
   ---
-  duration_ms: 13.35039
+  duration_ms: 13.120621
   type: 'test'
   ...
 # Subtest: trends use only confirmed entries, cautious wording and list the entries behind each value
 ok 174 - trends use only confirmed entries, cautious wording and list the entries behind each value
   ---
-  duration_ms: 0.745833
+  duration_ms: 0.838087
   type: 'test'
   ...
 # Subtest: private draft is per-account, round-trips and rejects tampered data
 ok 175 - private draft is per-account, round-trips and rejects tampered data
   ---
-  duration_ms: 0.712105
+  duration_ms: 0.731353
   type: 'test'
   ...
-# (node:3294) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:4968) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: turn uses a strict JSON schema, sends only the session messages and returns an allow-listed cue
 ok 176 - turn uses a strict JSON schema, sends only the session messages and returns an allow-listed cue
   ---
-  duration_ms: 184.422191
+  duration_ms: 328.756182
   type: 'test'
   ...
 # Subtest: the model cannot inject arbitrary cues, HTML or commands; happy is corrected on sad input
 ok 177 - the model cannot inject arbitrary cues, HTML or commands; happy is corrected on sad input
   ---
-  duration_ms: 30.802508
+  duration_ms: 55.971359
   type: 'test'
   ...
 # Subtest: immediate danger always adds supportive emergency guidance
 ok 178 - immediate danger always adds supportive emergency guidance
   ---
-  duration_ms: 31.426887
+  duration_ms: 63.711897
   type: 'test'
   ...
 # Subtest: retrying the same turn id never pays twice and is scoped to the owner
 ok 179 - retrying the same turn id never pays twice and is scoped to the owner
   ---
-  duration_ms: 31.696603
+  duration_ms: 32.586511
   type: 'test'
   ...
 # Subtest: profile personalization comes from the authenticated account only (Naomi never gets Alejandro’s)
 ok 180 - profile personalization comes from the authenticated account only (Naomi never gets Alejandro’s)
   ---
-  duration_ms: 29.414617
+  duration_ms: 47.287838
   type: 'test'
   ...
 # Subtest: analysis with too little information never calls the model or invents scores
 ok 181 - analysis with too little information never calls the model or invents scores
   ---
-  duration_ms: 16.074213
+  duration_ms: 32.577773
   type: 'test'
   ...
 # Subtest: analysis drops emotions/moments without a literal quote from the PERSON and keeps the rest
 ok 182 - analysis drops emotions/moments without a literal quote from the PERSON and keeps the rest
   ---
-  duration_ms: 17.187513
+  duration_ms: 22.165813
   type: 'test'
   ...
 # KISHA_OPENAI_REJECTED 500
@@ -1152,671 +1152,671 @@ ok 182 - analysis drops emotions/moments without a literal quote from the PERSON
 # Subtest: provider failure, missing key and quota are graceful errors
 ok 183 - provider failure, missing key and quota are graceful errors
   ---
-  duration_ms: 37.590391
+  duration_ms: 53.300574
   type: 'test'
   ...
 # Subtest: input validation: roles, length, session id
 ok 184 - input validation: roles, length, session id
   ---
-  duration_ms: 17.896462
+  duration_ms: 20.333177
   type: 'test'
   ...
 # Subtest: geofence: Ciudad Guzmán centre and outskirts inside; Guadalajara / Colima outside
 ok 185 - geofence: Ciudad Guzmán centre and outskirts inside; Guadalajara / Colima outside
   ---
-  duration_ms: 1.170159
+  duration_ms: 1.633371
   type: 'test'
   ...
 # Subtest: polyline6 round-trips; parseValhalla keeps provider distance/time and ordered maneuvers
 ok 186 - polyline6 round-trips; parseValhalla keeps provider distance/time and ordered maneuvers
   ---
-  duration_ms: 3.22344
+  duration_ms: 3.651172
   type: 'test'
   ...
 # Subtest: parseValhalla rejects malformed or failed provider output instead of inventing a route
 ok 187 - parseValhalla rejects malformed or failed provider output instead of inventing a route
   ---
-  duration_ms: 1.179592
+  duration_ms: 1.346013
   type: 'test'
   ...
 # Subtest: GPS quality: stale, inaccurate or missing fixes never produce a turn instruction
 ok 188 - GPS quality: stale, inaccurate or missing fixes never produce a turn instruction
   ---
-  duration_ms: 0.939997
+  duration_ms: 1.264741
   type: 'test'
   ...
 # Subtest: simulated drive: progress, announcements once per threshold, remaining time from provider, arrival
 ok 189 - simulated drive: progress, announcements once per threshold, remaining time from provider, arrival
   ---
-  duration_ms: 4.652575
+  duration_ms: 6.303706
   type: 'test'
   ...
 # Subtest: deviation: jitter tolerated; a real detour triggers reroute after 3 fixes; 20 s debounce; max 6 per 10 min
 ok 190 - deviation: jitter tolerated; a real detour triggers reroute after 3 fixes; 20 s debounce; max 6 per 10 min
   ---
-  duration_ms: 2.831027
+  duration_ms: 3.205083
   type: 'test'
   ...
 # Subtest: destination disambiguation: ambiguous ⇒ choices; outside ⇒ explained; unique ⇒ chosen
 ok 191 - destination disambiguation: ambiguous ⇒ choices; outside ⇒ explained; unique ⇒ chosen
   ---
-  duration_ms: 0.83727
+  duration_ms: 1.106796
   type: 'test'
   ...
-# (node:3313) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:4987) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: requires a bound session
 ok 192 - requires a bound session
   ---
-  duration_ms: 156.848313
+  duration_ms: 215.904922
   type: 'test'
   ...
 # Subtest: without STADIA_API_KEY: config says exactly what is missing; route/search answer 503 (no fake data)
 ok 193 - without STADIA_API_KEY: config says exactly what is missing; route/search answer 503 (no fake data)
   ---
-  duration_ms: 47.946362
+  duration_ms: 44.538391
   type: 'test'
   ...
 # Subtest: route: geofenced destination/origin; provider trip passed through unedited; key only in Authorization header
 ok 194 - route: geofenced destination/origin; provider trip passed through unedited; key only in Authorization header
   ---
-  duration_ms: 50.142197
+  duration_ms: 25.08649
   type: 'test'
   ...
 # Subtest: traffic only when explicitly enabled and mode is auto
 ok 195 - traffic only when explicitly enabled and mode is auto
   ---
-  duration_ms: 24.742208
+  duration_ms: 39.775086
   type: 'test'
   ...
 # Subtest: provider failures become honest errors: no route, bad key, rate limit, timeout
 ok 196 - provider failures become honest errors: no route, bad key, rate limit, timeout
   ---
-  duration_ms: 46.386015
+  duration_ms: 48.361233
   type: 'test'
   ...
 # Subtest: search is bounded to the area and returns only real coordinates
 ok 197 - search is bounded to the area and returns only real coordinates
   ---
-  duration_ms: 11.024704
+  duration_ms: 11.479627
   type: 'test'
   ...
 # Subtest: daily quota per account (EVIE_MAP_LIMITS)
 ok 198 - daily quota per account (EVIE_MAP_LIMITS)
   ---
-  duration_ms: 20.563177
+  duration_ms: 18.841297
   type: 'test'
   ...
-# (node:3325) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:4999) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: pure: "ayer" and weekdays resolve in the user time zone, not UTC
 ok 199 - pure: "ayer" and weekdays resolve in the user time zone, not UTC
   ---
-  duration_ms: 55.271446
+  duration_ms: 104.369657
   type: 'test'
   ...
 # Subtest: pure: topics supersede, sensitivity is detected, context block is bounded and labelled
 ok 200 - pure: topics supersede, sensitivity is detected, context block is bounded and labelled
   ---
-  duration_ms: 3.376604
+  duration_ms: 5.703283
   type: 'test'
   ...
 # Subtest: API requires the bound session (cookie + matching X-Evie-User); owner_id in body rejected
 ok 201 - API requires the bound session (cookie + matching X-Evie-User); owner_id in body rejected
   ---
-  duration_ms: 145.063069
+  duration_ms: 229.402563
   type: 'test'
   ...
 # Subtest: remember / list / edit / forget; contradictions superseded; duplicates not stacked; no plaintext in D1
 ok 202 - remember / list / edit / forget; contradictions superseded; duplicates not stacked; no plaintext in D1
   ---
-  duration_ms: 66.197001
+  duration_ms: 121.734459
   type: 'test'
   ...
 # Subtest: ambiguous forget returns candidates instead of deleting a guess
 ok 203 - ambiguous forget returns candidates instead of deleting a guess
   ---
-  duration_ms: 36.608302
+  duration_ms: 52.406636
   type: 'test'
   ...
 # Subtest: sensitive: location refused; health/emotional need the category AND explicit confirmation
 ok 204 - sensitive: location refused; health/emotional need the category AND explicit confirmation
   ---
-  duration_ms: 22.954343
+  duration_ms: 39.701208
   type: 'test'
   ...
 # Subtest: isolation: B cannot list, edit, delete, recall or receive A memories in its assistant context
 ok 205 - isolation: B cannot list, edit, delete, recall or receive A memories in its assistant context
   ---
-  duration_ms: 44.885573
+  duration_ms: 58.638498
   type: 'test'
   ...
 # Subtest: assistant context: bounded, only relevant facts; private mode sends none
 ok 206 - assistant context: bounded, only relevant facts; private mode sends none
   ---
-  duration_ms: 220.753815
+  duration_ms: 244.917492
   type: 'test'
   ...
 # Subtest: history is opt-in; private/Kisha sessions never stored; sensitive questions stripped; recall grounded with date
 ok 207 - history is opt-in; private/Kisha sessions never stored; sensitive questions stripped; recall grounded with date
   ---
-  duration_ms: 25.740823
+  duration_ms: 37.47305
   type: 'test'
   ...
 # Subtest: deleting a conversation removes its summary and reports derived memories; export and full wipe
 ok 208 - deleting a conversation removes its summary and reports derived memories; export and full wipe
   ---
-  duration_ms: 23.249757
+  duration_ms: 30.411215
   type: 'test'
   ...
 # Subtest: memory disabled: nothing saved or retrieved
 ok 209 - memory disabled: nothing saved or retrieved
   ---
-  duration_ms: 22.449138
+  duration_ms: 22.11475
   type: 'test'
   ...
 # Subtest: single mic owner: second owner pre-empts the first, wake has lowest priority, release frees it
 ok 210 - single mic owner: second owner pre-empts the first, wake has lowest priority, release frees it
   ---
-  duration_ms: 3.150208
+  duration_ms: 2.771666
   type: 'test'
   ...
 # Subtest: long narrative: a 7,000-char turn is kept whole; context ≤ 20k chars; summary requested when turns drop out
 ok 211 - long narrative: a 7,000-char turn is kept whole; context ≤ 20k chars; summary requested when turns drop out
   ---
-  duration_ms: 2.269439
+  duration_ms: 1.911534
   type: 'test'
   ...
 # Subtest: legacy migration is explicit and rejects unauthorized and unconfirmed imports
 ok 212 - legacy migration is explicit and rejects unauthorized and unconfirmed imports
   ---
-  duration_ms: 19.736738
+  duration_ms: 15.724614
   type: 'test'
   ...
 # Subtest: legacy ZIP preserves source bytes, text IDs, media and hashes without modifying source
 ok 213 - legacy ZIP preserves source bytes, text IDs, media and hashes without modifying source
   ---
-  duration_ms: 13.246337
+  duration_ms: 13.31094
   type: 'test'
   ...
 # Subtest: mutating a preview cannot inject unvalidated records into the import
 ok 214 - mutating a preview cannot inject unvalidated records into the import
   ---
-  duration_ms: 6.621769
+  duration_ms: 6.0198
   type: 'test'
   ...
 # Subtest: missing legacy media blocks preview without writes
 ok 215 - missing legacy media blocks preview without writes
   ---
-  duration_ms: 1.192197
+  duration_ms: 1.223397
   type: 'test'
   ...
 # Subtest: changed source or nonempty target blocks migration
 ok 216 - changed source or nonempty target blocks migration
   ---
-  duration_ms: 3.02853
+  duration_ms: 2.472804
   type: 'test'
   ...
 # Subtest: download failure and backup quota failure never import records or images
 ok 217 - download failure and backup quota failure never import records or images
   ---
-  duration_ms: 7.295164
+  duration_ms: 5.724056
   type: 'test'
   ...
 # Subtest: failed Store commit removes only newly copied destination images
 ok 218 - failed Store commit removes only newly copied destination images
   ---
-  duration_ms: 3.902864
+  duration_ms: 3.52033
   type: 'test'
   ...
 # Subtest: account switch during image copy rolls back original scope, never the next account
 ok 219 - account switch during image copy rolls back original scope, never the next account
   ---
-  duration_ms: 6.674349
+  duration_ms: 5.109815
   type: 'test'
   ...
 # Subtest: destination revision change while copying is never overwritten
 ok 220 - destination revision change while copying is never overwritten
   ---
-  duration_ms: 7.179918
+  duration_ms: 9.844481
   type: 'test'
   ...
 # Subtest: existing media collision cannot overwrite another destination image
 ok 221 - existing media collision cannot overwrite another destination image
   ---
-  duration_ms: 3.449707
+  duration_ms: 3.099953
   type: 'test'
   ...
 # Subtest: failed rollback retains recovery journal and blocks repeat import
 ok 222 - failed rollback retains recovery journal and blocks repeat import
   ---
-  duration_ms: 4.194483
+  duration_ms: 6.018389
   type: 'test'
   ...
 # Subtest: journal quota after successful Store save does not delete imported images or invite retry
 ok 223 - journal quota after successful Store save does not delete imported images or invite retry
   ---
-  duration_ms: 5.630881
+  duration_ms: 4.834778
   type: 'test'
   ...
 # Subtest: concurrent commit is blocked while download is pending
 ok 224 - concurrent commit is blocked while download is pending
   ---
-  duration_ms: 8.285445
+  duration_ms: 7.926187
   type: 'test'
   ...
 # Subtest: PWA installation omits credentials and cannot cache private API paths
 ok 225 - PWA installation omits credentials and cannot cache private API paths
   ---
-  duration_ms: 59.593546
+  duration_ms: 50.715213
   type: 'test'
   ...
 # Subtest: PWA bypasses auth, media, signed URLs, external requests and writes
 ok 226 - PWA bypasses auth, media, signed URLs, external requests and writes
   ---
-  duration_ms: 1.680666
+  duration_ms: 1.716353
   type: 'test'
   ...
 # Subtest: PWA navigation uses matching versioned HTML and activation preserves unrelated caches
 ok 227 - PWA navigation uses matching versioned HTML and activation preserves unrelated caches
   ---
-  duration_ms: 4.356493
+  duration_ms: 4.07998
   type: 'test'
   ...
 # Subtest: research keeps only sources the search tool really returned and labels dates
 ok 228 - research keeps only sources the search tool really returned and labels dates
   ---
-  duration_ms: 137.174446
+  duration_ms: 147.832538
   type: 'test'
   ...
 # Subtest: no verifiable source => insufficient, never invented
 ok 229 - no verifiable source => insufficient, never invented
   ---
-  duration_ms: 3.504245
+  duration_ms: 3.59889
   type: 'test'
   ...
 # Subtest: research respects the daily web_search limit without calling OpenAI
 ok 230 - research respects the daily web_search limit without calling OpenAI
   ---
-  duration_ms: 1.642549
+  duration_ms: 1.761153
   type: 'test'
   ...
 # Subtest: weather without a configured place asks for the location (no guess, no call)
 ok 231 - weather without a configured place asks for the location (no guess, no call)
   ---
-  duration_ms: 1.854513
+  duration_ms: 1.869563
   type: 'test'
   ...
 # Subtest: weather returns labelled observation time and attribution
 ok 232 - weather returns labelled observation time and attribution
   ---
-  duration_ms: 3.34102
+  duration_ms: 3.690969
   type: 'test'
   ...
 # Subtest: learning path drops source indexes that point to unverified sources
 ok 233 - learning path drops source indexes that point to unverified sources
   ---
-  duration_ms: 3.351166
+  duration_ms: 3.397939
   type: 'test'
   ...
 # Subtest: explicit module wins; scheduling never becomes a payment
 ok 234 - explicit module wins; scheduling never becomes a payment
   ---
-  duration_ms: 4.908493
+  duration_ms: 6.052279
   type: 'test'
   ...
 # Subtest: money parser stores integer cents, not pesos or binary decimal fractions
 ok 235 - money parser stores integer cents, not pesos or binary decimal fractions
   ---
-  duration_ms: 0.726912
+  duration_ms: 0.808654
   type: 'test'
   ...
 # Subtest: narrow deterministic commands preserve exact domain and meaning
 ok 236 - narrow deterministic commands preserve exact domain and meaning
   ---
-  duration_ms: 3.843998
+  duration_ms: 4.3342
   type: 'test'
   ...
 # Subtest: required Finance sentence executes one financial write and announces only verified result
 ok 237 - required Finance sentence executes one financial write and announces only verified result
   ---
-  duration_ms: 25.477627
+  duration_ms: 25.237177
   type: 'test'
   ...
 # Subtest: required reminder creates only Agenda task, no Finance write
 ok 238 - required reminder creates only Agenda task, no Finance write
   ---
-  duration_ms: 1.350343
+  duration_ms: 1.354818
   type: 'test'
   ...
 # Subtest: cross-domain model batch is rejected before ANY tool runs
 ok 239 - cross-domain model batch is rejected before ANY tool runs
   ---
-  duration_ms: 0.96836
+  duration_ms: 0.983716
   type: 'test'
   ...
 # Subtest: failure, duplicate client and unverified output cannot become model success
 ok 240 - failure, duplicate client and unverified output cannot become model success
   ---
-  duration_ms: 1.037318
+  duration_ms: 0.995957
   type: 'test'
   ...
 # Subtest: duplicate-client clarification preserves the financial proposal but still executes through registry
 ok 241 - duplicate-client clarification preserves the financial proposal but still executes through registry
   ---
-  duration_ms: 1.201275
+  duration_ms: 1.19121
   type: 'test'
   ...
 # Subtest: never switches automatically to an available fallback model
 ok 242 - never switches automatically to an available fallback model
   ---
-  duration_ms: 0.861228
+  duration_ms: 0.86205
   type: 'test'
   ...
 # Subtest: ambiguous mutation clarifies without requesting a model or executing tools
 ok 243 - ambiguous mutation clarifies without requesting a model or executing tools
   ---
-  duration_ms: 0.525036
+  duration_ms: 0.552361
   type: 'test'
   ...
 # Subtest: cancel while model is pending prevents tools
 ok 244 - cancel while model is pending prevents tools
   ---
-  duration_ms: 14.408723
+  duration_ms: 10.181762
   type: 'test'
   ...
 # Subtest: preparation rejection never opens confirmation or commits
 ok 245 - preparation rejection never opens confirmation or commits
   ---
-  duration_ms: 0.632573
+  duration_ms: 0.569306
   type: 'test'
   ...
 # Subtest: versioned migration preserves original bytes, apps, grants, AI paths and unknown preferences
 ok 246 - versioned migration preserves original bytes, apps, grants, AI paths and unknown preferences
   ---
-  duration_ms: 5.173005
+  duration_ms: 5.741008
   type: 'test'
   ...
 # Subtest: malformed and newer settings are not silently reset or overwritten
 ok 247 - malformed and newer settings are not silently reset or overwritten
   ---
-  duration_ms: 1.071187
+  duration_ms: 1.375799
   type: 'test'
   ...
 # Subtest: microphone consent survives host restart and explicit revocation
 ok 248 - microphone consent survives host restart and explicit revocation
   ---
-  duration_ms: 1.240266
+  duration_ms: 1.53887
   type: 'test'
   ...
 # Subtest: replacing an authorized identity revokes its old action grants
 ok 249 - replacing an authorized identity revokes its old action grants
   ---
-  duration_ms: 1.107902
+  duration_ms: 1.406405
   type: 'test'
   ...
 # Subtest: opacity full range and explicit model preference persist
 ok 250 - opacity full range and explicit model preference persist
   ---
-  duration_ms: 2.340909
+  duration_ms: 3.370869
   type: 'test'
   ...
 # Subtest: sound cues exist for card open/close, shortcut open, success and error
 ok 251 - sound cues exist for card open/close, shortcut open, success and error
   ---
-  duration_ms: 2.42585
+  duration_ms: 2.659132
   type: 'test'
   ...
 # Subtest: cues do not stack: a second cue within 90 ms is dropped
 ok 252 - cues do not stack: a second cue within 90 ms is dropped
   ---
-  duration_ms: 1.552797
+  duration_ms: 1.421156
   type: 'test'
   ...
 # Subtest: cues are ducked while EVIE is speaking
 ok 253 - cues are ducked while EVIE is speaking
   ---
-  duration_ms: 2.241815
+  duration_ms: 1.799058
   type: 'test'
   ...
 # Subtest: automation URLs accept http(s) only and reject unsafe targets
 ok 254 - automation URLs accept http(s) only and reject unsafe targets
   ---
-  duration_ms: 4.643393
+  duration_ms: 4.453545
   type: 'test'
   ...
 # Subtest: CAS conflict after pull fetches reviewable versions without retrying a write
 ok 255 - CAS conflict after pull fetches reviewable versions without retrying a write
   ---
-  duration_ms: 10.375474
+  duration_ms: 8.072976
   type: 'test'
   ...
 # Subtest: CAS race with identical remote data resolves through readback without a write loop
 ok 256 - CAS race with identical remote data resolves through readback without a write loop
   ---
-  duration_ms: 5.042691
+  duration_ms: 4.565563
   type: 'test'
   ...
 # Subtest: remote conflict resolution applies nonconflicting linked companions atomically
 ok 257 - remote conflict resolution applies nonconflicting linked companions atomically
   ---
-  duration_ms: 5.093432
+  duration_ms: 5.10093
   type: 'test'
   ...
 # Subtest: editing while conflict is displayed prevents stale confirmation from discarding that edit
 ok 258 - editing while conflict is displayed prevents stale confirmation from discarding that edit
   ---
-  duration_ms: 2.730924
+  duration_ms: 3.137433
   type: 'test'
   ...
 # Subtest: old conflict dialog cannot confirm a newer server version
 ok 259 - old conflict dialog cannot confirm a newer server version
   ---
-  duration_ms: 3.58333
+  duration_ms: 8.264835
   type: 'test'
   ...
 # Subtest: conflict choices wait until all linked conflicts are selected
 ok 260 - conflict choices wait until all linked conflicts are selected
   ---
-  duration_ms: 3.149562
+  duration_ms: 10.215319
   type: 'test'
   ...
 # Subtest: rollback quota failure never applies the selected remote versions
 ok 261 - rollback quota failure never applies the selected remote versions
   ---
-  duration_ms: 2.243261
+  duration_ms: 7.572836
   type: 'test'
   ...
 # Subtest: remote revision rollback or changed payload at same revision is rejected
 ok 262 - remote revision rollback or changed payload at same revision is rejected
   ---
-  duration_ms: 2.659285
+  duration_ms: 8.488327
   type: 'test'
   ...
 # Subtest: cannot resolve during an active fetch or after cancelling the account engine
 ok 263 - cannot resolve during an active fetch or after cancelling the account engine
   ---
-  duration_ms: 2.520026
+  duration_ms: 7.353197
   type: 'test'
   ...
 # Subtest: Spanish durations
 ok 264 - Spanish durations
   ---
-  duration_ms: 4.057698
+  duration_ms: 5.667919
   type: 'test'
   ...
 # Subtest: «Ivi, pon un temporizador de 10 minutos para la pasta» → named timer + card
 ok 265 - «Ivi, pon un temporizador de 10 minutos para la pasta» → named timer + card
   ---
-  duration_ms: 5.20941
+  duration_ms: 6.798902
   type: 'test'
   ...
 # Subtest: multiple named timers; pause / resume / status / cancel by name, duration or single
 ok 266 - multiple named timers; pause / resume / status / cancel by name, duration or single
   ---
-  duration_ms: 2.930463
+  duration_ms: 3.752399
   type: 'test'
   ...
 # Subtest: persistence: reload rebuilds remaining time from timestamps
 ok 267 - persistence: reload rebuilds remaining time from timestamps
   ---
-  duration_ms: 2.09811
+  duration_ms: 2.492436
   type: 'test'
   ...
 # Subtest: finishing rings a gentle alarm and marks done; late finish is reported, not rung
 ok 268 - finishing rings a gentle alarm and marks done; late finish is reported, not rung
   ---
-  duration_ms: 4.914836
+  duration_ms: 5.405262
   type: 'test'
   ...
 # Subtest: limits and errors: no duration, duplicate label, >24 h, cancel all with undo
 ok 269 - limits and errors: no duration, duplicate label, >24 h, cancel all with undo
   ---
-  duration_ms: 1.679993
+  duration_ms: 1.943708
   type: 'test'
   ...
-# (node:3399) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:5073) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: currentTime uses the trusted clock and handles DST and bad zones
 ok 270 - currentTime uses the trusted clock and handles DST and bad zones
   ---
-  duration_ms: 64.364828
+  duration_ms: 60.13372
   type: 'test'
   ...
 # Subtest: "¿Qué hora es?" is resolved on the server with get_current_time (browser never answers it)
 ok 271 - "¿Qué hora es?" is resolved on the server with get_current_time (browser never answers it)
   ---
-  duration_ms: 138.179505
+  duration_ms: 193.036766
   type: 'test'
   ...
 # Subtest: research requests enable web_search, return clickable dated sources and a URL-free spoken text
 ok 272 - research requests enable web_search, return clickable dated sources and a URL-free spoken text
   ---
-  duration_ms: 40.765715
+  duration_ms: 63.855702
   type: 'test'
   ...
 # OPENAI_REJECTED 400 unsupported_tool enfoque
 # Subtest: plain CRM questions do not pay for web search; budget exhausted disables it; unsupported model falls back
 ok 273 - plain CRM questions do not pay for web search; budget exhausted disables it; unsupported model falls back
   ---
-  duration_ms: 63.735303
+  duration_ms: 66.353893
   type: 'test'
   ...
 # Subtest: profile: each account reads/writes only its own; client ids ignored; AI context isolated; delete works
 ok 274 - profile: each account reads/writes only its own; client ids ignored; AI context isolated; delete works
   ---
-  duration_ms: 46.217746
+  duration_ms: 41.078814
   type: 'test'
   ...
 # Subtest: non-v5 text falls through (null) and surface commands stay with the local router
 ok 275 - non-v5 text falls through (null) and surface commands stay with the local router
   ---
-  duration_ms: 14.276275
+  duration_ms: 16.711414
   type: 'test'
   ...
 # Subtest: task create resolves the SOMA client and sends op_id; ambiguity/unknown asks back
 ok 276 - task create resolves the SOMA client and sends op_id; ambiguity/unknown asks back
   ---
-  duration_ms: 3.224396
+  duration_ms: 3.951154
   type: 'test'
   ...
 # Subtest: scene: guests never resolve scenes; owners run client steps and report per-step results
 ok 277 - scene: guests never resolve scenes; owners run client steps and report per-step results
   ---
-  duration_ms: 5.756069
+  duration_ms: 7.519705
   type: 'test'
   ...
 # Subtest: plan proposal never applies without approval; account switch drops caches
 ok 278 - plan proposal never applies without approval; account switch drops caches
   ---
-  duration_ms: 21.934661
+  duration_ms: 25.163285
   type: 'test'
   ...
 # Subtest: once tier is sent a single time; lifecycle events carry no content
 ok 279 - once tier is sent a single time; lifecycle events carry no content
   ---
-  duration_ms: 1.754144
+  duration_ms: 1.82444
   type: 'test'
   ...
 # Subtest: section vs card vs close card
 ok 280 - section vs card vs close card
   ---
-  duration_ms: 5.206995
+  duration_ms: 4.280493
   type: 'test'
   ...
 # Subtest: intent router: route, plan, next, tier (not work mode), tasks, memory, scene candidate
 ok 281 - intent router: route, plan, next, tier (not work mode), tasks, memory, scene candidate
   ---
-  duration_ms: 3.017916
+  duration_ms: 3.068562
   type: 'test'
   ...
 # Subtest: dictation: chunk plan with overlap, bounded
 ok 282 - dictation: chunk plan with overlap, bounded
   ---
-  duration_ms: 0.371725
+  duration_ms: 0.398116
   type: 'test'
   ...
 # Subtest: dictation: >1 min Spanish assembled in order, overlap removed, duplicates ignored, gaps reported
 ok 283 - dictation: >1 min Spanish assembled in order, overlap removed, duplicates ignored, gaps reported
   ---
-  duration_ms: 1.107599
+  duration_ms: 1.115997
   type: 'test'
   ...
 # Subtest: wake: single turn, no self-trigger while speaking or right after; variants
 ok 284 - wake: single turn, no self-trigger while speaking or right after; variants
   ---
-  duration_ms: 0.312547
+  duration_ms: 0.294826
   type: 'test'
   ...
 # Subtest: lifecycle: request id, ordered stages, no private content, single terminal; cue bounded and mutable
 ok 285 - lifecycle: request id, ordered stages, no private content, single terminal; cue bounded and mutable
   ---
-  duration_ms: 1.352253
+  duration_ms: 0.961774
   type: 'test'
   ...
-# (node:3425) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:5099) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: guest invite: hash only; kind=guest; unused code expires 72 h after creation; owner only
 ok 286 - guest invite: hash only; kind=guest; unused code expires 72 h after creation; owner only
   ---
-  duration_ms: 170.018872
+  duration_ms: 197.1343
   type: 'test'
   ...
 # Subtest: redeem: name + code, no password; 72 h FROM REDEMPTION; cookie bounded; single use
 ok 287 - redeem: name + code, no password; 72 h FROM REDEMPTION; cookie bounded; single use
   ---
-  duration_ms: 36.002159
+  duration_ms: 60.400878
   type: 'test'
   ...
 # Subtest: redeem rejects password field, bad input, expired or member code; rate limited
 ok 288 - redeem rejects password field, bad input, expired or member code; rate limited
   ---
-  duration_ms: 55.625466
+  duration_ms: 62.02999
   type: 'test'
   ...
 # Subtest: a guest code cannot become a permanent member via signup or Google
 ok 289 - a guest code cannot become a permanent member via signup or Google
   ---
-  duration_ms: 24.39116
+  duration_ms: 15.13219
   type: 'test'
   ...
 # Subtest: guest capabilities: no admin, connections, password, owner claim or scenes
 ok 290 - guest capabilities: no admin, connections, password, owner claim or scenes
   ---
-  duration_ms: 30.934289
+  duration_ms: 37.771645
   type: 'test'
   ...
 # Subtest: isolation both ways; header spoofing rejected
 ok 291 - isolation both ways; header spoofing rejected
   ---
-  duration_ms: 39.391725
+  duration_ms: 40.32423
   type: 'test'
   ...
 # EVIE_GUEST_CLEANUP cleaned 0
 # Subtest: expiry per request; sessions revoked; complete, auditable, content-free cleanup; owner untouched
 ok 292 - expiry per request; sessions revoked; complete, auditable, content-free cleanup; owner untouched
   ---
-  duration_ms: 28.747943
+  duration_ms: 63.13524
   type: 'test'
   ...
 # EVIE_GUEST_CLEANUP failed 1
@@ -1824,317 +1824,317 @@ ok 292 - expiry per request; sessions revoked; complete, auditable, content-free
 # Subtest: cleanup retryable after a Supabase failure; never cleans an active guest
 ok 293 - cleanup retryable after a Supabase failure; never cleans an active guest
   ---
-  duration_ms: 20.432237
+  duration_ms: 38.122906
   type: 'test'
   ...
 # EVIE_GUEST_CLEANUP cleaned 0
 # Subtest: owner revokes a guest immediately
 ok 294 - owner revokes a guest immediately
   ---
-  duration_ms: 18.178737
+  duration_ms: 36.917475
   type: 'test'
   ...
 # Subtest: TTS cache privacy fix: private text never cached nor in a key
 ok 295 - TTS cache privacy fix: private text never cached nor in a key
   ---
-  duration_ms: 38.311775
+  duration_ms: 57.159853
   type: 'test'
   ...
 # Subtest: STT: no 60 s cap, size-based floor, no 4000-char cut, chunk echoed, oversize rejected
 ok 296 - STT: no 60 s cap, size-based floor, no 4000-char cut, chunk echoed, oversize rejected
   ---
-  duration_ms: 25.672653
+  duration_ms: 53.037499
   type: 'test'
   ...
-# (node:3437) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:5111) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: typed memories with project; sealed at rest; v1 records keep working as type fact
 ok 297 - typed memories with project; sealed at rest; v1 records keep working as type fact
   ---
-  duration_ms: 239.812051
+  duration_ms: 292.711555
   type: 'test'
   ...
 # Subtest: "¿te acuerdas de lo que hablamos sobre SOMA?" — grounded hybrid search; unknown topics admit no memory
 ok 298 - "¿te acuerdas de lo que hablamos sobre SOMA?" — grounded hybrid search; unknown topics admit no memory
   ---
-  duration_ms: 43.262203
+  duration_ms: 44.187616
   type: 'test'
   ...
 # Subtest: corrige: edit history is kept (sealed) and confidence returns to 1
 ok 299 - corrige: edit history is kept (sealed) and confidence returns to 1
   ---
-  duration_ms: 44.754364
+  duration_ms: 41.064077
   type: 'test'
   ...
 # Subtest: incognito never reads or writes; sensitive needs opt-in + confirmation; locations refused; export v2
 ok 300 - incognito never reads or writes; sensitive needs opt-in + confirmation; locations refused; export v2
   ---
-  duration_ms: 29.240089
+  duration_ms: 37.773884
   type: 'test'
   ...
 # Subtest: tenant isolation: B never sees, searches or corrects A memories
 ok 301 - tenant isolation: B never sees, searches or corrects A memories
   ---
-  duration_ms: 23.168224
+  duration_ms: 24.157022
   type: 'test'
   ...
 # Subtest: pure hybrid score: project and recency raise, unrelated is 0
 ok 302 - pure hybrid score: project and recency raise, unrelated is 0
   ---
-  duration_ms: 0.806815
+  duration_ms: 0.804067
   type: 'test'
   ...
 # Subtest: open SOMA tasks appear once; matching client nextAction is not double counted
 ok 303 - open SOMA tasks appear once; matching client nextAction is not double counted
   ---
-  duration_ms: 5.5669
+  duration_ms: 5.681436
   type: 'test'
   ...
 # Subtest: a different nextAction still appears; no tasks = previous behavior
 ok 304 - a different nextAction still appears; no tasks = previous behavior
   ---
-  duration_ms: 14.328446
+  duration_ms: 17.614309
   type: 'test'
   ...
 # Subtest: tasks beyond the horizon are excluded
 ok 305 - tasks beyond the horizon are excluded
   ---
-  duration_ms: 2.708712
+  duration_ms: 3.046267
   type: 'test'
   ...
-# (node:3456) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:5130) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: planner core: batch parsing, time parsing, past/overflow/priority, ¿qué sigue?
 ok 306 - planner core: batch parsing, time parsing, past/overflow/priority, ¿qué sigue?
   ---
-  duration_ms: 52.033114
+  duration_ms: 51.495023
   type: 'test'
   ...
 # Subtest: plan propose: dictation + open tasks + Pendientes, fixed events kept, hours respected, estimates labeled, nothing written
 ok 307 - plan propose: dictation + open tasks + Pendientes, fixed events kept, hours respected, estimates labeled, nothing written
   ---
-  duration_ms: 178.524961
+  duration_ms: 223.933416
   type: 'test'
   ...
 # Subtest: plan apply: explicit approval; per-item results; idempotent; owner-only; ¿qué sigue?
 ok 308 - plan apply: explicit approval; per-item results; idempotent; owner-only; ¿qué sigue?
   ---
-  duration_ms: 47.108805
+  duration_ms: 41.851245
   type: 'test'
   ...
 # Subtest: route parser: section vs card vs route; origin/destination/mode
 ok 309 - route parser: section vs card vs route; origin/destination/mode
   ---
-  duration_ms: 4.430589
+  duration_ms: 5.475209
   type: 'test'
   ...
 # Subtest: route query: both ends geocoded inside the area, real route, honest traffic note, key server-side, address never stored or logged
 ok 310 - route query: both ends geocoded inside the area, real route, honest traffic note, key server-side, address never stored or logged
   ---
-  duration_ms: 26.538068
+  duration_ms: 31.185524
   type: 'test'
   ...
 # Subtest: route query: ambiguity, location permission, outside area, section intent, not configured
 ok 311 - route query: ambiguity, location permission, outside area, section intent, not configured
   ---
-  duration_ms: 39.114303
+  duration_ms: 45.302045
   type: 'test'
   ...
-# (node:3468) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:5142) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: tasks: CRUD + complete/reopen/reschedule; sealed at rest; validation
 ok 312 - tasks: CRUD + complete/reopen/reschedule; sealed at rest; validation
   ---
-  duration_ms: 233.553146
+  duration_ms: 316.781676
   type: 'test'
   ...
 # Subtest: tasks: idempotent create by op_id; find by words
 ok 313 - tasks: idempotent create by op_id; find by words
   ---
-  duration_ms: 36.679737
+  duration_ms: 26.896668
   type: 'test'
   ...
 # Subtest: tasks: owner isolation; X-Evie-User mismatch; owner_id in body rejected
 ok 314 - tasks: owner isolation; X-Evie-User mismatch; owner_id in body rejected
   ---
-  duration_ms: 28.876989
+  duration_ms: 33.791245
   type: 'test'
   ...
 # Subtest: scenes: typed validation, reserved words, trigger conflicts, duplicates, limits, sealed, per owner
 ok 315 - scenes: typed validation, reserved words, trigger conflicts, duplicates, limits, sealed, per owner
   ---
-  duration_ms: 38.391633
+  duration_ms: 36.300483
   type: 'test'
   ...
 # Subtest: scenes: exact resolve; run applies server steps, per-step + PARTIAL results; run_id idempotent
 ok 316 - scenes: exact resolve; run applies server steps, per-step + PARTIAL results; run_id idempotent
   ---
-  duration_ms: 37.255097
+  duration_ms: 36.561374
   type: 'test'
   ...
-# (node:3480) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (node:5154) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: config: tiers map to model/effort/tokens server-side; sol never gets effort none; env overrides
 ok 317 - config: tiers map to model/effort/tokens server-side; sol never gets effort none; env overrides
   ---
-  duration_ms: 9.811298
+  duration_ms: 10.66059
   type: 'test'
   ...
 # Subtest: parser: "modo enfoque" is the work mode, not a tier; persistent vs once; no false positives
 ok 318 - parser: "modo enfoque" is the work mode, not a tier; persistent vs once; no false positives
   ---
-  duration_ms: 4.467072
+  duration_ms: 5.772804
   type: 'test'
   ...
 # Subtest: GET/PUT /ai/tier: authenticated, validated, per-account
 ok 319 - GET/PUT /ai/tier: authenticated, validated, per-account
   ---
-  duration_ms: 188.185999
+  duration_ms: 277.212676
   type: 'test'
   ...
 # Subtest: /chat sends the stored tier model+effort and reports it in metadata
 ok 320 - /chat sends the stored tier model+effort and reports it in metadata
   ---
-  duration_ms: 61.821783
+  duration_ms: 92.475279
   type: 'test'
   ...
 # Subtest: voice: persistent change needs no model call; "solo para esta pregunta" never persists
 ok 321 - voice: persistent change needs no model call; "solo para esta pregunta" never persists
   ---
-  duration_ms: 40.375035
+  duration_ms: 45.558048
   type: 'test'
   ...
 # Subtest: suggests Profundo but never silently overrides the chosen tier
 ok 322 - suggests Profundo but never silently overrides the chosen tier
   ---
-  duration_ms: 21.73225
+  duration_ms: 16.680375
   type: 'test'
   ...
 # OPENAI_REJECTED 404 model_not_found profundo
 # Subtest: graceful DISCLOSED fallback when the Profundo model is unavailable; preference untouched
 ok 323 - graceful DISCLOSED fallback when the Profundo model is unavailable; preference untouched
   ---
-  duration_ms: 21.026071
+  duration_ms: 22.894129
   type: 'test'
   ...
 # Subtest: budget: account budget degrades to Chispa (disclosed); global budget stops paid calls
 ok 324 - budget: account budget degrades to Chispa (disclosed); global budget stops paid calls
   ---
-  duration_ms: 23.561923
+  duration_ms: 24.068201
   type: 'test'
   ...
 # Subtest: metrics: content-free histograms, whitelisted names, per caller
 ok 325 - metrics: content-free histograms, whitelisted names, per caller
   ---
-  duration_ms: 21.566699
+  duration_ms: 35.850723
   type: 'test'
   ...
 # Subtest: guest: Profundo unavailable (PUT 403, spoken refused, body tier downgraded with disclosure)
 ok 326 - guest: Profundo unavailable (PUT 403, spoken refused, body tier downgraded with disclosure)
   ---
-  duration_ms: 20.773729
+  duration_ms: 44.026627
   type: 'test'
   ...
 # Subtest: diagnostic mic timeout discards without transcription or model dispatch
 ok 327 - diagnostic mic timeout discards without transcription or model dispatch
   ---
-  duration_ms: 5.655322
+  duration_ms: 7.485646
   type: 'test'
   ...
 # Subtest: synthetic PCM recording encodes valid mono WAV and releases before dispatch
 ok 328 - synthetic PCM recording encodes valid mono WAV and releases before dispatch
   ---
-  duration_ms: 4.855308
+  duration_ms: 5.887894
   type: 'test'
   ...
 # Subtest: cancel during microphone permission stops late stream without starting recorder
 ok 329 - cancel during microphone permission stops late stream without starting recorder
   ---
-  duration_ms: 8.983624
+  duration_ms: 9.966891
   type: 'test'
   ...
 # Subtest: cancel ignores late transcription and never sends it to model
 ok 330 - cancel ignores late transcription and never sends it to model
   ---
-  duration_ms: 4.760353
+  duration_ms: 5.758204
   type: 'test'
   ...
 # Subtest: cancel ignores late TTS and leaves no output AudioContext
 ok 331 - cancel ignores late TTS and leaves no output AudioContext
   ---
-  duration_ms: 3.19698
+  duration_ms: 3.603609
   type: 'test'
   ...
 # Subtest: VAD requires voice and 1100ms silence; steady ambient never dispatches
 ok 332 - VAD requires voice and 1100ms silence; steady ambient never dispatches
   ---
-  duration_ms: 89.424612
+  duration_ms: 135.957692
   type: 'test'
   ...
 # Subtest: continuous session sends one utterance then waits for actual TTS end before listening
 ok 333 - continuous session sends one utterance then waits for actual TTS end before listening
   ---
-  duration_ms: 60.880649
+  duration_ms: 74.354671
   type: 'test'
   ...
 # Subtest: stop during continuous playback resolves pending speech without reopening microphone
 ok 334 - stop during continuous playback resolves pending speech without reopening microphone
   ---
-  duration_ms: 2.567576
+  duration_ms: 2.387505
   type: 'test'
   ...
 # Subtest: denied session permission stops once with no retry timer
 ok 335 - denied session permission stops once with no retry timer
   ---
-  duration_ms: 2.848282
+  duration_ms: 2.098526
   type: 'test'
   ...
 # Subtest: desktop state helper retains illegal transition rejection and cancels executing safely
 ok 336 - desktop state helper retains illegal transition rejection and cancels executing safely
   ---
-  duration_ms: 1.494025
+  duration_ms: 1.491976
   type: 'test'
   ...
 # Subtest: confirmation token is exact, expiring, single-use and cannot move to another action
 ok 337 - confirmation token is exact, expiring, single-use and cannot move to another action
   ---
-  duration_ms: 2.643248
+  duration_ms: 2.992399
   type: 'test'
   ...
 # Subtest: confirmation cancellation rejects approval and preserves immutable action snapshot
 ok 338 - confirmation cancellation rejects approval and preserves immutable action snapshot
   ---
-  duration_ms: 0.401551
+  duration_ms: 0.519946
   type: 'test'
   ...
 # Subtest: catalog validates identities; shell, admin, remote, credentials and arbitrary protocols blocked
 ok 339 - catalog validates identities; shell, admin, remote, credentials and arbitrary protocols blocked
   ---
-  duration_ms: 2.723472
+  duration_ms: 3.430717
   type: 'test'
   ...
 # Subtest: discovery uses fixed helper, deduplicates and never authorizes automatically
 ok 340 - discovery uses fixed helper, deduplicates and never authorizes automatically
   ---
-  duration_ms: 12.141223
+  duration_ms: 16.262488
   type: 'test'
   ...
 # Subtest: typed windows tools reject injections and draft retains exact recipient and message
 ok 341 - typed windows tools reject injections and draft retains exact recipient and message
   ---
-  duration_ms: 2.687666
+  duration_ms: 4.731894
   type: 'test'
   ...
 # Subtest: scoped files reject traversal and changed sources; rename is verified without overwrite
 ok 342 - scoped files reject traversal and changed sources; rename is verified without overwrite
   ---
-  duration_ms: 3.802853
+  duration_ms: 6.655431
   type: 'test'
   ...
 # Subtest: persistent grants are scoped by action, app and trusted URL host
 ok 343 - persistent grants are scoped by action, app and trusted URL host
   ---
-  duration_ms: 0.289613
+  duration_ms: 2.513969
   type: 'test'
   ...
 1..343
@@ -2145,4 +2145,4 @@ ok 343 - persistent grants are scoped by action, app and trusted URL host
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 18916.663233
+# duration_ms 22307.01146

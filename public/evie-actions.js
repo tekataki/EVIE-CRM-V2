@@ -6,7 +6,7 @@
    - is idempotent per op_id (model call_id) for retries,
    - is recorded in preferences.evieAudit (last 200, record title only — no note text) with an undo.
    Deletes are soft (deleted_at) and undoable. Destructive or bulk operations are not offered.
-   Account isolation: Store is already scoped to the signed-in account (Alejandro/Dali vs Naomi); the server
+   Account isolation: Store is already scoped to the signed-in account (each private account is separate); the server
    only proxies the model and never receives these records. */
 window.EvieActions=(()=>{
  const AUDIT_MAX=200,OP_TTL=10*60e3;
