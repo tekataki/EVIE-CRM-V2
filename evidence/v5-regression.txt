@@ -9,3 +9,6 @@ map | exit=0 | MAP E2E OK (19 checks, 1440x900)
 login | exit=0 | LOGIN E2E OK (7 checks, 390x844, google=true)
 v31 | exit=0 | V31 E2E OK (16 checks, 1440x900)
 workspace | exit=0 | WORKSPACE E2E OK (13 checks, 1440x900)
+kisha | exit=0 | KISHA E2E OK (re-ejecución; 1er intento: 20 checks OK pero 2 pageerror «machine null» — carrera corregida en kisha-view.js)
+life | exit=0 | E2E OK
+v5guest | exit=0 | V5 GUEST E2E OK (7 checks, 390x844)

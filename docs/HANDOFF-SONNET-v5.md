@@ -13,7 +13,7 @@ comportamiento) ni los datos de las cuentas existentes.
 | Login invitado | `public/account-ui.js` | `#auth-guest` (details), `#guest-form`, `.guest-submit` |
 | Banner invitado | `public/evie-v5.js` | `.v5-guest` dentro del panel (falta un banner global; ver abajo) |
 
-No existe CSS para `.v5-*` ni `#evie-dictation`: se ven con estilos base. Crea las hojas que necesites.
+`public/evie-v5.css` solo da la capa funcional (overlay por encima de la navegación, 390 px). Rediséñalo libremente.
 
 ## Contratos que debes conservar
 * `EvieV5.handle(text)` se llama en `EvieAssistant.ask()` **antes** de `tryLocal`; devuelve `{text,spoken}` o `null`.

@@ -1,0 +1,12 @@
+/* v5 functional layer only: keeps the tools panel and dictation above the app chrome and usable on 390 px.
+   Visual design intentionally neutral (inherits theme colors) — Sonnet owns the redesign. */
+#v5-panel,#evie-dictation{position:fixed;z-index:2147483000;inset:auto 12px 12px auto;width:min(460px,calc(100vw - 24px));max-height:min(80vh,720px);overflow:auto;
+ background:var(--surface,var(--panel,#fff));color:var(--text,inherit);border:1px solid rgba(127,127,127,.35);border-radius:14px;padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+#v5-panel[hidden],#evie-dictation[hidden]{display:none}
+@media (max-width:640px){#v5-panel,#evie-dictation{inset:auto 8px 8px 8px;width:auto;max-height:85vh}}
+.v5-head{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px}
+.v5-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.v5-tabs [aria-selected=true]{font-weight:700;text-decoration:underline}
+.v5-body label{display:block;margin:6px 0}
+.v5-body textarea,.v5-body input:not([type=checkbox]):not([type=radio]),.v5-body select,#dict-text{width:100%;box-sizing:border-box}
+.v5-warn{color:#b45309}.v5-error{color:#b91c1c}.v5-fixed{opacity:.75}.v5-guest{font-size:.85em}

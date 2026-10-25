@@ -114,7 +114,7 @@ window.KishaView=(()=>{
  function syncReplay(){const r=document.getElementById('kisha-replay');if(r)r.hidden=!(machine?.phase==='blocked'&&voice?.hasClip());}
  function leave(){abort();voice?.dispose();voice=null;character?.destroy();character=null;mounted=null;clearTimeout(closeTimer);persist();session=null;machine=null;}
  function abort(){try{ctl?.abort();}catch{}ctl=null;}
- function ensureVoice(){if(!voice)voice=KishaVoice.create({onPhase:p=>{if(p!=='synthesizing')machine.go(p);},onLevel:l=>character?.setMouth(l),canCloud:can});return voice;}
+ function ensureVoice(){if(!voice)voice=KishaVoice.create({onPhase:p=>{if(p!=='synthesizing')machine?.go(p);}/* late phase after leave(): no machine, ignore */,onLevel:l=>character?.setMouth(l),canCloud:can});return voice;}
  /* ---------- conversation ---------- */
  function add(role,text){session.messages.push({role,text,at:new Date().toISOString()});if(role==='kisha'){const sb=document.getElementById('kisha-subs');if(sb)sb.textContent=text;}const log=document.getElementById('kisha-log');if(log){log.insertAdjacentHTML('beforeend',msgHTML(session.messages.at(-1)));log.scrollTop=log.scrollHeight;}persist();}
  function note(text,html=''){const log=document.getElementById('kisha-log');if(log){log.insertAdjacentHTML('beforeend',`<li class="kisha-msg system" role="note"><p>${e(text)}</p>${html}</li>`);log.scrollTop=log.scrollHeight;}}
