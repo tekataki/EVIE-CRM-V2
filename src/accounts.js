@@ -15,6 +15,7 @@ import { createGuests, guestOf, sweepGuests, GUEST_MS } from './guests.js'
 import { createV5 } from './v5-routes.js'
 import { aiProvider, claudeModel } from './claude.js'
 import { createChat } from './chat.js'
+import { createSoma } from './soma.js'
 import { memorySource } from './ai-memory.js'
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -251,6 +252,7 @@ export function createAccounts({fetcher=fetch}={}) {
  api.route('/memory',createMemory({authenticate:bound,seal,unseal,memorySource:memories}))
  api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal,seal,memorySource:memories}))
  api.route('/chat',createChat({fetcher,authenticate:bound,seal,unseal,remote}))
+ api.route('/soma',createSoma({fetcher,authenticate:bound}))
  api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal,memorySource:memories}))
  api.route('/info',createResearch({fetcher,authenticate:bound,unseal}))
  api.route('/auth/google',createGoogleAuth({remote,issueSession,verified:async c=>{const s=await verified(c);return s&&s.user.role!=='guest'?s:null},seal,unseal,digest,limited,fetcher}))

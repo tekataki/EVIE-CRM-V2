@@ -1,0 +1,48 @@
+/* evie-briefing.css · v10 — tarjeta «Briefing del día» (HUD) y diálogo «Mi horario». Oscuro y claro. */
+.bf,.bf-form{--bf-text:var(--v8-text,#f5f7ff);--bf-muted:var(--v8-muted,#9aa4bd);--bf-cyan:var(--v8-cyan,#62f0ff);--bf-warn:#ffb547;--bf-good:#3ddc97;--bf-chip:rgba(255,255,255,.05);--bf-stroke:rgba(255,255,255,.09)}
+html[data-theme="light"] :is(.bf,.bf-form){--bf-text:#0c1426;--bf-muted:#56607a;--bf-cyan:#0a86a8;--bf-warn:#b86e00;--bf-good:#0f9a63;--bf-chip:rgba(16,28,56,.045);--bf-stroke:rgba(16,28,56,.1)}
+.bf{display:grid;gap:12px;color:var(--bf-text)}
+.bf-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.bf-top>div:first-child{min-width:0}
+.bf-eyebrow{font:600 10.5px/1 var(--v8-mono,ui-monospace,monospace);letter-spacing:.22em;color:var(--bf-cyan)}
+.bf-date{margin:4px 0 0;font-size:17px;font-weight:650;letter-spacing:-.01em;line-height:1.25}
+.bf-wx{flex:0 1 auto;max-width:56%;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:14px;background:var(--bf-chip);border:1px solid var(--bf-stroke);overflow-wrap:normal}
+.bf-wx strong{font-size:22px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}.bf-wx span{display:grid;min-width:0;font-size:12.5px;line-height:1.2}.bf-wx small{color:var(--bf-muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bf-sec{padding:10px 12px;border-radius:16px;background:var(--bf-chip);border:1px solid var(--bf-stroke)}
+.bf-sec.is-warn{border-color:color-mix(in srgb,var(--bf-warn) 40%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--bf-warn) 10%,transparent),transparent)}
+.bf-sec h4{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:12px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--bf-muted)}
+.bf-sec h4 svg{width:14px;height:14px;color:var(--bf-cyan)}.bf-sec.is-warn h4 svg{color:var(--bf-warn)}
+.bf-sec p{margin:0;font-size:13.5px;line-height:1.45}
+.bf-muted{color:var(--bf-muted);font-size:12.5px!important;margin-top:4px!important}
+.bf-blocks{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.bf-blocks li{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:baseline;font-size:13.5px}
+.bf-blocks time{font-variant-numeric:tabular-nums;color:var(--bf-cyan);font-weight:650;font-size:12.5px}
+.bf-blocks li[data-kind="fixed"] span{font-weight:650}
+.bf-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.bf-list li{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:13.5px}.bf-list a{color:var(--bf-text);font-weight:600}
+.bf-list small{color:var(--bf-muted);font-size:12px}.bf-list em{font-style:normal;font-size:11px;font-weight:700;color:var(--bf-warn)}
+.bf-meter{height:8px;border-radius:999px;background:var(--bf-stroke);overflow:hidden;margin:4px 0}
+.bf-meter i{display:block;height:100%;width:calc(var(--p,0)*1%);border-radius:inherit;background:linear-gradient(90deg,var(--bf-cyan),#8b7bff);box-shadow:0 0 12px rgba(98,240,255,.6);animation:bf-fill 1.2s cubic-bezier(.2,.8,.2,1) both}
+.bf-en p{font-size:15px;font-weight:600;font-style:italic}.bf-en small{color:var(--bf-muted)}
+.bf-actions{display:flex;flex-wrap:wrap;gap:6px}.bf-actions .button{display:inline-flex;align-items:center;gap:6px;min-height:40px}
+/* In the HUD card (scrolls inside a fixed height): the actions stay reachable at the bottom edge. */
+.hud-card[data-type="briefing"] .bf-actions{position:sticky;bottom:-16px;z-index:2;margin:0 -16px -16px;padding:14px 16px 14px;background:linear-gradient(180deg,rgba(var(--g-rgb,12,18,34),0),rgba(var(--g-rgb,12,18,34),.92) 38%)}
+@media (max-width:600px){.hud-card[data-type="briefing"] .bf-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));bottom:-14px;margin:0 -14px -14px;padding:14px 14px 12px}
+ .hud-card[data-type="briefing"] .bf-actions .button{flex-direction:column;justify-content:center;gap:3px;min-height:54px;padding:6px 4px;font-size:12px;line-height:1.15;white-space:normal;text-align:center}}
+.bf-depart{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,rgba(98,240,255,.12),rgba(139,123,255,.08));border:1px solid rgba(98,240,255,.25);font-size:13.5px;line-height:1.4}
+.bf-depart svg{width:17px;height:17px;flex:none;color:var(--bf-cyan);margin-top:1px}
+/* Mi horario */
+.bf-form{display:grid;gap:12px}
+.bf-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.bf-h{margin:4px 0 0;font-size:14px}
+.bf-commit{position:relative;margin:0;padding:10px 40px 10px 10px;border-radius:14px;border:1px solid var(--bf-stroke);background:var(--bf-chip);display:grid;grid-template-columns:1fr 120px;gap:8px}
+.bf-days{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px}
+.bf-days label{position:relative}.bf-days input{position:absolute;opacity:0;inset:0}
+.bf-days span{display:grid;place-items:center;min-width:44px;min-height:34px;padding:0 6px;border-radius:10px;border:1px solid var(--bf-stroke);font-size:12.5px;font-weight:600;color:var(--bf-muted);cursor:pointer}
+.bf-days input:checked+span{background:linear-gradient(135deg,#4b8dff,#6d5dff);color:#fff;border-color:transparent}
+.bf-days input:focus-visible+span{outline:2px solid var(--bf-cyan);outline-offset:2px}
+.bf-place{grid-column:1/-1;display:flex;gap:6px}.bf-place .input{flex:1;min-width:0}
+.bf-del{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:9px;border:0;background:transparent;color:var(--bf-muted);cursor:pointer;display:grid;place-items:center}
+.bf-del svg{width:15px;height:15px}
+@media (max-width:560px){.bf-row{grid-template-columns:1fr 1fr}.bf-commit{grid-template-columns:1fr}}
+@keyframes bf-fill{from{width:0}}
+@media (prefers-reduced-motion:reduce){.bf-meter i{animation:none}}

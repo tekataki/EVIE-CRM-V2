@@ -103,6 +103,27 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v10 · Fase 3: Briefing diario y Cabina SOMA (2026-11-22)
+- **Briefing del día** (tarjeta del HUD y «Ivi, protocolo matutino»): clima, bloques de hoy (compromisos fijos +
+  Agenda), ventana para entrenar antes de tu primer compromiso con los músculos que ya están listos, seguimientos de
+  ventas vencidos, avance de tu misión y una frase útil en inglés que cambia cada día. «Escuchar» lo lee con la voz de
+  Ivi (sin costo de IA). Se abre solo la primera vez que entras a Inicio antes de las 12:00 (se puede desactivar).
+- **Mi horario**: hora de despertar, minutos de entreno y de traslado, punto de salida y compromisos fijos (hora, días
+  y lugar). Vive en tus preferencias; nada personal está en el código.
+- **«Sal ahora»**: si el compromiso tiene lugar, Ivi calcula el camino con tráfico (Mapa) y te avisa con una
+  notificación cuándo salir. Funciona con EVIE abierta o en segundo plano; no hay servidor de push, así que con la app
+  cerrada no llega el aviso.
+- **Cabina SOMA** (`#soma`): matriz de necesidades (problema → solución → paquete con precio único y mensual),
+  objeciones si/entonces con búsqueda, seguimientos con cadencia 2/5/10 días y mensajes sugeridos (cercano, directo,
+  valor) para copiar o abrir en WhatsApp, resultados ganados/perdidos con motivo y tareas del socio.
+- **Ficha del prospecto** (`#soma/<id>`): necesidades → paquetes recomendados, **dossier de visita** hecho por Ivi
+  (problema probable, solución, paquete, objeciones, preguntas, cierre, siguiente paso y supuestos), **propuesta
+  imprimible** en un clic, tareas yo/socio, ubicación en el Mapa con «Ver ruta» y cierre ganado/perdido.
+- Servidor: `src/soma.js` (`/api/soma/dossier` con esfuerzo medio y `/api/soma/followup` con esfuerzo bajo, salidas
+  estructuradas de Claude); necesita `ANTHROPIC_API_KEY`, limpia los datos del prospecto y cuenta para el tope diario.
+  Sin migración nueva: los datos viven en `preferences` y en `clients.cabin`.
+- Pruebas: `tests/soma-briefing.test.cjs` y E2E `tools/e2e-soma.mjs` (20 comprobaciones) a 390 y 1440 px, oscuro y claro.
+
 ## Novedades v10 · Fase 2: Claude, Chat con memoria e Ivi (2026-11-22)
 - **Claude es el cerebro de Ivi** (`claude-opus-5-5`, SDK oficial `@anthropic-ai/sdk` en el Worker, `src/claude.js`).
   Niveles → esfuerzo: Chispa `low`, Enfoque `medium`, Profundo `high`. Pensamiento adaptativo, respuestas en
@@ -194,7 +215,7 @@ API `/api`: `runtime`, `auth/*`, `memory/*`, `map/config|search|route`, `data/pu
 **docs/SETUP.md** (Cloudflare, Supabase, cuentas, claves, costos, Google; §8 lista consolidada v3.2), **docs/MAP.md**, **docs/MEMORY.md** y `.dev.vars.example`.
 
 ## Pruebas
-Pruebas de Node en 26 archivos (`tests/*.test.cjs`; ejecútalas archivo por archivo en máquinas con poca RAM), e2e `tools/e2e-chat.mjs`, `tools/e2e-drafts.mjs`, `e2e-memory.mjs`, `e2e-map.mjs`, `e2e-login.mjs`, `e2e-v31.mjs`, `e2e-hud.mjs`, `e2e-workspace.mjs`, `e2e-kisha.mjs`, `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs` y `tools/qa-sweep.mjs`, privacidad `tools/check-privacy.mjs`.
+Pruebas de Node en 47 archivos (`tests/*.test.cjs`; ejecútalas archivo por archivo en máquinas con poca RAM), e2e `tools/e2e-chat.mjs`, `tools/e2e-soma.mjs`, `tools/e2e-drafts.mjs`, `e2e-memory.mjs`, `e2e-map.mjs`, `e2e-login.mjs`, `e2e-v31.mjs`, `e2e-hud.mjs`, `e2e-workspace.mjs`, `e2e-kisha.mjs`, `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs` y `tools/qa-sweep.mjs`, privacidad `tools/check-privacy.mjs`.
 
 ## Restaurar la versión anterior
 Tag `pre-v2.3-946d437` en GitHub, o *Cloudflare → Deployments → Rollback*.

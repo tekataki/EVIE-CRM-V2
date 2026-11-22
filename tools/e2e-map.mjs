@@ -98,6 +98,16 @@ assert.equal(await p.evaluate(() => EvieAssistant.tryLocal('Ivi, abre el mapa'))
 await p.evaluate(() => { location.hash = 'inicio' }); await until(() => document.getElementById('evie-stage-input'))
 await p.evaluate(() => EvieHUD.open('mapa')); await until(() => /Instituto Tecnológico/.test([...document.querySelectorAll('.hud-card')].map((n) => n.innerText).join(' ')))
 ok('HUD card «Mapa · Ciudad Guzmán» shows the current destination and route')
+// 7b) Cabina SOMA: open prospects with a saved place show as pins (closed ones do not); removed afterwards
+if (mapReady) {
+  await p.evaluate(() => { const t = Domain.today(), base = { date: t, amount: 0, contact: '', phone: '', email: '', project: '', payments: [], deliverables: [], notes: [], installments: [] }; Store.save((s) => { s.clients = [...(s.clients || []), { ...base, id: 'pin-aaaaaaaa', title: 'Prospecto Pin', stage: 'Prospecto', cabin: { place: { name: 'Calle de prueba', lat: 19.6950, lon: -103.3990 } } }, { ...base, id: 'pin-bbbbbbbb', title: 'Prospecto Cerrado', stage: 'Prospecto', cabin: { outcome: { result: 'lost' }, place: { name: 'Otra calle', lat: 19.6940, lon: -103.3980 } } }] }); location.hash = 'inicio' })
+  await until(() => document.getElementById('evie-stage-input')); await p.evaluate(() => { location.hash = 'mapa' })
+  await until(() => document.querySelector('.map-pin.pin-prospect[aria-label="Prospecto: Prospecto Pin"]'), null, 20000)
+  assert.equal(await p.evaluate(() => document.querySelectorAll('.map-pin.pin-prospect').length), 1)
+  assert.ok(await p.evaluate(() => document.querySelector('.map-pin.pin-prospect').classList.contains('maplibregl-marker')), 'MapLibre marker classes kept')
+  ok('Cabina SOMA: open prospects with a saved place show as pins on the map (closed ones hidden)')
+  await p.evaluate(() => Store.save((s) => { s.clients = s.clients.filter((c) => !String(c.id).startsWith('pin-')) }))
+}
 // 8) no location history persisted
 const stored = await p.evaluate(() => Object.keys(localStorage).map((k) => localStorage.getItem(k)).join('|') + Object.keys(sessionStorage).map((k) => sessionStorage.getItem(k)).join('|'))
 assert.ok(!/19\.70[0-9]|-103\.4[0-9]{2}/.test(stored), 'coordinates found in storage'); ok('no coordinates in localStorage/sessionStorage (no location history)')

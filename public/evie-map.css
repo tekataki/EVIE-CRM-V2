@@ -37,6 +37,8 @@
 .map-pin.pin-dest{background:#ef4444;width:22px;height:22px}
 .map-pin.pin-me{background:#3b82f6}
 .map-pin.pin-origin{background:#f59e0b}
+.map-pin.pin-prospect{background:linear-gradient(135deg,#8b7bff,#4b8dff);width:20px;height:20px;cursor:pointer;transition:box-shadow .15s}
+.map-pin.pin-prospect:hover,.map-pin.pin-prospect:focus-visible{box-shadow:0 0 0 5px rgba(139,123,255,.38),0 2px 8px rgba(0,0,0,.45);outline:2px solid #62f0ff;outline-offset:3px}
 .map-canvas .maplibregl-ctrl-attrib{font-size:11px;background:rgba(255,255,255,.88);color:#111}
 .map-canvas .maplibregl-ctrl-attrib a{color:#0b3d91}
 @media (max-width:640px){.map-canvas{min-height:52vh;border-radius:18px}.map-search{flex-direction:column}.map-search .button{width:100%}.map-row .button{flex:1 1 auto}}

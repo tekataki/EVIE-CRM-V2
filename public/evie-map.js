@@ -45,9 +45,16 @@ window.EvieMap=(()=>{
   if(route?.shape?.length&&!session){const b=route.shape.reduce((a,p)=>[[Math.min(a[0][0],p.lon),Math.min(a[0][1],p.lat)],[Math.max(a[1][0],p.lon),Math.max(a[1][1],p.lat)]],[[999,999],[-999,-999]]);map.fitBounds(b,{padding:60,duration:RM()?0:600});}}
  const markers={};
  function marker(id,p,cls,label){if(!map||!window.maplibregl){return;}if(!p){markers[id]?.remove();delete markers[id];return;}
-  if(!markers[id]){const el=document.createElement('div');el.className='map-pin '+cls;el.setAttribute('aria-label',label);el.setAttribute('role','img');markers[id]=new maplibregl.Marker({element:el}).setLngLat([p.lon,p.lat]).addTo(map);}
-  else{markers[id].setLngLat([p.lon,p.lat]);markers[id].getElement().className='map-pin '+cls;}}
- function drawMarkers(){marker('dest',dest,'pin-dest','Destino');marker('origin',session?null:origin,origin?.manual?'pin-origin':'pin-me','Origen');}
+  // MapLibre's addTo() overwrites aria-label with its generic «Map marker»: set ours afterwards.
+  if(!markers[id]){const el=document.createElement('div');el.className='map-pin '+cls;el.setAttribute('role','img');markers[id]=new maplibregl.Marker({element:el}).setLngLat([p.lon,p.lat]).addTo(map);el.setAttribute('aria-label',label);}
+  else{markers[id].setLngLat([p.lon,p.lat]);const el=markers[id].getElement();[...el.classList].filter(c=>c.startsWith('pin-')&&c!==cls).forEach(c=>el.classList.remove(c));el.classList.add('map-pin',cls);el.setAttribute('aria-label',label);}}
+ function drawMarkers(){marker('dest',dest,'pin-dest','Destino');marker('origin',session?null:origin,origin?.manual?'pin-origin':'pin-me','Origen');drawProspects();}
+ /* Cabina SOMA: open prospects with a saved place show as violet pins; tapping one routes there. */
+ function prospects(){try{return Store.list('clients').filter(c=>!c.deleted_at&&c.cabin?.place&&Number.isFinite(Number(c.cabin.place.lat))&&Number.isFinite(Number(c.cabin.place.lon))&&!c.cabin.outcome&&!/complet|perdid|pausad|ganad/i.test(c.stage||''));}catch{return [];}}
+ function drawProspects(){if(!map||!window.maplibregl)return;const seen=new Set();
+  for(const c of prospects()){const id='p:'+c.id,pl=c.cabin.place,p={lat:Number(pl.lat),lon:Number(pl.lon)};seen.add(id);const fresh=!markers[id];marker(id,p,'pin-prospect','Prospecto: '+(c.title||'cliente'));
+   const el=fresh&&markers[id]?.getElement();if(el){el.title=c.title||'';el.tabIndex=0;el.setAttribute('role','button');const go=ev=>{ev.stopPropagation();choose({name:pl.name||c.title,label:(c.title||'Prospecto')+(pl.name?' · '+pl.name:''),lat:p.lat,lon:p.lon});};el.addEventListener('click',go);el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();go(ev);}});}}
+  for(const k of Object.keys(markers))if(k.startsWith('p:')&&!seen.has(k)){markers[k].remove();delete markers[k];}}
  /* ---------- search / route (provider via Worker) ---------- */
  async function search(text){const q=String(text||'').trim();lastQuery=q;candidates=[];
   if(q.length<2){st('idle','Escribe el lugar que buscas.');return {ok:false,status:'empty'};}
