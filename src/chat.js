@@ -14,6 +14,7 @@ import { isTier, tierConfig, TIER_LABELS } from './tiers.js'
 import { aiProvider, claudeClient, claudeRun, claudeError, claudeCost, claudeTools, webSearchTool, textOf, sourcesOf, toolUses, stopNote, searchesOf } from './claude.js'
 import { iviSystem, iviUserBlock, iviDayContext, iviTurnNote, personaDials, cleanMode } from './persona.js'
 import { supa, memoryStore, relevantMemories, memoryBlock, learnFromExchange, memorySettings, MEMORY_KINDS, MEMORY_LIMITS } from './ai-memory.js'
+import { openaiStream, openaiError } from './openai.js'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export const CHAT_LIMITS = { text: 16000, title: 120, history: 40, historyChars: 80000, conversations: 300, messages: 400 }
@@ -104,7 +105,9 @@ export function createChat({ fetcher = fetch, authenticate, seal, unseal, remote
     const t0 = Date.now()
     const [x, e] = await ctx(c); if (e) return e
     const { s, env } = x, owner = s.user.id
-    if (aiProvider(env) !== 'claude') return err(c, 'El chat usa Claude: falta ANTHROPIC_API_KEY en Cloudflare.', 503, 'no_claude')
+    // Claude when ANTHROPIC_API_KEY exists; OpenAI (Responses API, streamed) meanwhile. Same SSE contract for the browser.
+    const provider = aiProvider(env); if (!provider) return err(c, 'La IA no está configurada en el servidor.', 503, 'no_ai')
+    const errOf = (ex) => provider === 'claude' ? claudeError(ex) : openaiError(ex)
     const id = c.req.param('id'); if (!UUID.test(id)) return err(c, 'Conversación inválida.')
     const b = await body(c); if (!b) return err(c, 'JSON inválido.')
     const mode = b.regenerate === true ? 'regenerate' : b.edit === true ? 'edit' : 'send'
@@ -145,13 +148,22 @@ export function createChat({ fetcher = fetch, authenticate, seal, unseal, remote
     const hist = historyMessages(rows)
     const last = hist.at(-1); if (last?.role === 'user') hist[hist.length - 1] = { role: 'user', content: [{ type: 'text', text: last.content, cache_control: { type: 'ephemeral' } }] }
     let messages = [...hist, { role: 'system', content: iviTurnNote({ tier: cfg.id, web, memory: memoryBlock(relevant) }) }]
-    const tools = [...claudeTools(SERVER_TOOLS), ...(web ? [webSearchTool({ timezone, city: profile?.city, maxUses: 3 })] : [])]
-    const client = claudeClient(env, fetcher), abort = c.req.raw?.signal || null
+    const tools = provider === 'claude' ? [...claudeTools(SERVER_TOOLS), ...(web ? [webSearchTool({ timezone, city: profile?.city, maxUses: 3 })] : [])] : []
+    const client = provider === 'claude' ? claudeClient(env, fetcher) : null, abort = c.req.raw?.signal || null
     const isNew = !row.title_sealed && mode === 'send' && rows.filter((m) => m.role === 'user').length === 1
     const title = isNew ? autoTitle(userMsg.text) : null
     const memoryUsed = relevant.map((m) => ({ id: m.id, kind: m.kind, text: m.text }))
 
     async function generate(onText) {
+      if (provider === 'openai') {
+        // Same persona and context; the clock goes in the instructions (no tool loop) and web search is hosted.
+        const instructions = [...system.map((b) => b.text), iviTurnNote({ tier: cfg.id, web, memory: memoryBlock(relevant) }), `Hora local actual: ${currentTime(timezone).spoken_es} (${timezone}).`].join('\n\n')
+        const o = await openaiStream(env, fetcher, { tier: cfg.id, instructions, input: historyMessages(rows), web: web ? { timezone, city: profile?.city } : null, onText, signal: abort })
+        let text = o.text.trim()
+        if (!text) text = o.stop_reason === 'refusal' ? 'Prefiero no responder eso. ¿Lo vemos de otra forma?' : 'Listo.'
+        else if (o.stop_reason === 'max_tokens') text += '\n\n_(Respuesta cortada por longitud: pídeme que continúe.)_'
+        return { msg: { model: o.model, stop_reason: o.stop_reason, usage: {} }, cost: o.cost, searches: o.searches, text, sources: o.sources }
+      }
       let msg = null, cost = 0, searches = 0, text = '', sources = []
       for (let hop = 0; hop < 6; hop++) {
         msg = await claudeRun(client, { model: cfg.model, max_tokens: cfg.max_output_tokens, system, messages, tools, output_config: { effort: cfg.effort } }, { onText, signal: abort })
@@ -180,7 +192,7 @@ export function createChat({ fetcher = fetch, authenticate, seal, unseal, remote
     const metaEvent = { conversation: id, user_message: { id: userMsg.id, seq: userMsg.seq }, tier: { id: cfg.id, label: TIER_LABELS[cfg.id], effort: cfg.effort, downgraded }, web, private: privateMode, title }
 
     if (!(c.req.header('Accept') || '').includes('text/event-stream')) {
-      try { const r = await generate(null); return c.json({ ...metaEvent, ...(await finish(r)) }) } catch (ex) { const xe = claudeError(ex); console.error('CHAT_CLAUDE', xe.code); return err(c, xe.message, xe.status === 499 ? 499 : xe.status, xe.code) }
+      try { const r = await generate(null); return c.json({ ...metaEvent, ...(await finish(r)) }) } catch (ex) { const xe = errOf(ex); console.error('CHAT_' + provider.toUpperCase(), xe.code); return err(c, xe.message, xe.status === 499 ? 499 : xe.status, xe.code) }
     }
     c.header('X-Accel-Buffering', 'no')
     return streamSSE(c, async (stream) => {
@@ -192,9 +204,9 @@ export function createChat({ fetcher = fetch, authenticate, seal, unseal, remote
         const done = await finish(r)
         if (!closed) await stream.writeSSE({ event: 'done', data: JSON.stringify(done) })
       } catch (ex) {
-        const xe = claudeError(ex)
+        const xe = errOf(ex)
         if (xe.code === 'aborted' || closed) { if (partial.trim()) { try { await finish({ msg: null, cost: 0, searches: 0, text: partial.trim(), sources: [] }, true) } catch {} } return }
-        console.error('CHAT_CLAUDE', xe.code)
+        console.error('CHAT_' + provider.toUpperCase(), xe.code)
         if (!closed) await stream.writeSSE({ event: 'error', data: JSON.stringify({ error: xe.message, code: xe.code }) })
       }
     })

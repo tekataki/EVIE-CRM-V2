@@ -111,7 +111,7 @@ export function createResearch({ fetcher = fetch, authenticate, unseal = null })
     if (cost > 0) { await usage(x.env, x.s.user.id, 'cost_micro', cost); await usage(x.env, '__global__', 'cost_micro', cost) }
   }
   async function gate(c, x) {
-    if (!aiProvider(x.env)) return err(c, 'La investigación requiere ANTHROPIC_API_KEY en el servidor.', 503)
+    if (!aiProvider(x.env)) return err(c, 'La investigación requiere la IA de EVIE (OPENAI_API_KEY o ANTHROPIC_API_KEY en el servidor).', 503)
     if (x.env.EVIE_WEB_SEARCH === 'off') return err(c, 'La búsqueda web está desactivada (EVIE_WEB_SEARCH=off).', 503)
     if (await usage(x.env, x.s.user.id, 'web_search') >= limits(x.env).web_search) return err(c, 'Llegaste al límite diario de búsquedas web.', 429)
     return null

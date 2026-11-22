@@ -6,6 +6,7 @@
 // («lo más importante del usuario ahora») is regenerated and injected (cached) into every prompt.
 import { sensitivity, keywords, normalize, settingsOf, listMemories, ensureMemorySchema } from './memory.js'
 import { claudeClient, claudeModel, claudeJson, claudeCost, aiProvider } from './claude.js'
+import { openaiJson } from './openai.js'
 
 export const MEMORY_KINDS = ['profile', 'preference', 'project', 'goal', 'person', 'decision', 'fact']
 export const MEMORY_LIMITS = { active: 400, text: 400, relevant: 8, profileChars: 1600, profileEvery: 5, extractDaily: 80 }
@@ -137,18 +138,21 @@ export function cleanOps(ops, list, settings = {}) {
 
 /**
  * Run after a finished exchange (off the response path). Returns {applied, profile, cost}.
- * Skips: no Claude, memory disabled, trivial user text, daily cap reached (checked by the caller).
+ * Skips: no AI provider, memory disabled, trivial user text, daily cap reached (checked by the caller).
+ * Claude when ANTHROPIC_API_KEY exists; OpenAI (strict JSON schema) meanwhile.
  */
 export async function learnFromExchange({ env, fetcher, store, user, assistant, conversationId = null, settings = null }) {
-  if (aiProvider(env) !== 'claude') return { applied: 0, cost: 0 }
+  const provider = aiProvider(env); if (!provider) return { applied: 0, cost: 0 }
   const st = settings || { enabled: true, use_memories: true }
   if (st.enabled === false || st.use_memories === false) return { applied: 0, cost: 0 }
   if (String(user || '').trim().length < 12) return { applied: 0, cost: 0 }
-  const client = claudeClient(env, fetcher), model = claudeModel(env)
+  const ask = provider === 'claude'
+    ? (() => { const client = claudeClient(env, fetcher), model = claudeModel(env); return async (system, text, schema) => { const { json, msg } = await claudeJson(client, { model, system, user: text, schema, effort: 'low', max_tokens: 3000 }); return { json, cost: claudeCost(env, msg) } } })()
+    : (system, text, schema, name) => openaiJson(env, fetcher, { tier: 'enfoque', system, user: text, schema, name, maxTokens: 2500 })
   const list = await store.list()
   const mem = list.slice(0, 120).map((m) => `${m.id} | ${m.kind} | imp ${m.importance} | ${m.text}`).join('\n') || '(sin recuerdos)'
-  const { json, msg } = await claudeJson(client, { model, system: EXTRACT_SYSTEM, user: `<recuerdos_actuales>\n${mem}\n</recuerdos_actuales>\n\n<intercambio>\nUsuario: ${clip(user, 4000)}\nIvi: ${clip(assistant, 3000)}\n</intercambio>`, schema: OPS_SCHEMA, effort: 'low', max_tokens: 3000 })
-  let cost = claudeCost(env, msg), applied = 0
+  const { json, cost: c0 } = await ask(EXTRACT_SYSTEM, `<recuerdos_actuales>\n${mem}\n</recuerdos_actuales>\n\n<intercambio>\nUsuario: ${clip(user, 4000)}\nIvi: ${clip(assistant, 3000)}\n</intercambio>`, OPS_SCHEMA, 'memory_ops')
+  let cost = c0 || 0, applied = 0
   for (const o of cleanOps(json?.ops, list, st)) {
     try {
       if (o.op === 'add') await store.add({ ...o, source_conversation: conversationId })
@@ -162,8 +166,8 @@ export async function learnFromExchange({ env, fetcher, store, user, assistant, 
   if (applied && ((state?.changes_since_profile || 0) >= MEMORY_LIMITS.profileEvery || !state?.profile_sealed)) {
     const fresh = await store.list()
     if (fresh.length) {
-      const r = await claudeJson(client, { model, system: PROFILE_SYSTEM, user: fresh.slice(0, 150).map((m) => `- [${m.kind}, imp ${m.importance}] ${m.text}`).join('\n'), schema: PROFILE_SCHEMA, effort: 'low', max_tokens: 3000 })
-      cost += claudeCost(env, r.msg); profile = clip(r.json?.profile, MEMORY_LIMITS.profileChars); if (profile) await store.saveProfile(profile)
+      const r = await ask(PROFILE_SYSTEM, fresh.slice(0, 150).map((m) => `- [${m.kind}, imp ${m.importance}] ${m.text}`).join('\n'), PROFILE_SCHEMA, 'memory_profile')
+      cost += r.cost || 0; profile = clip(r.json?.profile, MEMORY_LIMITS.profileChars); if (profile) await store.saveProfile(profile)
     }
   }
   return { applied, profile, cost }

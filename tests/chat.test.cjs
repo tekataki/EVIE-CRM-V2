@@ -38,14 +38,22 @@ function sse(msg){const ev=[],push=(type,data)=>ev.push(`event: ${type}\ndata: $
  (msg.content||[]).forEach((b,i)=>{push('content_block_start',{index:i,content_block:{type:'text',text:'',citations:null}});for(const part of b.text.match(/.{1,7}/gs)||[])push('content_block_delta',{index:i,delta:{type:'text_delta',text:part}});push('content_block_stop',{index:i});});
  push('message_delta',{delta:{stop_reason:msg.stop_reason||'end_turn',stop_sequence:null},usage:{output_tokens:80}});push('message_stop',{});
  return new Response(ev.join(''),{headers:{'content-type':'text/event-stream'}});}
+// OpenAI Responses API stream (used while there is no ANTHROPIC_API_KEY).
+function oaiSse(text,sources=[]){const ev=[],push=o=>ev.push(`event: ${o.type}\ndata: ${JSON.stringify(o)}\n\n`);
+ push({type:'response.created',response:{id:'resp_1',status:'in_progress'}});for(const part of text.match(/.{1,9}/gs)||[])push({type:'response.output_text.delta',delta:part});
+ push({type:'response.completed',response:{id:'resp_1',status:'completed',model:'gpt-6-luna',output:[...(sources.length?[{type:'web_search_call',action:{type:'search',sources:sources.map(url=>({type:'url',url}))}}]:[]),{type:'message',content:[{type:'output_text',text,annotations:sources.map(url=>({type:'url_citation',url,title:'Fuente de prueba'}))}]}],usage:{input_tokens:1000,output_tokens:200,input_tokens_details:{cached_tokens:0}}}});
+ return new Response(ev.join(''),{headers:{'content-type':'text/event-stream'}});}
 async function fixture(t,extra={}){
  const {createAccounts}=await import('../src/accounts.js');
  const db=new DatabaseSync(':memory:');t.after(()=>db.close());
  for(const m of ['0001_auth_sessions.sql','0002_invites_usage.sql'])db.exec(fs.readFileSync(path.join(root,'migrations/d1',m),'utf8'));
  const binding={prepare(sql){return {bind(...args){return {all:async()=>({results:db.prepare(sql).all(...args)}),first:async()=>db.prepare(sql).get(...args)||null,run:async()=>{const r=db.prepare(sql).run(...args);return {success:true,meta:{changes:Number(r.changes)}};}};}};}};
  const env={EVIE_ACCOUNTS_ENABLED:'true',AUTH_DB:binding,SUPABASE_URL:'https://provider.invalid',SUPABASE_PUBLISHABLE_KEY:'k',EVIE_SESSION_KEY:Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64'),ANTHROPIC_API_KEY:'test-anthropic',...extra};
- const sent=[];let reply='Listo, Sam: tu plan está **en marcha**.',ops={ops:[]};
+ const sent=[],oai=[];let reply='Listo, Sam: tu plan está **en marcha**.',ops={ops:[]},oaiSources=[];
  const fetcher=async(input,options={})=>{const url=typeof input==='string'?input:input.url;
+  if(url.startsWith('https://api.openai.com/v1/responses')){const body=JSON.parse(options.body);oai.push(body);
+   if(body.text?.format?.type==='json_schema'){const isProfile=!!body.text.format.schema.properties.profile;return Response.json({status:'completed',model:body.model,output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(isProfile?{profile:'- Quiere su laptop en 2027'}:typeof ops==='function'?ops(body):ops)}]}],usage:{input_tokens:300,output_tokens:60}});}
+   return oaiSse(typeof reply==='function'?reply(body):reply,oaiSources);}
   if(url.includes('grant_type=password'))return Response.json({user:{id:A},access_token:'acc',refresh_token:'ref',expires_in:3600});
   if(url.endsWith('/auth/v1/user'))return Response.json({id:A});
   if(url.includes('/rest/v1/'))return postgrest(url,options);
@@ -57,7 +65,7 @@ async function fixture(t,extra={}){
  const request=(route,{method='GET',body,cookie,accept}={})=>api.request('https://evie.test'+route,{method,headers:{Origin:'https://evie.test','X-Evie-Request':'1','Content-Type':'application/json',...(accept?{Accept:accept}:{}),...(cookie?{Cookie:cookie,'X-Evie-User':A}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})},env);
  const r=await request('/auth/signin',{method:'POST',body:{username:'owner-a',password:'synthetic-password'}});const cookie=r.headers.get('set-cookie').split(';')[0];
  const call=(route,o={})=>request('/chat'+route,{cookie,...o});
- return {request,call,cookie,sent,env,db,setReply:f=>reply=f,setOps:o=>ops=o};}
+ return {request,call,cookie,sent,oai,env,db,setReply:f=>reply=f,setOps:o=>ops=o,setSources:s=>oaiSources=s};}
 const raw=async sql=>{await pg.exec('reset role');return (await pg.query(sql)).rows;};
 function parseSSE(text){return text.split('\n\n').filter(Boolean).map(b=>{const ev=(b.match(/^event: (.*)$/m)||[])[1],d=(b.match(/^data: (.*)$/m)||[])[1];return {event:ev,data:d?JSON.parse(d):null};});}
 
@@ -130,7 +138,26 @@ test('«Lo que Ivi sabe de ti»: add, edit in place, forget and restore; memory 
  f.setOps({ops:[]});await f.call(`/conversations/${id}/messages`,{method:'POST',body:{text:'¿Qué sabes de mí?'}});
  const sys=f.sent.filter(b=>!b.output_config?.format).at(-1).system;assert.ok(sys.some(b=>/perfil_memoria/.test(b.text)&&/laptop en 2027/.test(b.text)));});
 
-test('chat needs Claude and a session',async t=>{const f=await fixture(t,{ANTHROPIC_API_KEY:''});
+test('chat needs an AI provider and a session',async t=>{const f=await fixture(t,{ANTHROPIC_API_KEY:''});
  const id=(await (await f.call('/conversations',{method:'POST',body:{}})).json()).conversation.id;
- const r=await f.call(`/conversations/${id}/messages`,{method:'POST',body:{text:'hola'}});assert.equal(r.status,503);assert.match((await r.json()).error,/ANTHROPIC_API_KEY/);
+ const r=await f.call(`/conversations/${id}/messages`,{method:'POST',body:{text:'hola'}});assert.equal(r.status,503);assert.match((await r.json()).error,/IA no está configurada/);
  assert.equal((await f.request('/chat/conversations')).status,401);});
+
+test('chat runs on OpenAI while there is no Claude key: same SSE contract, saved sealed, sources, memory learned with strict JSON',async t=>{
+ const f=await fixture(t,{ANTHROPIC_API_KEY:'',OPENAI_API_KEY:'test-openai'});
+ const id=(await (await f.call('/conversations',{method:'POST',body:{}})).json()).conversation.id;
+ f.setOps({ops:[{op:'add',id:null,kind:'goal',text:'Quiere ahorrar para una laptop en 2027.',importance:4,confidence:0.9}]});
+ const r=await f.call(`/conversations/${id}/messages`,{method:'POST',accept:'text/event-stream',body:{text:'Quiero ahorrar para una laptop en 2027, ¿cómo empiezo?'}});
+ assert.equal(r.status,200);const raw=await r.text();
+ assert.equal([...raw.matchAll(/event: delta\ndata: (.*)/g)].map(m=>JSON.parse(m[1]).t).join(''),'Listo, Sam: tu plan está **en marcha**.');
+ const done=JSON.parse(raw.match(/event: done\ndata: (.*)/)[1]);assert.equal(done.model,'gpt-6-luna');assert.match(done.title,/^Quiero ahorrar para una laptop en 2027/);
+ const call=f.oai.find(b=>b.stream===true);assert.equal(call.store,false);assert.match(call.instructions,/Ivi/);assert.match(call.instructions,/Hora local actual/);assert.deepEqual(call.input.map(m=>m.role),['user']);assert.equal(call.max_output_tokens,4000);
+ const saved=(await (await f.call(`/conversations/${id}/messages`)).json()).messages;assert.equal(saved.at(-1).text,'Listo, Sam: tu plan está **en marcha**.');
+ const ext=f.oai.find(b=>b.text?.format?.name==='memory_ops');assert.ok(ext,'memory extraction ran on OpenAI');assert.equal(ext.text.format.strict,true);
+ const items=ext.text.format.schema.properties.ops.items;assert.equal(items.additionalProperties,false);assert.deepEqual(items.required,['op','id','kind','text','importance','confidence']);
+ assert.ok((await (await f.call('/memories')).json()).memories.some(m=>/laptop en 2027/.test(m.text)));
+ // follow-up turn carries the history; web search uses the hosted tool and returns verified-looking sources
+ f.setSources(['https://example.org/tasas']);f.setReply('Según la fuente, la tasa subió.');
+ const j=await (await f.call(`/conversations/${id}/messages`,{method:'POST',body:{text:'Investiga en internet la tasa de ahorro actual',research:true}})).json();
+ assert.equal(j.text,'Según la fuente, la tasa subió.');assert.deepEqual(j.sources.map(s=>s.host),['example.org']);
+ const last=f.oai.filter(b=>b.stream===true).at(-1);assert.deepEqual(last.input.map(m=>m.role),['user','assistant','user']);assert.equal(last.tools[0].type,'web_search');});

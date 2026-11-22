@@ -348,7 +348,7 @@ export function createAssistant({ fetcher = fetch, authenticate, unseal = null, 
     const s = await authenticate(c); if (!s) return err(c, 'Inicia sesión.', 401)
     const env = c.env || {}
     const provider = aiProvider(env)
-    if (!provider) return err(c, 'Ivi IA no está configurada (falta ANTHROPIC_API_KEY en Cloudflare).', 503)
+    if (!provider) return err(c, 'Ivi IA no está configurada (falta OPENAI_API_KEY o ANTHROPIC_API_KEY en Cloudflare).', 503)
     let body; try { body = await c.req.json() } catch { return err(c, 'JSON inválido.') }
     let input; try { input = sanitizeInput(body?.input) } catch (e) { return err(c, e.message) }
     const requestId = typeof body.request_id === 'string' && /^r-[0-9a-f-]{36}$/.test(body.request_id) ? body.request_id : rid()

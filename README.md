@@ -151,6 +151,9 @@ Configuración v3: ver `docs/SETUP.md §7`.
   `tests/ai-chat-sql.test.cjs`, `tests/chat-md.test.cjs` (XSS) y E2E `tools/e2e-chat.mjs` a 390 y 1440 px.
 - **Para activarlo:** Cloudflare → Workers & Pages → `evie-crm-v2` → Settings → Variables and Secrets → Production →
   agrega el secreto `ANTHROPIC_API_KEY` y vuelve a desplegar. `/api/runtime` mostrará `ai.provider: "claude"`.
+- **Mientras no exista esa llave, todo funciona con OpenAI** (`OPENAI_API_KEY`, `src/openai.js`): el Chat responde en
+  vivo por la Responses API con búsqueda web, la Cabina SOMA y el aprendizaje de memoria usan esquemas JSON estrictos,
+  y Kisha e investigación siguen igual. Al agregar la llave de Claude el cambio es automático.
 
 ## Novedades v10 · Fase 1: Físico = Cuerpo + recuperación (2026-11-22)
 - **Físico ya solo tiene «Cuerpo».** Se quitaron las pestañas «Entrenamientos» y «Comidas y calorías» (registro manual

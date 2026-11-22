@@ -156,7 +156,7 @@ export function createKisha({ fetcher = fetch, authenticate, seal = null, unseal
   async function context(c) {
     const s = await authenticate(c); if (!s) return { fail: err(c, 'Inicia sesión.', 401) }
     const env = c.env || {}
-    if (!aiProvider(env)) return { fail: err(c, 'Kisha necesita la IA de EVIE (falta ANTHROPIC_API_KEY en el servidor).', 503) }
+    if (!aiProvider(env)) return { fail: err(c, 'Kisha necesita la IA de EVIE (falta OPENAI_API_KEY o ANTHROPIC_API_KEY en el servidor).', 503) }
     let body; try { body = await c.req.json() } catch { return { fail: err(c, 'JSON inválido.') } }
     if (!body || typeof body !== 'object' || Array.isArray(body) || 'owner_id' in body || 'user_id' in body) return { fail: err(c, 'Solicitud inválida.') }
     if (typeof body.session_id !== 'string' || !UUID.test(body.session_id)) return { fail: err(c, 'Sesión inválida.') }

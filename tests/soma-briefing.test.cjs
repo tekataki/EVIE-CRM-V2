@@ -11,9 +11,10 @@ async function fixture(t,extra={}){const {createAccounts}=await import('../src/a
  for(const m of ['0001_auth_sessions.sql','0002_invites_usage.sql'])db.exec(fs.readFileSync(path.join(__dirname,'../migrations/d1',m),'utf8'));
  const binding={prepare(sql){return {bind(...args){return {all:async()=>({results:db.prepare(sql).all(...args)}),first:async()=>db.prepare(sql).get(...args)||null,run:async()=>{const r=db.prepare(sql).run(...args);return {success:true,meta:{changes:Number(r.changes)}};}};}};}};
  const env={EVIE_ACCOUNTS_ENABLED:'true',AUTH_DB:binding,SUPABASE_URL:'https://provider.invalid',SUPABASE_PUBLISHABLE_KEY:'k',EVIE_SESSION_KEY:Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64'),ANTHROPIC_API_KEY:'k',...extra};
- const sent=[];let reply='{}';const fetcher=async(input,o={})=>{const url=typeof input==='string'?input:input.url;if(url.includes('grant_type=password'))return Response.json({user:{id:A},access_token:'acc',refresh_token:'ref',expires_in:3600});if(url.endsWith('/auth/v1/user'))return Response.json({id:A});if(url.startsWith('https://api.anthropic.com')){sent.push(JSON.parse(o.body));return sse(reply);}throw Error('unexpected '+url);};
+ const sent=[],oai=[];let reply='{}';const fetcher=async(input,o={})=>{const url=typeof input==='string'?input:input.url;if(url.includes('grant_type=password'))return Response.json({user:{id:A},access_token:'acc',refresh_token:'ref',expires_in:3600});if(url.endsWith('/auth/v1/user'))return Response.json({id:A});if(url.startsWith('https://api.anthropic.com')){sent.push(JSON.parse(o.body));return sse(reply);}
+  if(url.startsWith('https://api.openai.com/v1/responses')){const b=JSON.parse(o.body);oai.push(b);return Response.json({status:'completed',model:b.model,output:[{type:'message',content:[{type:'output_text',text:reply}]}],usage:{input_tokens:900,output_tokens:300}});}throw Error('unexpected '+url);};
  const api=createAccounts({fetcher});const request=(route,{method='GET',body,cookie}={})=>api.request('https://evie.test'+route,{method,headers:{Origin:'https://evie.test','X-Evie-Request':'1','Content-Type':'application/json',...(cookie?{Cookie:cookie,'X-Evie-User':A}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})},env);
- const r=await request('/auth/signin',{method:'POST',body:{username:'owner-a',password:'synthetic-password'}});return {request,cookie:r.headers.get('set-cookie').split(';')[0],sent,db,setReply:x=>reply=x};}
+ const r=await request('/auth/signin',{method:'POST',body:{username:'owner-a',password:'synthetic-password'}});return {request,cookie:r.headers.get('set-cookie').split(';')[0],sent,oai,db,setReply:x=>reply=x};}
 const prospect={client:{name:'Café de prueba',stage:'Diagnóstico',project:'Menú y pedidos',notes:'<script>x</script> Le interesa el QR',needs:['Le preguntan el menú por WhatsApp'],days_since_contact:4},packages:[{name:'Menú digital QR',includes:['Menú web','QR'],one_time:3500,monthly:250}],objections:[{if:'Está caro',then:'Empieza con el paquete chico'}]};
 
 test('dossier: Claude structured output (effort medium), sanitized prospect data, metered',async t=>{const f=await fixture(t);
@@ -25,11 +26,21 @@ test('dossier: Claude structured output (effort medium), sanitized prospect data
  assert.ok(f.db.prepare("SELECT amount FROM ai_usage WHERE owner_id=? AND kind='cost_micro'").get(A).amount>0);
  assert.equal((await f.request('/soma/dossier',{method:'POST',cookie:f.cookie,body:{client:{}}})).status,400);});
 
-test('follow-up: three messages (cercano/directo/valor), effort low; no Claude → clear 503; needs session',async t=>{const f=await fixture(t);
+test('follow-up: three messages (cercano/directo/valor), effort low; no AI at all → clear 503; needs session',async t=>{const f=await fixture(t);
  f.setReply(JSON.stringify({mensajes:[{tono:'cercano',texto:'¡Hola! ¿Cómo va todo?'},{tono:'directo',texto:'¿Agendamos el arranque?'},{tono:'valor',texto:'Te comparto una idea para tu menú.'}]}));
  const j=await (await f.request('/soma/followup',{method:'POST',cookie:f.cookie,body:prospect})).json();assert.deepEqual(j.mensajes.map(m=>m.tono),['cercano','directo','valor']);assert.equal(f.sent[0].output_config.effort,'low');
  assert.equal((await f.request('/soma/followup',{method:'POST',body:prospect})).status,401);
- const n=await fixture(t,{ANTHROPIC_API_KEY:''});const r=await n.request('/soma/followup',{method:'POST',cookie:n.cookie,body:prospect});assert.equal(r.status,503);assert.match((await r.json()).error,/ANTHROPIC_API_KEY/);});
+ const n=await fixture(t,{ANTHROPIC_API_KEY:''});const r=await n.request('/soma/followup',{method:'POST',cookie:n.cookie,body:prospect});assert.equal(r.status,503);assert.match((await r.json()).error,/IA no está configurada/);});
+
+test('Cabina on OpenAI while there is no Claude key: strict JSON schema, same output, metered; malformed JSON → clear message',async t=>{const f=await fixture(t,{ANTHROPIC_API_KEY:'',OPENAI_API_KEY:'o'});
+ f.setReply(JSON.stringify({resumen:'Café con mucho WhatsApp.',problema_probable:'Contesta precios todo el día.',solucion:'Menú QR.',paquete_recomendado:{nombre:'Menú digital QR',por_que:'Lo urgente.'},objeciones:[{si:'Es caro',entonces:'Pago dividido'}],preguntas:['¿Cuántos mensajes al día?'],cierre:'¿Arrancamos?',siguiente_paso:'Enviar propuesta.',supuestos:['Tiene WhatsApp Business']}));
+ const r=await f.request('/soma/dossier',{method:'POST',cookie:f.cookie,body:prospect});const j=await r.json();assert.equal(r.status,200,JSON.stringify(j));assert.equal(j.dossier.paquete_recomendado.nombre,'Menú digital QR');
+ const b=f.oai[0];assert.equal(b.text.format.type,'json_schema');assert.equal(b.text.format.strict,true);assert.equal(b.text.format.name,'soma_dossier');assert.equal(b.store,false);assert.equal(b.reasoning.effort,'medium');
+ assert.ok(!/<script>/.test(b.input[0].content));assert.equal(b.text.format.schema.properties.paquete_recomendado.additionalProperties,false);
+ assert.ok(f.db.prepare("SELECT amount FROM ai_usage WHERE owner_id=? AND kind='cost_micro'").get(A).amount>0);
+ f.setReply(JSON.stringify({mensajes:[{tono:'cercano',texto:'¡Hola!'},{tono:'directo',texto:'¿Arrancamos?'},{tono:'valor',texto:'Una idea.'}]}));
+ const m=await (await f.request('/soma/followup',{method:'POST',cookie:f.cookie,body:prospect})).json();assert.equal(m.mensajes.length,3);assert.equal(f.oai[1].text.format.name,'soma_followup');
+ f.setReply('esto no es json');const bad=await f.request('/soma/followup',{method:'POST',cookie:f.cookie,body:prospect});assert.equal(bad.status,502);assert.match((await bad.json()).error,/incompleta/);});
 
 function briefing({commitments=[],settings={},now=new Date(2026,10,23,8,0)}={}){
  const ctx={console,Math,JSON,Intl,structuredClone,Number,String,Object,Array,Promise,setTimeout,setInterval:()=>0,crypto};const RealDate=Date;
