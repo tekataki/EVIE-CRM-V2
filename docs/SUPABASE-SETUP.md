@@ -37,7 +37,18 @@ Navegador (PC / teléfono, PWA)  →  Cloudflare Pages "evie-crm-v2" (Worker /ap
 | Función | Cómo funciona | Estado |
 |---|---|---|
 | **Invitados de 72 h** | Ya **no necesitan la clave secreta**. El Worker crea al invitado con el alta normal y, con la sesión del propio invitado, llama a `evie_guest_register()`. Supabase guarda la fila en `evie_guests` y fija la caducidad (72 h, no se puede alargar). Al vencer o al terminarlo el propietario, una RLS restrictiva lo bloquea al instante en todas las tablas y `evie_apply`; `pg_cron` borra al usuario cada 15 min (en cascada: perfil, preferencias, registros, contactos). Los invitados no suben fotos a la nube: sus fotos se quedan en su dispositivo, así no quedan archivos huérfanos. Los usuarios `guest-…` están reservados. | ✅ listo |
-| **Continuar con Google** | El Worker consulta a Supabase si el proveedor Google está encendido (`/auth/v1/settings`, caché de 5 min). Al activarlo en Supabase, el botón se habilita solo, **sin tocar Cloudflare**. | ⏳ falta que actives Google en Supabase (abajo) |
+| **Continuar con Google** | El Worker consulta a Supabase si el proveedor Google está encendido (`/auth/v1/settings`, caché de 5 min). Al activarlo en Supabase, el botón se habilita solo, **sin tocar Cloudflare**. | ✅ activo desde 2026-11-22 (ver «Estado de Google» abajo) |
+
+### Estado de Google (2026-11-22)
+- Google Cloud: proyecto **EVIE CRM** (`evie-crm-515505`), cliente OAuth web **«EVIE web (Supabase)»** con la
+  redirección `https://mehhbdnxskfbortgglnd.supabase.co/auth/v1/callback`. Ámbitos: solo `openid email profile`.
+- Supabase: proveedor Google encendido, **Allow manual linking** encendido, Site URL y Redirect URL de EVIE puestos.
+- **La app de Google está en modo «Prueba»:** solo pueden entrar con Google las cuentas agregadas en Google Cloud →
+  Google Auth Platform → **Público → Usuarios de prueba** (máx. 100). Para que **cualquiera** pueda crear su cuenta
+  con Google hay que **publicarla**, y Google pide antes en **Información de la marca**: página principal
+  (`https://evie-crm-v2.pages.dev`), enlace a un **aviso de privacidad público** y el dominio autorizado
+  `evie-crm-v2.pages.dev`. El borrador está en `docs/PRIVACIDAD-BORRADOR.md` (le faltan tus datos de responsable).
+- El secreto del cliente solo está en Supabase (y en el JSON que hayas descargado). Nunca va en el repositorio.
 
 ### v7 (2026-11-22): acceso solo con Google
 | Pantalla | Qué hace |
