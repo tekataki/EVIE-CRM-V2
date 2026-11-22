@@ -103,6 +103,20 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v9 · rediseño (2026-11-22)
+- **Sistema de diseño v8** (`public/evie-v8.css` + `public/evie-v8.js`): fondo 3D con luces volumétricas, piso en
+  perspectiva y grano; superficies con profundidad real (sombra ambiental + luz principal, brillo superior) y una luz
+  que sigue al cursor; botones, campos, pestañas, diálogos, barra lateral y dock del celular rediseñados.
+  Animaciones con **Motion** (motion.dev, versión sin React de Framer Motion, `public/vendor/motion.min.js`, MIT) y
+  **GSAP**. Respeta «reducir movimiento».
+- **Intro** «EVIE · Created by Alejandro Dali»: secuencia HUD con GSAP (escaneo, anillos, núcleo de luz, texto que se
+  descifra y salida con destello). Una vez por sesión; un toque la salta.
+- **Finanzas:** las cuentas son tarjetas físicas (chip, pago sin contacto, número realzado, titular, materiales por
+  color, reflejo e inclinación 3D). Nuevos campos opcionales: últimos 4 dígitos y color. Gráficas con profundidad.
+- **Kisha:** ahora es el Border Collie del dueño (`public/kisha/kisha-collie.webp`, fondo quitado) con parpadeo, boca
+  que se abre con el volumen real de la voz, respiración, posturas por ánimo y un aura que reacciona a la voz.
+- **Físico** (cuerpo + medidas y peso) y **Agenda** (más simple) — ver sus notas abajo.
+
 ## Novedades v8 (2026-11-22)
 - **Correo + contraseña, o Google.** «Crear mi cuenta»: correo, contraseña y confirmación (o Google). «Iniciar
   sesión»: correo y contraseña, o «Continuar con Google» en un toque. Con el mismo correo es la misma cuenta.

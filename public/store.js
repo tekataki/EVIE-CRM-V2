@@ -39,6 +39,25 @@ window.Store = (()=>{
     if(Domain.renewGoals(structuredClone(state.goals)))save(s=>Domain.renewGoals(s.goals));
     return state;
   }
+  /* Body check-in (metrics): weight (kg, 0<w≤500) is optional when there are tape measurements (cm, 10–300) or % body
+     fat (2–70). Legacy weight-only records stay valid; weight 0/null = «not provided». '' = valid. Mirrors FisicoMeasures.check. */
+  function metricError(r) {
+    const has = v => v !== undefined && v !== null, ok = v => typeof v === 'number' && Number.isFinite(v);
+    if (has(r.weight) && r.weight !== 0 && (!ok(r.weight) || r.weight <= 0 || r.weight > 500)) return 'Peso corporal no válido.';
+    if (has(r.body_fat) && (!ok(r.body_fat) || r.body_fat < 2 || r.body_fat > 70)) return 'Porcentaje de grasa no válido (2–70 %).';
+    let n = 0;
+    if (has(r.measurements)) {
+      if (typeof r.measurements !== 'object' || Array.isArray(r.measurements) || Object.keys(r.measurements).length > 30) return 'Medidas corporales no válidas.';
+      for (const [k, v] of Object.entries(r.measurements)) {
+        if (!/^[a-z][a-z0-9_]{0,23}$/.test(k)) return 'Medidas corporales no válidas.';
+        if (v == null) continue;
+        if (!ok(v) || v < 10 || v > 300) return 'Medida fuera de rango (10–300 cm).';
+        n++;
+      }
+    }
+    if (!(ok(r.weight) && r.weight > 0) && !n && !has(r.body_fat)) return 'Peso corporal no válido.';
+    return '';
+  }
   function validate(s) {
     const fail = message => { throw new Error(message); };
     const text = value => typeof value === 'string' && value.length <= 15000;
@@ -75,7 +94,7 @@ window.Store = (()=>{
         if (c==='goals' && (!Number.isInteger(r.target)||r.target<=0||!Number.isInteger(r.progress)||r.progress<0||r.progress>r.target||!['diario','semanal','mensual','anual'].includes(r.horizon)||!text(r.category)||!text(r.periodKey)||!Array.isArray(r.history))) fail('Objetivo no válido.');
         if (c==='routines' && (!text(r.exercises)||!r.exercises.trim()||!Number.isInteger(r.day)||r.day<0||r.day>6)) fail('Rutina no válida.');
         if (c==='sessions' && (!Array.isArray(r.sets)||r.sets.some(t=>!idValid(t.id)||!text(t.exercise)||!Number.isFinite(t.weight)||t.weight<0||t.weight>1000||!Number.isInteger(t.reps)||t.reps<0||t.reps>1000||!Number.isInteger(t.rir)||t.rir<0||t.rir>10))) fail('Series no válidas.');
-        if (c==='metrics' && (!Number.isFinite(r.weight)||r.weight<=0||r.weight>500)) fail('Peso corporal no válido.');
+        if (c==='metrics') { const m=metricError(r); if (m) fail(m); }
         if (c==='skills' && (!Array.isArray(r.tasks)||r.tasks.some(t=>!idValid(t.id)||!text(t.title)||!Number.isInteger(t.points)||t.points<=0||!Number.isInteger(t.level)||t.level<0||t.level>6||!text(t.evidence)))) fail('Ruta de aprendizaje no válida.');
         if (c==='studySessions' && (!Number.isInteger(r.minutes)||r.minutes<=0||r.minutes>1440||!idValid(r.skillId))) fail('Sesión de estudio no válida.');
         if (c==='journal' && !(r.journal_version===4?JournalData.validate(r):Domain.validateJournal(r))) fail('Bitácora no válida.');
@@ -97,5 +116,5 @@ window.Store = (()=>{
   function put(collection,data,id){let result;save(s=>{if(id){const index=s[collection].findIndex(x=>x.id===id);if(index<0)throw new Error('No se encontró el registro.');result={...s[collection][index],...data,updated_at:new Date().toISOString()};s[collection][index]=result;}else{result=record(data);s[collection].push(result);}});return result;}
   function remove(collection,id){save(s=>{const item=s[collection].find(x=>x.id===id);if(item)item.deleted_at=new Date().toISOString();});}
   function merge(incoming){heal(incoming);validate(incoming);incoming=Migrations.migrate(incoming);validate(incoming);save(s=>{for(const c of collections){const ids=new Set(s[c].map(x=>x.id));for(const r of incoming[c])if(!ids.has(r.id)){s[c].push(r);ids.add(r.id);}}});}
-  return {init,save,put,remove,merge,validate,uuid,record,blank,lock,subscribe,get:()=>state,list:c=>state[c].filter(x=>!x.deleted_at),collections};
+  return {init,save,put,remove,merge,validate,validateMetric:metricError,uuid,record,blank,lock,subscribe,get:()=>state,list:c=>state[c].filter(x=>!x.deleted_at),collections};
 })();

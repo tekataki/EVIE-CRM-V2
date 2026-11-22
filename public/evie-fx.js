@@ -14,14 +14,48 @@ window.EvieFX=(()=>{
   if(!el)return Promise.resolve();
   let seen=false;try{seen=sessionStorage.getItem('evie-splash')==='1';sessionStorage.setItem('evie-splash','1');}catch{}
   if((seen&&!force)||reduced()||!g()){el.remove();return Promise.resolve();}
+  if(!el.classList.contains('v8'))return legacySplash(el);
+  // v8 HUD boot: scan line → rings draw and spin → light core → «EVIE» from blur → boot lines decrypt →
+  // «Created by Alejandro Dali» types itself → rings fly past the camera with a flash into the app.
+  return new Promise(done=>{const G=g(),q=s=>el.querySelector(s),qa=s=>[...el.querySelectorAll(s)];let ended=false;
+   const spin=[];const finish=()=>{if(ended)return;ended=true;spin.forEach(t=>t.kill());if(!el.isConnected)return done();
+    G.timeline({onComplete:()=>{el.remove();done();}})
+     .to(q('.sp-rings'),{scale:2.8,opacity:0,duration:.6,ease:'power3.in'},0)
+     .to(q('.sp-text'),{y:-24,opacity:0,filter:'blur(10px)',duration:.45,ease:'power2.in'},0)
+     .to(q('.sp-flash'),{opacity:.9,duration:.18,ease:'power1.in'},.32).to(q('.sp-flash'),{opacity:0,duration:.35,ease:'power2.out'},.5)
+     .to(el,{opacity:0,duration:.4,ease:'power2.inOut'},.5);};
+   el.addEventListener('click',finish,{once:true});setTimeout(finish,5200);
+   // The credit stays one plain phrase in the HTML; split it here into «Created by» + the typed name.
+   const credit=q('.sp-credit');if(credit&&!credit.querySelector('.sp-name')){const t=credit.textContent.trim(),m=t.match(/^(Created by)\s+(.+)$/i),by=m?m[1]:'',who=m?m[2]:t;const esc=c=>c.replace(/[<&>"]/g,'');credit.innerHTML=(by?'<span class="sp-by">'+esc(by)+'</span>':'')+'<span class="sp-name">'+[...who].map(c=>'<span>'+esc(c)+'</span>').join('')+'</span>';}
+   const draw=qa('.sp-r:not(.r2)');draw.forEach(p=>{const L=p.getTotalLength?p.getTotalLength():1000;G.set(p,{strokeDasharray:L,strokeDashoffset:L});});
+   const scramble=(node,dur)=>{const fin=node.dataset.final||node.textContent,chars='ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#·/',o={p:0};
+    return G.to(o,{p:1,duration:dur,ease:'none',onUpdate:()=>{const n=Math.floor(o.p*fin.length);node.textContent=fin.slice(0,n)+[...fin.slice(n)].map(c=>c===' '?' ':chars[Math.random()*chars.length|0]).join('');},onComplete:()=>{node.textContent=fin;}});};
+   const tl=G.timeline({onComplete:()=>setTimeout(finish,450)});
+   tl.set(qa('.sp-word span'),{opacity:0,yPercent:40,scale:1.35,filter:'blur(18px)'})
+     .set([q('.sp-sub'),q('.sp-by'),q('.sp-caret')],{opacity:0}).set(qa('.sp-name span'),{opacity:0}).set(qa('.sp-boot span'),{opacity:0})
+     .fromTo(q('.sp-grid'),{opacity:0,yPercent:20},{opacity:.5,yPercent:0,duration:1.4,ease:'expo.out'},0)
+     .to(q('.sp-scan'),{scaleX:1,duration:.55,ease:'expo.out'},.05).to(q('.sp-scan'),{scaleY:30,opacity:0,duration:.5,ease:'power2.in'},.55)
+     .to(draw,{strokeDashoffset:0,duration:1.1,stagger:.12,ease:'power3.inOut'},.3)
+     .fromTo(q('.r2'),{opacity:0,scale:.9,transformOrigin:'50% 50%'},{opacity:1,scale:1,duration:.8,ease:'expo.out'},.45)
+     .fromTo(q('.sp-ticks'),{opacity:0,rotation:-40,svgOrigin:'200 200'},{opacity:1,rotation:0,duration:1.2,ease:'expo.out'},.35)
+     .to(q('.sp-core'),{scale:1,duration:.7,ease:'expo.out'},.5).to(q('.sp-core'),{scale:3.2,opacity:0,filter:'blur(14px)',duration:.7,ease:'power3.in'},1.0)
+     .to(qa('.sp-word span'),{opacity:1,yPercent:0,scale:1,filter:'blur(0px)',duration:.9,stagger:.09,ease:'expo.out'},1.05)
+     .to(q('.sp-sub'),{opacity:1,duration:.5},1.55).fromTo(q('.sp-sub'),{letterSpacing:'1.2em'},{letterSpacing:'.5em',duration:.8,ease:'expo.out'},1.55)
+     .add(()=>{qa('.sp-boot span').forEach((s,i)=>{G.set(s,{opacity:1});G.delayedCall(i*.22,()=>scramble(s,.55));});},.6)
+     .to(q('.sp-by'),{opacity:.7,duration:.4},1.9)
+     .fromTo(qa('.sp-name span'),{opacity:0,filter:'blur(8px)',y:6},{opacity:1,filter:'blur(0px)',y:0,duration:.35,stagger:.045,ease:'power2.out'},2.0);
+   spin.push(G.to(q('.r1'),{rotation:360,svgOrigin:'200 200',duration:24,ease:'none',repeat:-1}),G.to(q('.r2'),{rotation:-360,svgOrigin:'200 200',duration:40,ease:'none',repeat:-1}),
+    G.to([q('.r3'),q('.r4')],{rotation:360,svgOrigin:'200 200',duration:6,ease:'none',repeat:-1}),G.to(q('.sp-ticks'),{rotation:'+=360',svgOrigin:'200 200',duration:60,ease:'none',repeat:-1,delay:1.5}));
+  });
+ }
+ function legacySplash(el){
   return new Promise(done=>{const G=g(),finish=()=>{if(!el.isConnected)return done();G.to(el,{opacity:0,duration:.45,ease:'power2.inOut',onComplete:()=>{el.remove();done();}});};
    el.addEventListener('click',finish,{once:true});setTimeout(finish,3800);
    const tl=G.timeline({onComplete:()=>setTimeout(finish,250)});
    tl.from(el.querySelectorAll('.splash-dots i'),{scale:0,opacity:0,stagger:{each:.04,from:'random'},duration:.5,ease:'back.out(2)'})
      .from(el.querySelector('.splash-orb'),{scale:.2,opacity:0,duration:.8,ease:'expo.out'},'-=.3')
-     .to(el.querySelectorAll('.splash-dots i'),{x:()=>G.utils.random(-14,14),y:()=>G.utils.random(-14,14),duration:.9,ease:'sine.inOut'},'<')
      .from(el.querySelectorAll('.splash-word span'),{yPercent:120,opacity:0,stagger:.07,duration:.6,ease:'power3.out'},'-=.5')
-     .from(el.querySelector('.splash-tag'),{opacity:0,y:8,duration:.4},'-=.2').from(el.querySelector('.splash-credit'),{opacity:0,y:10,letterSpacing:'.5em',duration:.7,ease:'power3.out'},'-=.1');
+     .from(el.querySelector('.splash-credit'),{opacity:0,y:10,letterSpacing:'.5em',duration:.7,ease:'power3.out'},'-=.1');
   });
  }
  function gate(root){
@@ -39,6 +73,7 @@ window.EvieFX=(()=>{
   const main=document.getElementById('main-content');if(!main)return;const changed=route!==lastRoute;lastRoute=route;
   if(!changed||reduced()||!g())return;const G=g();
   const items=[...main.querySelectorAll(':scope>*:not(script), .page-heading, .panel, .stat-card, .detail-card, .evm-card, .bank-card')].filter((n,i,a)=>a.indexOf(n)===i).slice(0,24);
+  if(window.EvieV8?.enter?.(items)){countUp(main);return;}
   G.fromTo(items,{y:18,opacity:0},{y:0,opacity:1,duration:.55,stagger:.035,ease:'power3.out',clearProps:'transform,opacity'});
   countUp(main);
  }

@@ -32,7 +32,33 @@ window.FisicoBody=(()=>{
   hamstrings:'M104,258 C116,258 130,258 140,262 C144,282 142,300 138,312 C128,318 116,318 110,312 C106,294 104,276 104,258 Z',
   calves:'M112,326 C124,320 138,324 144,336 C146,358 142,380 136,398 L122,400 C118,378 114,354 112,326 Z'};
  const BAND_FILL={fresh:'url(#fb-hatch-fresh-WHICH)',mid:'url(#fb-hatch-mid-WHICH)',ready:'url(#fb-dots-ready-WHICH)',idle:'none'};
- function view(which,{summary={},presentation='neutral',selected=null,title}={}){const R=which==='front'?FRONT:BACK;
+ /* Decorative anatomy contours (left half, mirrored) used by the v8 «escáner» look. Purely visual, aria-hidden. */
+ const LINES={front:['M100,86 L100,124','M100,124 C110,128 124,127 135,119','M100,80 C108,77 120,77 131,82','M100,132 L100,214','M101,148 C110,149 120,148 129,145','M101,168 C110,169 120,168 130,165','M101,188 C110,189 118,188 126,185','M116,318 C122,325 132,325 139,318','M146,128 C150,138 151,148 150,156'],
+  back:['M100,70 L100,204','M106,96 C116,93 127,100 129,113 C125,125 114,129 106,124','M100,208 L100,246','M114,316 C122,321 132,321 139,316','M108,150 C116,156 124,166 128,180']};
+ /* measure: {regionKey:{has,label,on}} switches the map to «medidas» mode (no recovery bands; volumetric fills). */
+ function measureView(which,{presentation='neutral',title,measure}){const R=which==='front'?FRONT:BACK,sil=silhouette(presentation);
+  const parts=Object.entries(R).map(([k,d])=>{const m=measure[k]||{},label=m.label||k;
+   return `<path class="fb-m" data-m="${k}" data-band="idle" ${m.has?'data-has="1"':''} ${m.on?'data-selected="1"':''} d="${both(d)}" fill="url(#fb-${m.has?'meas':'skin'}-${which})" tabindex="0" role="button" aria-pressed="${!!m.on}" aria-label="${esc(label)}"><title>${esc(label)}</title></path>`;}).join('');
+  const stop=(o,c,a)=>`<stop offset="${o}" style="stop-color:${c};stop-opacity:${a}"/>`;
+  return `<svg class="fb-svg fb-3d" viewBox="0 0 200 440" role="group" aria-label="${esc(title||(which==='front'?'Vista frontal':'Vista posterior'))}"><defs>
+   <radialGradient id="fb-vol-${which}" cx=".4" cy=".2" r=".9">${stop(0,'#9fd0ff',.34)}${stop(.45,'#5a7dff',.14)}${stop(1,'#0a1030',.04)}</radialGradient>
+   <linearGradient id="fb-rim-${which}" x1="0" y1="0" x2="1" y2="1">${stop(0,'#62f0ff',.95)}${stop(.55,'#5aa9ff',.6)}${stop(1,'#8b7bff',.85)}</linearGradient>
+   <linearGradient id="fb-meas-${which}" x1="0" y1="0" x2=".4" y2="1">${stop(0,'#62f0ff',.5)}${stop(1,'#5aa9ff',.16)}</linearGradient>
+   <linearGradient id="fb-skin-${which}" x1="0" y1="0" x2="0" y2="1">${stop(0,'#a9c8ff',.12)}${stop(1,'#8b7bff',.03)}</linearGradient>
+   <linearGradient id="fb-sel-${which}" x1="0" y1="0" x2=".3" y2="1">${stop(0,'#ffffff',.85)}${stop(.35,'#62f0ff',.75)}${stop(1,'#5aa9ff',.4)}</linearGradient>
+   <linearGradient id="fb-scan-${which}" x1="0" y1="0" x2="0" y2="1">${stop(0,'#62f0ff',0)}${stop(.85,'#62f0ff',.22)}${stop(1,'#ffffff',.7)}</linearGradient>
+   <radialGradient id="fb-floor-${which}" cx=".5" cy=".5" r=".5">${stop(0,'#62f0ff',.55)}${stop(.6,'#5aa9ff',.16)}${stop(1,'#5aa9ff',0)}</radialGradient>
+   <filter id="fb-blur-${which}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+   <clipPath id="fb-clip-${which}"><path d="${sil}"/></clipPath></defs>
+   <ellipse class="fb-floor" cx="100" cy="432" rx="70" ry="7" fill="url(#fb-floor-${which})" aria-hidden="true"/>
+   <ellipse class="fb-floor-ring" cx="100" cy="432" rx="52" ry="4.6" aria-hidden="true"/>
+   <path class="fb-aura" d="${sil}" filter="url(#fb-blur-${which})" aria-hidden="true"/>
+   <path class="fb-sil" d="${sil}"/>
+   <g class="fb-mesh" clip-path="url(#fb-clip-${which})" aria-hidden="true">${mesh(true)}</g>
+   <g class="fb-lines" aria-hidden="true">${LINES[which].map(d=>`<path d="${both(d)}"/>`).join('')}</g>
+   ${parts}
+   <g class="fb-scan-g" clip-path="url(#fb-clip-${which})" aria-hidden="true"><rect class="fb-scan" x="0" y="0" width="200" height="44" fill="url(#fb-scan-${which})"/></g></svg>`;}
+ function view(which,{summary={},presentation='neutral',selected=null,title,measure=null}={}){if(measure)return measureView(which,{presentation,title,measure});const R=which==='front'?FRONT:BACK;
   const parts=Object.entries(R).map(([k,d])=>{const s=summary[k]||{},b=s.band||'idle',label=`${s.label||k}: ${bandText(s)}`;
    return `<path class="fb-m" data-m="${k}" data-band="${b}" ${selected===k?'data-selected="1"':''} d="${both(d)}" fill="${BAND_FILL[b].replace('WHICH',which)}" tabindex="0" role="button" aria-pressed="${selected===k}" aria-label="${esc(label)}"><title>${esc(label)}</title></path>`;}).join('');
   return `<svg class="fb-svg" viewBox="0 0 200 440" role="group" aria-label="${esc(title||(which==='front'?'Vista frontal':'Vista posterior'))}"><defs>
@@ -45,7 +71,9 @@ window.FisicoBody=(()=>{
    <circle class="fb-head" cx="100" cy="32" r="0" aria-hidden="true"/>
    ${parts}</svg>`;}
  // Light procedural wireframe (horizontal contour lines clipped by the silhouette look) — purely decorative.
- function mesh(){let out='';for(let y=24;y<430;y+=14)out+=`<line x1="40" y1="${y}" x2="160" y2="${y}"/>`;for(let x=60;x<=140;x+=10)out+=`<line x1="${x}" y1="10" x2="${x}" y2="430"/>`;return out;}
+ // curved=true: contour arcs that wrap the body like a cylinder (clipped by the silhouette) for a volumetric read.
+ function mesh(curved=false){let out='';if(curved){for(let y=20;y<432;y+=11)out+=`<path d="M20,${y} Q100,${y+7} 180,${y}"/>`;for(let x=40;x<=160;x+=12)out+=`<path d="M${x},6 L${x},432"/>`;return out;}
+  for(let y=24;y<430;y+=14)out+=`<line x1="40" y1="${y}" x2="160" y2="${y}"/>`;for(let x=60;x<=140;x+=10)out+=`<line x1="${x}" y1="10" x2="${x}" y2="430"/>`;return out;}
  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  function bandText(s){if(!s||!s.last_date)return 'sin registros';const d=s.days_since,when=d===0?'hoy':d===1?'ayer':`hace ${d} días`;return `${FisicoCore.BAND_TEXT[s.band]} · último ${when}${s.partial?' (como músculo secundario)':''}`;}
  return Object.freeze({view,bandText,FRONT,BACK});
