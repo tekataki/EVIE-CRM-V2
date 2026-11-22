@@ -10,6 +10,9 @@ window.Store = (()=>{
   const coreCollections=['transactions','bills','loans','goals','clients','routines','sessions','metrics','skills','studySessions','journal'];
   const collections=[...coreCollections,...V2Domain.collections,...RCData.collections];
   const uuid=()=>crypto.randomUUID();
+  // Collections added to schema 4 after it shipped (e.g. `automations`) are missing from caches and backups
+  // saved by older versions. Add them as empty lists BEFORE validating, so an older phone cache still opens.
+  function heal(s){if(s&&typeof s==='object'&&s.version===4)for(const c of RCData.collections)if(s[c]===undefined)s[c]=[];return s;}
   function record(data){return {id:uuid(),created_at:new Date().toISOString(),updated_at:new Date().toISOString(),...data};}
   function initial(){
     const areas=['Mentalidad comercial y creación de valor','Cliente ideal e investigación del negocio','Construcción de una oferta','Prospección y preparación','Primer contacto y pitch','Preguntas de diagnóstico y escucha','Demostración y propuesta','Manejo de objeciones','Negociación','Cierre','Seguimiento y experiencia del cliente','Métricas, revisión y mejora','Automatización del proceso comercial','Prueba final: cerrar un cliente real'];
@@ -17,7 +20,7 @@ window.Store = (()=>{
   }
   function init(){
     key=DALI_CONFIG.storageKey;
-    const raw=localStorage.getItem(key), original=raw?JSON.parse(raw):(key.startsWith('dali-os-qa-')?initial():blank());
+    const raw=localStorage.getItem(key), original=raw?heal(JSON.parse(raw)):(key.startsWith('dali-os-qa-')?initial():blank());
     // Fresh personal origins must not receive legacy demo clients/routines/skills.
     // Original fixtures are retained ONLY under explicitly isolated QA keys.
     if(!raw){original.preferences.theme='dark';if(!key.startsWith('dali-os-qa-'))for(const c of ['clients','routines','skills'])original[c]=[];}
@@ -93,6 +96,6 @@ window.Store = (()=>{
   function save(mutator){if(!state||key!==DALI_CONFIG.storageKey)throw new Error('La sesión cambió. Recarga tu espacio antes de guardar.');const stored=JSON.parse(localStorage.getItem(key)||'null');if(stored&&(stored.revision||0)!==revision)throw new Error('Los datos cambiaron en otra pestaña. Recarga antes de guardar.');const next=structuredClone(state);mutator(next);next.revision=revision+1;validate(next);localStorage.setItem(key,JSON.stringify(next));const previous=state;state=next;revision=next.revision;for(const fn of listeners){try{fn(structuredClone(previous),structuredClone(next));}catch(error){console.warn('EVIE: no se pudo preparar sincronización');}}return state;}
   function put(collection,data,id){let result;save(s=>{if(id){const index=s[collection].findIndex(x=>x.id===id);if(index<0)throw new Error('No se encontró el registro.');result={...s[collection][index],...data,updated_at:new Date().toISOString()};s[collection][index]=result;}else{result=record(data);s[collection].push(result);}});return result;}
   function remove(collection,id){save(s=>{const item=s[collection].find(x=>x.id===id);if(item)item.deleted_at=new Date().toISOString();});}
-  function merge(incoming){validate(incoming);incoming=Migrations.migrate(incoming);validate(incoming);save(s=>{for(const c of collections){const ids=new Set(s[c].map(x=>x.id));for(const r of incoming[c])if(!ids.has(r.id)){s[c].push(r);ids.add(r.id);}}});}
+  function merge(incoming){heal(incoming);validate(incoming);incoming=Migrations.migrate(incoming);validate(incoming);save(s=>{for(const c of collections){const ids=new Set(s[c].map(x=>x.id));for(const r of incoming[c])if(!ids.has(r.id)){s[c].push(r);ids.add(r.id);}}});}
   return {init,save,put,remove,merge,validate,uuid,record,blank,lock,subscribe,get:()=>state,list:c=>state[c].filter(x=>!x.deleted_at),collections};
 })();

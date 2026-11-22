@@ -5,7 +5,7 @@ import { createConnections } from './connections.js'
 import { createAssistant } from './assistant.js'
 import { createKisha } from './kisha.js'
 import { createResearch } from './research.js'
-import { createGoogleAuth, googleEnabled } from './google-auth.js'
+import { createGoogleAuth, googleEnabled, googleSignupOpen } from './google-auth.js'
 import { createMemory } from './memory.js'
 import { createMemoryV2 } from './memory-v2.js'
 import { createMap, mapStatus } from './map.js'
@@ -55,7 +55,7 @@ export function createAccounts({fetcher=fetch}={}) {
  const api=new Hono()
  api.use('*',async(c,next)=>{const max=c.req.path.endsWith('/data/push')?16*1024*1024:c.req.path.includes('/data/media/')?11*1024*1024:c.req.path.endsWith('/ai/stt')?4*1024*1024:256*1024;return bodyLimit({maxSize:max,onError:c=>jsonError(c,'La solicitud supera el límite.',413)})(c,next)})
  api.use('*',async(c,next)=>{c.header('Cache-Control','no-store, private');c.header('X-Content-Type-Options','nosniff');await next()})
- api.get('/runtime',async c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:await googleEnabled(c.env||{},fetcher),guestInvites:true,mediaSync:true,passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,map:{configured:mapStatus(c.env).configured,traffic:mapStatus(c.env).traffic},providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
+ api.get('/runtime',async c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:await googleEnabled(c.env||{},fetcher),googleSignup:googleSignupOpen(c.env)?'open':'invite',guestInvites:true,mediaSync:true,passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,map:{configured:mapStatus(c.env).configured,traffic:mapStatus(c.env).traffic},providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
  api.use('*',async(c,next)=>{
   const env=c.env||{}
   if(env.EVIE_ACCOUNTS_ENABLED!=='true')return jsonError(c,'Las conexiones externas están desactivadas.',503)
@@ -163,6 +163,9 @@ export function createAccounts({fetcher=fetch}={}) {
   if(!r.ok){const code=await providerError(r);await release(c,invite);const [m,st]=providerMessage(r.status,code,signup);return jsonError(c,m,st)}
   const result=await r.json()
   if(!UUID.test(result.user?.id)){await release(c,invite);return jsonError(c,'Supabase no devolvió una sesión: desactiva "Confirm email" o configura SUPABASE_SERVICE_ROLE_KEY (docs/SETUP.md).',409)}
+  // Google-only: an account that already moved to Google no longer opens with its old password
+  // (EVIE_GOOGLE_AUTH=false is the emergency switch that brings passwords back for everyone).
+  if(!signup&&await googleEnabled(c.env,fetcher)&&await c.env.AUTH_DB.prepare('SELECT 1 AS x FROM google_links WHERE owner_id=?').bind(result.user.id).first()){await remote(c,'/auth/v1/logout',{method:'POST',access:result.access_token}).catch(()=>null);return jsonError(c,'Esta cuenta ya entra con Google. Toca «Continuar con Google».',409)}
   if(!await issueSession(c,result,data.username)){await release(c,invite);return jsonError(c,'Supabase no devolvió una sesión: desactiva "Confirm email" o configura SUPABASE_SERVICE_ROLE_KEY (docs/SETUP.md).',409)}
   if(invite)await c.env.AUTH_DB.prepare('UPDATE auth_invites SET used_by=? WHERE id=?').bind(result.user.id,invite.id).run()
   if(signup||role==='owner')await c.env.AUTH_DB.prepare('INSERT INTO auth_accounts(owner_id,username,role,created_at) VALUES(?,?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(result.user.id,data.username,role,Date.now()).run()
@@ -170,7 +173,9 @@ export function createAccounts({fetcher=fetch}={}) {
   return c.json({user:{id:result.user.id,username:data.username,role:acct?.role||'member'}})
  }
  const passwordOff=c=>c.env.EVIE_PASSWORD_LOGIN==='off'?jsonError(c,'El acceso con contraseña se retiró. Entra con Google.',410):null
- api.post('/auth/signup',c=>passwordOff(c)||enter(c,true));api.post('/auth/signin',c=>passwordOff(c)||enter(c,false))
+ // Once Google is active, new accounts are created only with Google (EVIE_PASSWORD_SIGNUP=on reopens it).
+ const passwordSignupOff=async c=>c.env.EVIE_PASSWORD_SIGNUP!=='on'&&await googleEnabled(c.env,fetcher)?jsonError(c,'Las cuentas nuevas se crean con Google. Toca «Crear cuenta con Google».',410):null
+ api.post('/auth/signup',async c=>passwordOff(c)||await passwordSignupOff(c)||enter(c,true));api.post('/auth/signin',c=>passwordOff(c)||enter(c,false))
  const verified=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
  const notGuest=async c=>{const s=await verified(c);if(!s)return [null,jsonError(c,'Inicia sesión de nuevo.',401)];if(s.user.role==='guest')return [null,jsonError(c,'Esta función no está disponible para invitados.',403)];return [s,null]}
  const owner=async c=>{const s=await verified(c);if(!s)return [null,jsonError(c,'Inicia sesión de nuevo.',401)];if(s.user.role!=='owner')return [null,jsonError(c,'Solo el propietario puede administrar personas.',403)];return [s,null]}

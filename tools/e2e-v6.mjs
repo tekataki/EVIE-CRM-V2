@@ -1,5 +1,5 @@
 // v6 E2E (runtime/auth/data mocked; real Supabase/Google NOT used):
-//  1. «¿Olvidaste tu contraseña?» → «Recuperar con Google» starts Google in mode 'recover' (disabled if Google is off).
+//  1. (retired 2026-11-22: Google-only access; see tools/e2e-login.mjs)
 //  2. Back from Google with ?google=recover → «Crea una contraseña nueva» → POST auth/password (old one not needed).
 //  3. Cross-device sync: another device changes the account → this tab pulls it within ~15 s (stamp watcher)
 //     and immediately when the app becomes visible again.
@@ -35,19 +35,7 @@ async function session({ google = true, signedIn = false, server }) {
   return { ctx, p, hits }
 }
 
-// 1. Forgot password → recover with Google
-{ const server = { rows: new Map(), stamp: 1, media: new Map() }; const { ctx, p, hits } = await session({ server })
-  await p.goto('http://localhost:3000/index.html', { timeout: 90000 }); await p.waitForSelector('.auth-v31', { timeout: 30000 })
-  await p.click('.auth-legacy:not(#auth-guest) summary'); await p.click('#account-forgot')
-  assert.equal(await p.isVisible('#auth-recover'), true); assert.equal(await p.getAttribute('#account-forgot', 'aria-expanded'), 'true')
-  assert.match(await p.textContent('#auth-recover'), /No necesitas la anterior/); ok('«¿Olvidaste tu contraseña?» opens the recovery panel')
-  await Promise.all([p.waitForURL('https://example.invalid/**', { timeout: 15000 }), p.click('#account-recover-google')])
-  assert.ok(hits.includes('START {"mode":"recover"}')); ok('«Recuperar con Google» starts Google in recover mode')
-  const overflow = await (await ctx.newPage()).evaluate(() => 0); void overflow; await ctx.close() }
-{ const server = { rows: new Map(), stamp: 1, media: new Map() }; const { ctx, p } = await session({ google: false, server })
-  await p.goto('http://localhost:3000/index.html', { timeout: 90000 }); await p.waitForSelector('.auth-v31', { timeout: 30000 })
-  await p.click('#account-forgot'); assert.equal(await p.isDisabled('#account-recover-google'), true); assert.match(await p.textContent('#auth-recover'), /aún no está activado/)
-  const sw = await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1); assert.ok(sw, 'no horizontal overflow'); ok('Google off: recovery button disabled with an honest note; no overflow'); await ctx.close() }
+// (1. The «¿Olvidaste tu contraseña?» panel was retired on 2026-11-22: access is Google-only — see tools/e2e-login.mjs.)
 
 // 2–4. Signed in
 { const server = { rows: new Map(), stamp: 1, media: new Map() }; const { ctx, p, hits } = await session({ signedIn: true, server })

@@ -1,8 +1,9 @@
 // Google sign-in through Supabase Auth (server-side PKCE). Security rules:
-// - A Google identity only opens an EXISTING EVIE account (one that linked Google while signed in),
-//   or creates one when the person presents a valid invitation / the bootstrap code for the first owner.
-// - A random Google account is never given access; matching email addresses are never used to merge
-//   identities (EVIE's legacy accounts use synthetic addresses).
+// - Google is how accounts are created and opened (2026-11-22). A Google identity opens the EVIE account it
+//   belongs to; an unknown Google identity creates its own new, empty, private space (EVIE_GOOGLE_SIGNUP=invite
+//   restores invitation-only creation). Guests (72 h) use invitation codes instead (src/guests.js).
+// - Matching email addresses are never used to merge identities (EVIE's legacy accounts use synthetic
+//   addresses). A legacy username account moves to Google only by signing in once and linking explicitly.
 // - Linking is explicit: a signed-in user starts "link", and the callback must return the SAME user id.
 // - Desktop: the system browser finishes OAuth and returns a one-time code to evie-crm://auth; the app
 //   redeems it with a secret nonce only it knows. Google login grants no Calendar/Gmail scopes.
@@ -26,6 +27,8 @@ export async function googleEnabled(env, fetcher = fetch) {
   googleCache.set(key, { on, until: Date.now() + (on ? 300000 : 60000) })
   return on
 }
+// Google is the way to create accounts. 'invite' keeps creation closed to owner-issued codes.
+export const googleSignupOpen = (env) => String(env?.EVIE_GOOGLE_SIGNUP || 'open').toLowerCase() !== 'invite'
 export function usernameFrom(email, taken) {
   const base = (String(email || '').split('@')[0] || 'usuario').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 18) || 'usuario'
   let name = base.length >= 3 ? base : (base + 'evie').slice(0, 18), i = 1
@@ -72,7 +75,12 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
     if (!await enabled(c.env)) return back(c, 'disabled')
     const state = c.req.query('s') || '', code = c.req.query('code') || ''
     if (!/^[A-Za-z0-9_-]{20,64}$/.test(state)) return back(c, 'invalid')
-    if (!code && c.req.query('error')) { if (state) await db(c).prepare('DELETE FROM google_auth_states WHERE state=?').bind(await digest('gstate:' + state)).run(); return back(c, 'denied') }
+    if (!code && c.req.query('error')) {
+      if (state) await db(c).prepare('DELETE FROM google_auth_states WHERE state=?').bind(await digest('gstate:' + state)).run()
+      // Supabase refuses to link a Google identity that already belongs to another user.
+      const why = (c.req.query('error_code') || '') + ' ' + (c.req.query('error_description') || '')
+      return back(c, /identity_already_exists|already linked|already exists/i.test(why) ? 'link_taken' : /manual.linking/i.test(why) ? 'link_off' : 'denied')
+    }
     const row = await db(c).prepare('DELETE FROM google_auth_states WHERE state=? AND expires_at>? RETURNING data').bind(await digest('gstate:' + state), Date.now()).first()
     if (!row) return back(c, 'expired')
     const st = await unseal(row.data, c.env.EVIE_SESSION_KEY)
@@ -96,6 +104,9 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
       let role = null
       if (st.invite && c.env.EVIE_BOOTSTRAP_TOKEN && n === 0 && st.invite === c.env.EVIE_BOOTSTRAP_TOKEN) role = 'owner'
       else if (st.invite) { const invite = await db(c).prepare("UPDATE auth_invites SET used_at=?,used_by=? WHERE id=? AND used_at IS NULL AND expires_at>? AND kind<>'guest' RETURNING id").bind(Date.now(), id, await digest('invite:' + st.invite.toUpperCase()), Date.now()).first(); if (invite) role = 'member' }
+      // Open sign-up with Google (default): any Google account can create its own private space.
+      // EVIE_GOOGLE_SIGNUP=invite restores invitation-only creation. Recovery never creates accounts (above).
+      if (!role && googleSignupOpen(c.env)) role = n === 0 ? 'owner' : 'member'
       if (!role) {
         // Not invited: no EVIE session. Remove the orphan Supabase user when the admin key exists.
         if (c.env.SUPABASE_SERVICE_ROLE_KEY) await remote(c, '/auth/v1/admin/users/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + c.env.SUPABASE_SERVICE_ROLE_KEY, apikey: c.env.SUPABASE_SERVICE_ROLE_KEY } }).catch(() => null)

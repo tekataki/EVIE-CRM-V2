@@ -103,6 +103,16 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v7 (2026-11-22)
+- **Acceso solo con Google.** «Iniciar sesión» y «Crear mi cuenta» son Google; cualquier cuenta de Google crea su propio
+  espacio (`EVIE_GOOGLE_SIGNUP=invite` lo cierra). Ya no hay registro con usuario y contraseña.
+- **Pestaña pequeña «Tengo un código de invitación»** para invitados de prueba (72 h).
+- **Cuentas anteriores:** «¿Ya tenías usuario y contraseña?» entra una vez y une la cuenta con Google; después la
+  contraseña vieja se rechaza. Mientras Google no esté activo, ese formulario queda abierto (nadie se queda fuera).
+- **Celular:** arreglado «No pudimos abrir tus datos · Colección v4 inválida: automations» (copias guardadas por
+  versiones viejas). Nuevo botón «Volver a bajar mis datos de la nube» si una copia local no se puede leer.
+- Pruebas: `tools/e2e-login.mjs` (11 comprobaciones) y `tools/e2e-v7.mjs` (reproduce el error del celular).
+
 ## Novedades v6 (2026-11-21)
 - **Invitados de 72 h funcionando** sin clave secreta: estructura propia en Supabase (`evie_guests`, RLS restrictiva, limpieza con `pg_cron`).
 - **Continuar con Google** se activa solo cuando el proveedor está encendido en Supabase; **«¿Olvidaste tu contraseña?» → Recuperar con Google**.

@@ -37,8 +37,25 @@ Navegador (PC / teléfono, PWA)  →  Cloudflare Pages "evie-crm-v2" (Worker /ap
 | Función | Cómo funciona | Estado |
 |---|---|---|
 | **Invitados de 72 h** | Ya **no necesitan la clave secreta**. El Worker crea al invitado con el alta normal y, con la sesión del propio invitado, llama a `evie_guest_register()`. Supabase guarda la fila en `evie_guests` y fija la caducidad (72 h, no se puede alargar). Al vencer o al terminarlo el propietario, una RLS restrictiva lo bloquea al instante en todas las tablas y `evie_apply`; `pg_cron` borra al usuario cada 15 min (en cascada: perfil, preferencias, registros, contactos). Los invitados no suben fotos a la nube: sus fotos se quedan en su dispositivo, así no quedan archivos huérfanos. Los usuarios `guest-…` están reservados. | ✅ listo |
-| **Continuar con Google** | El Worker consulta a Supabase si el proveedor Google está encendido (`/auth/v1/settings`, caché de 5 min). Al activarlo en Supabase, el botón se habilita solo, **sin tocar Cloudflare**. Google solo abre cuentas que ya lo vincularon, o crea una con código de invitación. | ⏳ falta que actives Google en Supabase (abajo) |
-| **¿Olvidaste tu contraseña?** | En la pantalla de acceso → «Recuperar con Google». Entra con la cuenta de Google vinculada y la app pide una contraseña nueva (no pide la anterior). Nunca crea cuentas. | ✅ código listo; depende de Google |
+| **Continuar con Google** | El Worker consulta a Supabase si el proveedor Google está encendido (`/auth/v1/settings`, caché de 5 min). Al activarlo en Supabase, el botón se habilita solo, **sin tocar Cloudflare**. | ⏳ falta que actives Google en Supabase (abajo) |
+
+### v7 (2026-11-22): acceso solo con Google
+| Pantalla | Qué hace |
+|---|---|
+| **Iniciar sesión** | «Continuar con Google». Abre la cuenta a la que pertenece esa cuenta de Google. |
+| **Crear mi cuenta** | «Crear cuenta con Google». Cualquier cuenta de Google crea su propio espacio privado y vacío (sin código). Ya no existe el registro con usuario y contraseña. `EVIE_GOOGLE_SIGNUP=invite` en Cloudflare lo vuelve solo por invitación. |
+| **Tengo un código de invitación** (pestaña pequeña) | Invitado de prueba por 72 h: solo nombre + código. |
+| **¿Ya tenías usuario y contraseña?** | Solo para las 5 cuentas anteriores: entras **una vez** con tu usuario y te lleva directo a Google para unirlo a tu cuenta (tus datos no se mueven). Después esa cuenta **solo entra con Google**: la contraseña vieja se rechaza. Requiere **Allow manual linking** (paso 5). |
+
+- **Importante para las cuentas anteriores:** usa primero «¿Ya tenías usuario y contraseña?». Si alguien entra
+  directo con «Continuar con Google», se crea un espacio nuevo vacío para esa cuenta de Google, y esa cuenta de
+  Google ya no se podrá unir al usuario anterior (sale el aviso «ya tiene su propio espacio»). Se puede arreglar a mano.
+- Mientras Google no esté activo, la pantalla muestra el formulario de usuario abierto, así nadie se queda fuera.
+- Interruptor de emergencia: `EVIE_GOOGLE_AUTH=false` en Cloudflare apaga Google y devuelve las contraseñas a todos.
+- La recuperación con contraseña nueva («¿Olvidaste tu contraseña?») se retiró de la pantalla: ya no hay contraseñas.
+- **Datos del celular:** un celular que guardó datos con una versión vieja (sin «automatizaciones») mostraba
+  «No pudimos abrir tus datos · Colección v4 inválida: automations». Ya abre solo. Y si alguna vez una copia local no
+  se puede leer, aparece **«Volver a bajar mis datos de la nube»** (guarda aparte la copia del dispositivo, no borra nada en la nube).
 | **Sincronización entre dispositivos** | Cada cambio se sube ~1 s después. Cada dispositivo pregunta cada 15 s una huella barata de la cuenta (`evie_sync_stamp()`) y descarga solo si otro dispositivo cambió algo. Al volver a la app (celular) baja los cambios al instante. Ajustes de la app (tema, preferencias de EVIE, incluido el sonido de "pensando") van en la cuenta. | ✅ |
 | **Fotos entre dispositivos** | Antes cada foto vivía solo en el navegador donde se subió. Ahora se suben a `user-media/<tu-id>/` (privado, con tu sesión) y otro dispositivo las descarga la primera vez que las muestra. Las fotos anteriores se suben solas la próxima vez que abras la app en el dispositivo que las tiene. | ✅ (en la app de Windows siguen locales) |
 
@@ -53,13 +70,15 @@ Lo que sigue siendo **por dispositivo** a propósito: temporizadores (para que l
 3. Copia el **Client ID** y el **Client secret**.
 4. Supabase → https://supabase.com/dashboard/project/mehhbdnxskfbortgglnd/auth/providers → **Google** → Enable →
    pega Client ID y Client secret → Save.
-5. Supabase → Authentication → **Sign In / Providers** → activa **Allow manual linking** (para «Vincular Google»).
+5. Supabase → Authentication → **Sign In / Providers** → activa **Allow manual linking** (para pasar las cuentas
+   anteriores a Google con «¿Ya tenías usuario y contraseña?»).
 6. Supabase → Authentication → **URL Configuration**:
    - Site URL: `https://evie-crm-v2.pages.dev`
    - Redirect URLs → Add: `https://evie-crm-v2.pages.dev/api/auth/google/callback**`
 7. Espera 1 minuto y recarga EVIE: «Continuar con Google» ya no aparece gris.
-8. Entra con tu usuario y contraseña → Configuración → **Acceso con Google → Vincular**. Desde ahí ya puedes entrar
-   con Google y recuperar tu cuenta si olvidas la contraseña. Cada persona vincula la suya.
+8. En la pantalla de acceso abre **«¿Ya tenías usuario y contraseña?»**, entra con tu usuario y elige tu cuenta de
+   Google. Desde ahí solo usas «Continuar con Google». Cada persona con cuenta anterior hace lo mismo una vez.
+   Las personas nuevas solo tocan «Crear cuenta con Google».
 
 ### Avisos que quedan (no urgentes)
 - Linter: `evie_apply` es `SECURITY DEFINER` y la ejecuta un usuario con sesión. **Es intencional**: es la única
