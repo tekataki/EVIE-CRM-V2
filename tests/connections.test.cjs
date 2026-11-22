@@ -26,7 +26,7 @@ test('catalog requires a session and shows honest statuses without secrets',asyn
  assert.equal((await f.request('/connections')).status,401);
  const c=await f.login('owner-a');const j=await(await f.request('/connections',{cookie:c})).json();
  const g=j.connections.find(x=>x.id==='google_calendar');assert.equal(g.status,'available');
- assert.equal(j.connections.find(x=>x.id==='gmail').status,'later');assert.equal(j.connections.find(x=>x.id==='openai').status,'needs_setup');
+ assert.equal(j.connections.find(x=>x.id==='gmail').status,'later');assert.equal(j.connections.find(x=>x.id==='claude').status,'needs_setup');
  assert.ok(!JSON.stringify(j).includes('gsecret'));});
 test('needs_setup when Google client is missing and start is refused',async t=>{const f=await fixture(t,{GOOGLE_CLIENT_ID:'',GOOGLE_CLIENT_SECRET:''});const c=await f.login('owner-a');
  const j=await(await f.request('/connections',{cookie:c})).json();assert.equal(j.connections[0].status,'needs_setup');

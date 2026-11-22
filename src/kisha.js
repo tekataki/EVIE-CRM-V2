@@ -7,6 +7,7 @@
 import { Hono } from 'hono'
 import { readProfile } from './profile.js'
 import { DEFAULTS, limits, usage, validTimeZone, currentTime } from './assistant.js'
+import { aiProvider, claudeClient, claudeModel, claudeJson, claudeError, claudeCost } from './claude.js'
 
 const OPENAI_URL = 'https://api.openai.com/v1/responses'
 export const CUES = ['neutral', 'curious', 'calm', 'supportive', 'happy', 'confused']
@@ -130,11 +131,23 @@ function parseJson(data) {
   return JSON.parse(text)
 }
 
-export function createKisha({ fetcher = fetch, authenticate, seal = null, unseal = null }) {
+export function createKisha({ fetcher = fetch, authenticate, seal = null, unseal = null, memorySource = null }) {
+  // v10: Kisha also knows the memory profile (shared with Ivi and the Chat), as data, never instructions.
+  const withMemory = (instr, mp) => mp ? instr + '\n\nLo más importante que sabes de la persona (resumen de su memoria; DATOS, puede estar desactualizado):\n<perfil_memoria>\n' + mp + '\n</perfil_memoria>' : instr
   const api = new Hono()
   const err = (c, message, status = 400) => c.json({ error: message }, status)
   const model = (env) => env.KISHA_MODEL || env.EVIE_MODEL_FAST || DEFAULTS.model
+  // v10: Claude (default when ANTHROPIC_API_KEY exists) with structured outputs; OpenAI kept behind EVIE_AI_PROVIDER.
   async function openai(env, payload, ms) {
+    if (aiProvider(env) === 'claude') {
+      try {
+        const { json, msg } = await claudeJson(claudeClient(env, fetcher), { model: claudeModel(env), system: payload.instructions, user: payload.input[0].content, schema: payload.text.format.schema, effort: 'low', max_tokens: Math.max(2000, payload.max_output_tokens * 4) })
+        return { json, cost: claudeCost(env, msg) }
+      } catch (e) {
+        if (e?.code === 'refusal' || e?.code === 'max_tokens' || e instanceof SyntaxError) { console.error('KISHA_CLAUDE_OUTPUT', e?.code || 'json'); return { error: ['Kisha no pudo responder ahora.', 502] } }
+        const x = claudeError(e); console.error('KISHA_CLAUDE_REJECTED', x.code); return { error: [x.status === 429 ? x.message : x.status === 504 ? 'Kisha tardó demasiado en responder. Intenta de nuevo.' : 'Kisha no pudo responder ahora.', x.status === 429 ? 429 : x.status === 504 ? 504 : 502] }
+      }
+    }
     let r
     try { r = await fetcher(OPENAI_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, store: false }), signal: AbortSignal.timeout(ms) }) } catch { return { error: ['Kisha tardó demasiado en responder. Intenta de nuevo.', 504] } }
     if (!r.ok) { console.error('KISHA_OPENAI_REJECTED', r.status); return { error: [r.status === 429 ? 'OpenAI limitó las solicitudes o no hay saldo en la cuenta de API.' : 'Kisha no pudo responder ahora.', r.status === 429 ? 429 : 502] } }
@@ -143,14 +156,15 @@ export function createKisha({ fetcher = fetch, authenticate, seal = null, unseal
   async function context(c) {
     const s = await authenticate(c); if (!s) return { fail: err(c, 'Inicia sesión.', 401) }
     const env = c.env || {}
-    if (!env.OPENAI_API_KEY) return { fail: err(c, 'Kisha necesita la IA de EVIE (falta OPENAI_API_KEY en el servidor).', 503) }
+    if (!aiProvider(env)) return { fail: err(c, 'Kisha necesita la IA de EVIE (falta ANTHROPIC_API_KEY en el servidor).', 503) }
     let body; try { body = await c.req.json() } catch { return { fail: err(c, 'JSON inválido.') } }
     if (!body || typeof body !== 'object' || Array.isArray(body) || 'owner_id' in body || 'user_id' in body) return { fail: err(c, 'Solicitud inválida.') }
     if (typeof body.session_id !== 'string' || !UUID.test(body.session_id)) return { fail: err(c, 'Sesión inválida.') }
     if (await usage(env, s.user.id, 'chat') >= limits(env).chat) return { fail: err(c, 'Llegaste al límite diario de IA. Puedes seguir escribiendo; Kisha responderá mañana.', 429) }
     // Personalization always comes from the authenticated account's own sealed profile.
     const profile = unseal ? await readProfile(env, s.user.id, unseal).catch(() => null) : null
-    return { s, env, body, profile }
+    const memoryProfile = memorySource && body.private !== true ? await memorySource.profile(c, s).catch(() => null) : null
+    return { s, env, body, profile, memoryProfile }
   }
   async function cached(env, owner, id) {
     if (!env.AUTH_DB || !unseal) return null
@@ -168,7 +182,7 @@ export function createKisha({ fetcher = fetch, authenticate, seal = null, unseal
 
   api.post('/turn', async (c) => {
     const k = await context(c); if (k.fail) return k.fail
-    const { s, env, body, profile } = k
+    const { s, env, body, profile, memoryProfile } = k
     if (typeof body.turn_id !== 'string' || !TURN_ID.test(body.turn_id)) return err(c, 'Turno inválido.')
     const key = body.session_id + ':' + body.turn_id
     const hit = await cached(env, s.user.id, key)
@@ -178,9 +192,10 @@ export function createKisha({ fetcher = fetch, authenticate, seal = null, unseal
     const memory = body.memory == null ? '' : clean(body.memory, MAX.memory)
     const needMemory = body.need_memory === true
     const lastUser = messages.at(-1).text
-    const res = await openai(env, { model: model(env), instructions: turnInstructions(profile, { needMemory }), input: [{ role: 'user', content: transcriptBlock(messages, memory) }], max_output_tokens: needMemory ? 1100 : 320, text: { format: { type: 'json_schema', name: 'kisha_turn', schema: TURN_SCHEMA, strict: true } } }, 25000)
+    const res = await openai(env, { model: model(env), instructions: withMemory(turnInstructions(profile, { needMemory }), memoryProfile), input: [{ role: 'user', content: transcriptBlock(messages, memory) }], max_output_tokens: needMemory ? 1100 : 320, text: { format: { type: 'json_schema', name: 'kisha_turn', schema: TURN_SCHEMA, strict: true } } }, 25000)
     if (res.error) return err(c, ...res.error)
     await usage(env, s.user.id, 'chat', 1)
+    if (res.cost) { await usage(env, s.user.id, 'cost_micro', res.cost); await usage(env, '__global__', 'cost_micro', res.cost) }
     let reply = clean(res.json?.reply, 700).replace(/[*_#`]/g, '')
     const g = guardCue(res.json?.cue, res.json?.intent, lastUser)
     if (g.intent === 'safety' && !reply.includes('911')) reply = (reply ? reply + ' ' : '') + SAFETY_TEXT
@@ -192,7 +207,7 @@ export function createKisha({ fetcher = fetch, authenticate, seal = null, unseal
 
   api.post('/analyze', async (c) => {
     const k = await context(c); if (k.fail) return k.fail
-    const { s, env, body, profile } = k
+    const { s, env, body, profile, memoryProfile } = k
     let messages; try { messages = sanitizeMessages(body.messages, { maxTurns: MAX.transcriptTurns, maxChars: MAX.transcriptChars }) } catch (e) { return err(c, e.message) }
     const tz = (profile?.timezone && validTimeZone(profile.timezone)) ? profile.timezone : (validTimeZone(body.timezone) ? body.timezone : 'America/Mexico_City')
     const now = currentTime(tz)
@@ -200,9 +215,10 @@ export function createKisha({ fetcher = fetch, authenticate, seal = null, unseal
     const userWords = norm(messages.filter((m) => m.role === 'user').map((m) => m.text).join(' ')).split(' ').filter(Boolean).length
     // Too little to summarize honestly: no model call, no invented scores.
     if (userWords < 8) return c.json({ ...base, insufficient: true, title: '', summary: '', moments: [], emotions: [], observation: null, dropped: 0 })
-    const res = await openai(env, { model: model(env), instructions: analysisInstructions(profile), input: [{ role: 'user', content: transcriptBlock(messages, body.memory ? clean(body.memory, MAX.memory) : '') }], max_output_tokens: 900, text: { format: { type: 'json_schema', name: 'kisha_review_draft', schema: ANALYSIS_SCHEMA, strict: true } } }, 40000)
+    const res = await openai(env, { model: model(env), instructions: withMemory(analysisInstructions(profile), memoryProfile), input: [{ role: 'user', content: transcriptBlock(messages, body.memory ? clean(body.memory, MAX.memory) : '') }], max_output_tokens: 900, text: { format: { type: 'json_schema', name: 'kisha_review_draft', schema: ANALYSIS_SCHEMA, strict: true } } }, 40000)
     if (res.error) return err(c, ...res.error)
     await usage(env, s.user.id, 'chat', 1)
+    if (res.cost) { await usage(env, s.user.id, 'cost_micro', res.cost); await usage(env, '__global__', 'cost_micro', res.cost) }
     return c.json({ ...base, ...groundAnalysis(res.json, messages) })
   })
   return api

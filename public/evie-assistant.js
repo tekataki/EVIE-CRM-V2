@@ -53,6 +53,7 @@ window.EvieAssistant=(()=>{
   async desktop_action({action,contact,message}){return window.EvieDesktopActions?EvieDesktopActions.run(action,{contact,message}):{ok:false,status:'unavailable'};},
   navigate({route}){if(['gimnasio','gym','salud'].includes(route))route='fisico';if(DALI_CONFIG.sections.some(s=>s.route===route)){location.hash=route;return {ok:true,opened:route};}return {ok:false};},
   set_mode({mode}){return window.EvieModes.set(mode);},
+  run_protocol({protocol,client}){return window.IviCore?IviCore.protocol(protocol,{client,fromModel:true}):{ok:false,error:'Protocolos no disponibles.'};},
   draft_task({title,date,time}){return makeDraft('agenda.create',{title,...(V2Domain.date(date)?{date}:{}),...(time&&/^\d{2}:\d{2}$/.test(time)&&V2Domain.date(date)?{time}:{})});},
   list_accounts(){const av=FinanceCore.available(EvieFinance.accounts(),live('transactions'),{today:today()});return {accounts:av.accounts.map(a=>({name:a.name,type:a.type,estimated_balance:moneyStr(a.balance)})),credit:av.credit.map(c=>({name:c.name,used:moneyStr(c.used),available_credit:moneyStr(c.available_credit)})),available_total:moneyStr(av.cents),unassigned_movements:av.unassigned_count,note:'Estimaciones con registros del usuario; no es el saldo del banco.'};},
   edit_record(a={},call){const {op,...args}=a||{};const clean=Object.fromEntries(Object.entries(args).filter(([,v])=>v!==null&&v!==undefined));const r=window.EvieActions?EvieActions.run(op,clean,{op_id:call?.call_id||null}):{status:'error',error:'No disponible.'};if(r.undo)lastUndo=r.undo;return {status:r.status,question:r.question||null,candidates:r.candidates||null,summary:r.say||r.error||null};},
@@ -91,8 +92,8 @@ window.EvieAssistant=(()=>{
  };
  function makeDraft(intent,params){try{const cmd=IvyCommandBus.envelope(intent,params,'voice','write');const p=IvyCommandBus.prepare(cmd);draft={token:p.token,fields:p.fields,route:p.route};renderDraft();return {status:'draft_shown',needs_user_confirmation:true,fields:p.fields};}catch(err){return {status:'invalid',error:err.message};}}
  /* ---------- local fast-path (free, no network) ---------- */
- function tryLocal(text){const speakLater=t=>{if(t){append('evie',t);if(!pref().muted)Voice.speak(t,Voice.begin());}};if(window.EvieMemory){const mm=EvieMemory.intent(text,{say:speakLater});if(mm!==null)return mm;}if(window.EvieMap){const mp=EvieMap.intent(text,{say:speakLater});if(mp!==null)return mp;}if(/^(?:(?:oye |hey )?(?:ivi|ivy|evie|evi|ibi|libi)[, ]+)?(?:deshaz|deshacer|desase) (?:lo ultimo|el ultimo (?:movimiento|registro|gasto|ingreso)|eso)$/.test(IvyTools.norm(text).replace(/[¿?¡!.,]/g,''))){const u=lastUndo||window.EvieFinance?.lastUndo?.();if(!u)return 'No tengo un registro reciente que deshacer.';u();lastUndo=null;window.EvieFinance?.setLastUndo?.(null);return 'Listo, lo deshice.';}if(window.EvieTimers){const tw=EvieTimers.intent(text);if(tw!==null)return tw;}if(window.EvieFisico){const fw=EvieFisico.intent(text);if(fw!==null)return fw;}if(window.EvieFinance){const fi=EvieFinance.intent(text);if(fi!==null)return fi;}const q=IvyTools.norm(text).replace(/[¿?¡!.,]/g,'').replace(/^(oye |hey |hola |ok )?(?:evie|evi|ivi|ivy|ibi|libi|eby|evy)[, ]+/,'').trim();
-  let m=q.match(/^(?:activa|activar|pon|entra en|cambia a)(?: el)? modo (\w+)/);if(m){const r=window.EvieModes.set(m[1]);return r.ok?r.say:'No conozco el modo '+m[1]+'. Tengo enfoque, gym, negocio, cierre, noche y normal.';}
+ function tryLocal(text){const speakLater=t=>{if(t){append('evie',t);if(!pref().muted)Voice.speak(t,Voice.begin());}};if(window.EvieMemory){const mm=EvieMemory.intent(text,{say:speakLater});if(mm!==null)return mm;}if(window.EvieMap){const mp=EvieMap.intent(text,{say:speakLater});if(mp!==null)return mp;}if(/^(?:(?:oye |hey )?(?:ivi|ivy|evie|evi|ibi|libi)[, ]+)?(?:deshaz|deshacer|desase) (?:lo ultimo|el ultimo (?:movimiento|registro|gasto|ingreso)|eso)$/.test(IvyTools.norm(text).replace(/[¿?¡!.,]/g,''))){const u=lastUndo||window.EvieFinance?.lastUndo?.();if(!u)return 'No tengo un registro reciente que deshacer.';u();lastUndo=null;window.EvieFinance?.setLastUndo?.(null);return 'Listo, lo deshice.';}if(window.EvieTimers){const tw=EvieTimers.intent(text);if(tw!==null)return tw;}if(window.IviCore){const iv=IviCore.intent(text);if(iv!==null)return iv;}if(window.EvieFisico){const fw=EvieFisico.intent(text);if(fw!==null)return fw;}if(window.EvieFinance){const fi=EvieFinance.intent(text);if(fi!==null)return fi;}const q=IvyTools.norm(text).replace(/[¿?¡!.,]/g,'').replace(/^(oye |hey |hola |ok )?(?:evie|evi|ivi|ivy|ibi|libi|eby|evy)[, ]+/,'').trim();
+  let m=q.match(/^(?:activa|activar|pon|entra en|cambia a)(?: el)? modo (\w+)/);if(m){const r=window.EvieModes.set(m[1]);return r.ok?r.say:'No conozco el modo '+m[1]+'. Tengo asistente, ventas, gym, estudio, noche, enfoque y cierre.';}
   if(/^(?:desactiva|salir? del?|quita)(?: el)? modo/.test(q)){window.EvieModes.set('normal');return 'Listo, volví al modo normal.';}
   m=q.match(/^(?:marca|completa|ya (?:hice|fui a|fui al|termine))(?: el| la| mi)? (?:habito )?(.+)$/);if(m&&window.EvieLife){const r=tools.draft_habit_check({title:m[1]});if(r.status==='draft_shown')return 'Te dejo la confirmación en pantalla.';}
   if(/^(callate|silencio|para|deten|detente|stop)$/.test(q)){stopSpeaking();return '';}
@@ -154,7 +155,7 @@ window.EvieAssistant=(()=>{
  /* ---------- OpenAI loop via server ---------- */
  async function chat(text,signal,lc=null){
   history.push({role:'user',content:text});history=history.slice(-14);
-  window.EvieProfile?.load?.().catch(()=>{});const context={name:name(),timezone:zone(),currency:DALI_CONFIG.currency};let input=[...history];
+  window.EvieProfile?.load?.().catch(()=>{});const context={name:name(),timezone:zone(),currency:DALI_CONFIG.currency,mode:window.IviCore?.personaMode?.()||'asistente',persona:Store.get()?.preferences?.iviPersona||{}};let input=[...history];
   for(let step=0;step<4;step++){
    const r=await EvieAccounts.request('ai/chat',{method:'POST',body:{input,context,private:!!window.EvieMemory?.isPrivate?.(),...(lc?{request_id:lc.id}:{}),...(step===0?(window.EvieV5?.chatExtras?.()||{}):{})},signal});window.EvieV5?.chatMeta?.(r);if(r.memory_used)lastMemoryUsed=r.memory_used;if(signal?.aborted)throw Object.assign(Error('cancelado'),{name:'AbortError'});
    if(!r.calls?.length){const say=(r.text||'').trim()||'Listo.';history.push({role:'assistant',content:say.slice(0,3900)});return {memory:lastMemoryUsed,text:say,spoken:(r.spoken||say).trim(),sources:Array.isArray(r.sources)?r.sources:[],checked:r.checked_at||null,webUnavailable:!!r.web_unavailable};}
@@ -322,7 +323,9 @@ window.EvieAssistant=(()=>{
 /* ---------- Modes: "activa el modo X" ---------- */
 window.EvieModes=(()=>{
  const modes={
-  normal:{label:'Normal',say:'Listo, modo normal.'},
+  normal:{label:'Asistente',say:'Modo asistente. Sistemas en línea.'},
+  ventas:{label:'Ventas',route:'soma',say:'Modo ventas. Te muestro prospectos y seguimientos.'},
+  estudio:{label:'Estudio',route:'agenda',say:'Modo estudio. Prioridad: tareas, exámenes y repasos.'},
   enfoque:{label:'Enfoque',route:'agenda',say:'Modo enfoque activado: 25 minutos sin distracciones. Te aviso al terminar.',timer:25},
   gym:{label:'Gym',route:'fisico',say:'Modo gym. Vamos con todo.'},
   negocio:{label:'Negocio',route:'negocios',say:'Modo negocio. Aquí están tus negocios.'},
@@ -332,7 +335,7 @@ window.EvieModes=(()=>{
  let timer=null,ends=0;
  const current=()=>Store.get()?.preferences?.evieMode||'normal';
  function badge(){let b=document.getElementById('evie-mode-badge');const m=current();if(m==='normal'){b?.remove();return;}if(!b){b=document.createElement('button');b.id='evie-mode-badge';b.type='button';b.addEventListener('click',()=>set('normal'));document.querySelector('.topbar-actions')?.prepend(b);}b.setAttribute('aria-label','Modo '+modes[m].label+'. Toca para salir');const left=ends?Math.max(0,Math.ceil((ends-Date.now())/60000)):0;b.innerHTML=`<span class="evie-live-dot"></span>${modes[m].label}${left?' · '+left+' min':''}`;}
- function set(m){m=IvyTools.norm(String(m||'')).replace('gimnasio','gym').replace('negocios','negocio');if(!modes[m])return {ok:false,say:'Modo desconocido.'};const def=modes[m];
+ function set(m){m=IvyTools.norm(String(m||'')).replace('gimnasio','gym').replace('negocios','negocio').replace(/^asistente$/,'normal').replace(/^venta$/,'ventas').replace(/^estudiar$/,'estudio');if(!modes[m])return {ok:false,say:'Modo desconocido.'};const def=modes[m];
   Store.save(s=>{s.preferences.evieMode=m;if(def.theme)s.preferences.theme=def.theme;if(m==='noche')s.preferences.motion='reduced';if(m==='normal'&&s.preferences.motion==='reduced'&&s.preferences.evieModeMotion!=='reduced')s.preferences.motion='subtle';});
   clearInterval(timer);timer=null;ends=0;if(def.timer){ends=Date.now()+def.timer*60000;timer=setInterval(()=>{badge();if(Date.now()>=ends){clearInterval(timer);timer=null;ends=0;App.toast('Terminó tu bloque de enfoque. Tómate 5 minutos.');window.EvieAssistant?.ask('Terminó mi bloque de enfoque',{speak:true});set('normal');}},20000);}
   document.documentElement.dataset.evieMode=m;if(def.route&&location.hash.slice(1)!==def.route)location.hash=def.route;else App.render();badge();return {ok:true,mode:m,say:def.say};}

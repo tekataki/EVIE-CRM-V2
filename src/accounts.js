@@ -13,6 +13,9 @@ import { createProfile } from './profile.js'
 import { ensureV5 } from './v5-schema.js'
 import { createGuests, guestOf, sweepGuests, GUEST_MS } from './guests.js'
 import { createV5 } from './v5-routes.js'
+import { aiProvider, claudeModel } from './claude.js'
+import { createChat } from './chat.js'
+import { memorySource } from './ai-memory.js'
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export function normalizeUsername(value) {
@@ -56,7 +59,7 @@ export function createAccounts({fetcher=fetch}={}) {
  const api=new Hono()
  api.use('*',async(c,next)=>{const max=c.req.path.endsWith('/data/push')?16*1024*1024:c.req.path.includes('/data/media/')?11*1024*1024:c.req.path.endsWith('/ai/stt')?4*1024*1024:256*1024;return bodyLimit({maxSize:max,onError:c=>jsonError(c,'La solicitud supera el límite.',413)})(c,next)})
  api.use('*',async(c,next)=>{c.header('Cache-Control','no-store, private');c.header('X-Content-Type-Options','nosniff');await next()})
- api.get('/runtime',async c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:await googleEnabled(c.env||{},fetcher),signup:googleSignupOpen(c.env)?'open':'invite',googleSignup:googleSignupOpen(c.env)?'open':'invite',guestInvites:true,mediaSync:true,passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,map:{configured:mapStatus(c.env).configured,traffic:mapStatus(c.env).traffic},providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
+ api.get('/runtime',async c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!aiProvider(c.env||{}),provider:aiProvider(c.env||{}),model:aiProvider(c.env||{})==='claude'?claudeModel(c.env||{}):null,refusalFallbacks:aiProvider(c.env||{})==='claude',stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:await googleEnabled(c.env||{},fetcher),signup:googleSignupOpen(c.env)?'open':'invite',googleSignup:googleSignupOpen(c.env)?'open':'invite',guestInvites:true,mediaSync:true,passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!aiProvider(c.env||{})&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,map:{configured:mapStatus(c.env).configured,traffic:mapStatus(c.env).traffic},providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
  api.use('*',async(c,next)=>{
   const env=c.env||{}
   if(env.EVIE_ACCOUNTS_ENABLED!=='true')return jsonError(c,'Las conexiones externas están desactivadas.',503)
@@ -221,7 +224,7 @@ export function createAccounts({fetcher=fetch}={}) {
  api.post('/data/pull',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||typeof b.after!=='string'||b.after.length>200||Object.keys(b).some(k=>k!=='after'))return jsonError(c,'Cursor inválido.');const r=await remote(c,'/rest/v1/rpc/evie_pull',{method:'POST',access:s.tokens.access_token,body:{after_key:b.after}});if(!r.ok)return jsonError(c,'No se pudo leer la cuenta.',502);const rows=await r.json();return c.json({owner:s.user.id,rows,next:rows.length===500?rows.at(-1).collection+'/'+rows.at(-1).record_id:''})})
  api.post('/data/push',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||!Array.isArray(b.changes)||!b.changes.length||b.changes.length>5000||Object.keys(b).some(k=>k!=='changes'))return jsonError(c,'Lote de 1 a 5000 cambios requerido.');const r=await remote(c,'/rest/v1/rpc/evie_apply',{method:'POST',access:s.tokens.access_token,body:{changes:b.changes}});if(!r.ok)return jsonError(c,r.status===409?'Otro dispositivo cambió estos registros.':'No se pudieron guardar los cambios.',r.status===409?409:422);return c.json({owner:s.user.id,rows:await r.json()})})
  // Cheap change detector for cross-device sync: the client polls this and pulls only when it changes.
- api.post('/data/stamp',async c=>{const s=c.get('account');const r=await remote(c,'/rest/v1/rpc/evie_sync_stamp',{method:'POST',access:s.tokens.access_token,body:{}});if(!r.ok)return jsonError(c,'No se pudo comprobar la sincronización.',502);const stamp=await r.json();return c.json({owner:s.user.id,stamp:typeof stamp==='string'?stamp:''})})
+ api.post('/data/stamp',async c=>{const s=c.get('account');const r=await remote(c,'/rest/v1/rpc/evie_sync_stamp',{method:'POST',access:s.tokens.access_token,body:{}});if(!r.ok)return jsonError(c,'No se pudo comprobar la sincronización.',502);const stamp=await r.json();let chat='';try{const q=await remote(c,'/rest/v1/rpc/evie_chat_stamp',{method:'POST',access:s.tokens.access_token,body:{}});if(q.ok){const v=await q.json();chat=typeof v==='string'?v:''}}catch{}return c.json({owner:s.user.id,stamp:typeof stamp==='string'?stamp:'',chat})})
  // Images: private bucket user-media/<owner>/<id>[-t].<ext>, always with the user's own token (Storage RLS).
  const MEDIA=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-t)?\.(webp|png|jpg|jpeg)$/
  const MIME={webp:'image/webp',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg'}
@@ -241,11 +244,14 @@ export function createAccounts({fetcher=fetch}={}) {
  api.route('/connections',createConnections({fetcher,seal,unseal,authenticate:async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id&&s.user.role!=='guest'?s:null}}))
  const bound=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
  api.route('/profile',createProfile({authenticate:bound,seal,unseal}))
- api.route('/memory',createMemory({authenticate:bound,seal,unseal}))
+ 
  api.route('/memory-v2',createMemoryV2({authenticate:bound,seal,unseal}))
  api.route('/map',createMap({fetcher,authenticate:bound}))
- api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal}))
- api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal}))
+ const memories=memorySource({remote,seal,unseal})
+ api.route('/memory',createMemory({authenticate:bound,seal,unseal,memorySource:memories}))
+ api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal,seal,memorySource:memories}))
+ api.route('/chat',createChat({fetcher,authenticate:bound,seal,unseal,remote}))
+ api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal,memorySource:memories}))
  api.route('/info',createResearch({fetcher,authenticate:bound,unseal}))
  api.route('/auth/google',createGoogleAuth({remote,issueSession,verified:async c=>{const s=await verified(c);return s&&s.user.role!=='guest'?s:null},seal,unseal,digest,limited,fetcher}))
  api.route('/auth/guest',createGuests({fetcher,remote,issueSession,digest,limited,owner,unseal}))

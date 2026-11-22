@@ -8,6 +8,7 @@ window.DALI_CONFIG = Object.freeze({
   limits:{jsonBytes:1048576,operations:500,depth:18,imageBytes:10485760,imageDimension:1600},
   sections:[
     {route:'inicio',label:'Inicio',icon:'layout-dashboard',group:'principal',searchTerms:['hoy','resumen'],mobilePriority:1},
+    {route:'chat',label:'Chat',icon:'messages-square',group:'principal',searchTerms:['chat','ivi','conversacion','preguntar','memoria','claude'],mobilePriority:0},
     {route:'agenda',label:'Agenda',icon:'calendar-days',group:'principal',searchTerms:['hoy','pendientes','semana'],mobilePriority:0},
     {route:'finanzas',label:'Finanzas',icon:'wallet',group:'principal',searchTerms:['dinero','pagos'],mobilePriority:2},
     {route:'fisico',label:'Físico',icon:'dumbbell',group:'principal',searchTerms:['fisico','gimnasio','gym','salud','musculos','cuerpo','recuperacion','medidas','peso','entrene'],mobilePriority:0},

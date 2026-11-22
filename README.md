@@ -103,6 +103,34 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v10 · Fase 2: Claude, Chat con memoria e Ivi (2026-11-22)
+- **Claude es el cerebro de Ivi** (`claude-opus-5-5`, SDK oficial `@anthropic-ai/sdk` en el Worker, `src/claude.js`).
+  Niveles → esfuerzo: Chispa `low`, Enfoque `medium`, Profundo `high`. Pensamiento adaptativo, respuestas en
+  streaming, **respaldo del servidor ante rechazos activado** (`fallbacks: "default"`), caché de prompt (la persona y
+  el perfil se cachean; lo variable va después) y búsqueda web `web_search_20260209` con fuentes verificadas.
+  Kisha usa salidas estructuradas; la investigación va en dos pasos (búsqueda citada → JSON) y solo conserva URLs que
+  la búsqueda devolvió. Groq (voz a texto) y Fish Audio (voz de Ivi) siguen igual. OpenAI queda como respaldo con
+  `EVIE_AI_PROVIDER=openai`. Costos con precios de Opus 5.5 ($4 / $20 por millón, lectura de caché $0.20); topes
+  diarios por defecto con Claude: $3 por cuenta y $5 global (`EVIE_BUDGET_ACCOUNT_DAILY_USD`, `EVIE_BUDGET_GLOBAL_DAILY_USD`).
+- **Sección Chat** (`#chat`): conversaciones con buscar, fijar, archivar, renombrar y borrar; Markdown con bloques de
+  código y botón copiar; respuesta en vivo con **detener**, **regenerar** y **editar el último mensaje**; dictado por
+  voz y **escuchar** la respuesta; selector de nivel; **chat privado** (sin memoria); móvil con cajón lateral.
+  Todo vive en Supabase (`ai_conversations`, `ai_messages`) **cifrado en el Worker** y se sincroniza entre
+  dispositivos con el sello `evie_chat_stamp`.
+- **Memoria de largo plazo** (`ai_memories`, `ai_memory_events`, `ai_state`; `src/ai-memory.js`): después de cada
+  intercambio Ivi propone agregar, actualizar (sin perder el historial) u olvidar recuerdos; cada tanto regenera un
+  «perfil de memoria» que se inyecta en el chat, en Ivi por voz y en Kisha. «Ivi, recuerda / olvida…» también llega
+  aquí. Nueva página **«Lo que Ivi sabe de ti»** (`#chat/memoria`): ver, agregar, editar, olvidar, recuperar e historial.
+- **Persona Ivi** (`src/persona.js`): IA leal, breve y con humor seco, vocabulario de protocolos, separa lo confirmado
+  de lo no confirmado y no se pasa de la raya en salud ni inversiones. **Modos** Asistente · Ventas · Gym · Estudio ·
+  Noche que reordenan la barra de **«Sistemas en línea»** de Inicio (recuperación, seguimientos, hoy, escuela,
+  misión) y las sugerencias; **ajustes de Ivi** (formalidad, humor, extensión, voz) y **protocolos**: matutino,
+  cierre y preparar visita («Ivi, protocolo matutino», «prepara la visita a…»).
+- Pruebas: `tests/claude.test.cjs`, `tests/chat.test.cjs` (PostgREST simulado sobre PGlite con la migración real),
+  `tests/ai-chat-sql.test.cjs`, `tests/chat-md.test.cjs` (XSS) y E2E `tools/e2e-chat.mjs` a 390 y 1440 px.
+- **Para activarlo:** Cloudflare → Workers & Pages → `evie-crm-v2` → Settings → Variables and Secrets → Production →
+  agrega el secreto `ANTHROPIC_API_KEY` y vuelve a desplegar. `/api/runtime` mostrará `ai.provider: "claude"`.
+
 ## Novedades v10 · Fase 1: Físico = Cuerpo + recuperación (2026-11-22)
 - **Físico ya solo tiene «Cuerpo».** Se quitaron las pestañas «Entrenamientos» y «Comidas y calorías» (registro manual
   de series, calculadora de calorías y su campo de perfil). Los datos guardados **no se borraron**: solo dejaron de
@@ -166,7 +194,7 @@ API `/api`: `runtime`, `auth/*`, `memory/*`, `map/config|search|route`, `data/pu
 **docs/SETUP.md** (Cloudflare, Supabase, cuentas, claves, costos, Google; §8 lista consolidada v3.2), **docs/MAP.md**, **docs/MEMORY.md** y `.dev.vars.example`.
 
 ## Pruebas
-Pruebas de Node en 26 archivos (`tests/*.test.cjs`; ejecútalas archivo por archivo en máquinas con poca RAM), e2e `tools/e2e-drafts.mjs`, `e2e-memory.mjs`, `e2e-map.mjs`, `e2e-login.mjs`, `e2e-v31.mjs`, `e2e-hud.mjs`, `e2e-workspace.mjs`, `e2e-kisha.mjs`, `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs` y `tools/qa-sweep.mjs`, privacidad `tools/check-privacy.mjs`.
+Pruebas de Node en 26 archivos (`tests/*.test.cjs`; ejecútalas archivo por archivo en máquinas con poca RAM), e2e `tools/e2e-chat.mjs`, `tools/e2e-drafts.mjs`, `e2e-memory.mjs`, `e2e-map.mjs`, `e2e-login.mjs`, `e2e-v31.mjs`, `e2e-hud.mjs`, `e2e-workspace.mjs`, `e2e-kisha.mjs`, `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs` y `tools/qa-sweep.mjs`, privacidad `tools/check-privacy.mjs`.
 
 ## Restaurar la versión anterior
 Tag `pre-v2.3-946d437` en GitHub, o *Cloudflare → Deployments → Rollback*.

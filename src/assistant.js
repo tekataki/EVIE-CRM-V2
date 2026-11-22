@@ -6,6 +6,9 @@ import { readProfile } from './profile.js'
 import { retrieve, settingsOf, contextBlock, ensureMemorySchema } from './memory.js'
 import { tierConfig, isTier, DEFAULT_TIER, TIER_IDS, TIER_LABELS, fallbackOf, costMicro, parseTierCommand, suggestTier, WEB_SEARCH_USD } from './tiers.js'
 import { ensureV5, getSetting, putSetting, observe, rid, percentiles } from './v5-schema.js'
+import { aiProvider, claudeClient, claudeRun, claudeError, claudeCost, claudeTools, webSearchTool, textOf, sourcesOf, toolUses, stopNote, searchesOf, servedByFallback } from './claude.js'
+import { iviSystem, iviUserBlock, iviContext, personaDials, cleanMode } from './persona.js'
+import { memoryBlock, learnFromExchange, memorySettings, MEMORY_LIMITS } from './ai-memory.js'
 
 const OPENAI_URL = 'https://api.openai.com/v1/responses'
 export const STT_MAX_SECONDS = 90
@@ -49,7 +52,8 @@ export const TOOLS = [
   { name: 'get_gym_summary', description: 'Mapa de recuperación muscular: grupos entrenados hace menos de 24 h, entre 24 y 48 h, listos (48 h o más) y sin entrenar en 7 días; último entrenamiento y días entrenados esta semana. Úsalo para "¿qué puedo entrenar hoy?".', parameters: S({}) },
   { name: 'search_records', description: 'Busca texto en los registros del usuario.', parameters: S({ query: { type: 'string', maxLength: 80 } }) },
   { name: 'navigate', description: 'Abre una sección de EVIE. "bitacora" es Mascota Virtual (Kisha).', parameters: S({ route: { type: 'string', enum: ['inicio', 'mapa', 'agenda', 'finanzas', 'negocios', 'fisico', 'gimnasio', 'habitos', 'tendencias', 'logros', 'objetivos', 'bitacora', 'aprendizaje', 'libros', 'subir', 'configuracion', 'perfil'] } }) },
-  { name: 'set_mode', description: 'Activa un modo de EVIE.', parameters: S({ mode: { type: 'string', enum: ['enfoque', 'gym', 'negocio', 'cierre', 'noche', 'normal'] } }) },
+  { name: 'set_mode', description: 'Activa un modo de Ivi: asistente (normal), ventas, gym, estudio, noche; también enfoque (bloque de 25 min), negocio y cierre del día. Reordena el inicio, alertas y sugerencias.', parameters: S({ mode: { type: 'string', enum: ['asistente', 'ventas', 'gym', 'estudio', 'noche', 'enfoque', 'negocio', 'cierre', 'normal'] } }) },
+  { name: 'run_protocol', description: 'Ejecuta un protocolo de Ivi (rutina de varios pasos): briefing (protocolo matutino), debrief (cierre del día) o visita (preparar una visita de ventas; client = nombre del prospecto o null).', parameters: S({ protocol: { type: 'string', enum: ['briefing', 'debrief', 'visita'] }, client: nstr('nombre del prospecto o null') }) },
   { name: 'draft_task', description: 'Propone un pendiente. El usuario debe confirmarlo en pantalla.', parameters: S({ title: { type: 'string', maxLength: 140 }, date: nstr('YYYY-MM-DD o null'), time: nstr('HH:MM o null') }) },
   { name: 'list_accounts', description: 'Cuentas del usuario (efectivo, débito, cartera, tarjeta de crédito) con su saldo estimado. Úsala antes de registrar si no sabes qué cuentas existen.', parameters: S({}) },
   { name: 'log_transaction', description: 'REGISTRA un ingreso o gasto ordinario cuando el usuario lo pide de forma explícita y completa («gasté 200 de mi dinero físico en comida»). Se guarda una sola vez y la app ofrece deshacer; no pidas otra confirmación. account = nombre o frase de la cuenta que dijo el usuario ("dinero físico", "BBVA") o null si no la dijo: si hay varias cuentas la herramienta devuelve needs_account con la pregunta exacta; hazla tal cual y vuelve a llamar con la respuesta. Un cobro esperado o programado NO es dinero recibido: usa draft_recurring. soma_client_name solo si el usuario dijo que es un cobro de ese cliente de SOMA.', parameters: S({ type: { type: 'string', enum: ['income', 'expense'] }, amount: { type: 'number', description: 'Monto positivo en MXN' }, title: { type: 'string', maxLength: 140 }, account: nstr('cuenta mencionada o null'), category: nstr('categoría o null'), date: nstr('YYYY-MM-DD o null (hoy)'), soma_client_name: nstr('cliente de SOMA explícito o null') }) },
@@ -157,7 +161,9 @@ export function profileBlock(p, text = '') {
 
 const day = (tz) => new Intl.DateTimeFormat('en-CA', { timeZone: tz || 'America/Mexico_City' }).format(new Date())
 export function limits(env, role = 'owner') { let o = {}; try { o = JSON.parse(env.EVIE_DAILY_LIMITS || '{}') } catch {} const base = { ...DEFAULTS.limits, ...o }; return role === 'guest' ? { ...base, ...DEFAULTS.guestLimits } : base }
-export function budget(env) { const a = Number(env?.EVIE_BUDGET_ACCOUNT_DAILY_USD), g = Number(env?.EVIE_BUDGET_GLOBAL_DAILY_USD); return { account_daily_usd: Number.isFinite(a) && a > 0 ? a : DEFAULTS.budget.account_daily_usd, global_daily_usd: Number.isFinite(g) && g > 0 ? g : DEFAULTS.budget.global_daily_usd } }
+// Claude (Opus 5.5) costs more per call than the old default model, so its default guardrails are higher. Both stay configurable.
+export const CLAUDE_BUDGET = Object.freeze({ account_daily_usd: 3, global_daily_usd: 5 })
+export function budget(env) { const a = Number(env?.EVIE_BUDGET_ACCOUNT_DAILY_USD), g = Number(env?.EVIE_BUDGET_GLOBAL_DAILY_USD), d = aiProvider(env || {}) === 'claude' ? CLAUDE_BUDGET : DEFAULTS.budget; return { account_daily_usd: Number.isFinite(a) && a > 0 ? a : d.account_daily_usd, global_daily_usd: Number.isFinite(g) && g > 0 ? g : d.global_daily_usd } }
 /** Stored reasoning tier for the account (never the work mode). */
 export async function readTier(env, owner) { if (!env?.AUTH_DB) return DEFAULT_TIER; try { await ensureV5(env.AUTH_DB); const v = await getSetting(env, owner, 'ai_reasoning_tier'); return isTier(v) ? v : DEFAULT_TIER } catch { return DEFAULT_TIER } }
 export async function usage(env, owner, kind, add = 0) {
@@ -182,6 +188,11 @@ export function sanitizeInput(items) {
       if (!TOOL_NAMES.has(it.name) || typeof it.call_id !== 'string' || it.call_id.length > 100 || typeof it.arguments !== 'string' || it.arguments.length > 4000) throw Error('Llamada inválida.')
       return { type: 'function_call', call_id: it.call_id, name: it.name, arguments: it.arguments }
     }
+    if (it.type === 'reasoning' && typeof it.id === 'string' && it.id.startsWith('cl_')) {
+      // Claude turn sealed by this Worker (AES-GCM): replayed verbatim inside the same tool round.
+      if (it.id.length > 80 || typeof it.encrypted_content !== 'string' || it.encrypted_content.length > 160000) throw Error('Razonamiento inválido.')
+      return { type: 'reasoning', id: it.id, encrypted_content: it.encrypted_content }
+    }
     if (it.type === 'reasoning') {
       if (typeof it.id !== 'string' || it.id.length > 200) throw Error('Razonamiento inválido.')
       return { type: 'reasoning', id: it.id, summary: Array.isArray(it.summary) ? it.summary.slice(0, 4) : [], ...(typeof it.encrypted_content === 'string' && it.encrypted_content.length < 20000 ? { encrypted_content: it.encrypted_content } : {}) }
@@ -194,13 +205,106 @@ export function sanitizeInput(items) {
   })
 }
 
-export function createAssistant({ fetcher = fetch, authenticate, unseal = null }) {
+/**
+ * Client items (text turns, sealed Claude turns, tool calls/outputs) → Claude messages.
+ * - Finished turns travel as plain text (no thinking blocks): dropping ALL earlier thinking keeps the
+ *   preserved-thinking check happy and the history append-only.
+ * - Inside one tool round the assistant turn comes back sealed ({o: owner, turns, server}) and is replayed
+ *   byte-for-byte, followed by one user message with every tool_result (server-side ones first).
+ */
+export async function toClaudeMessages(items, { unseal, secret, owner }) {
+  const msgs = [], pending = [], sealedCalls = new Set()
+  const flush = () => { if (pending.length) { msgs.push({ role: 'user', content: pending.splice(0) }) } }
+  for (const it of items) {
+    if (it.role === 'user' || it.role === 'assistant') { flush(); if (it.content.trim()) msgs.push({ role: it.role, content: it.content }); continue }
+    if (it.type === 'reasoning' && it.id.startsWith('cl_')) {
+      if (!unseal || !secret) throw Error('sealed turn without key')
+      const pack = await unseal(it.encrypted_content, secret)
+      if (!pack || pack.v !== 1 || pack.o !== owner || !Array.isArray(pack.turns)) throw Error('sealed turn mismatch')
+      flush()
+      for (const t of pack.turns) { if (!t || (t.role !== 'assistant' && t.role !== 'user') || !Array.isArray(t.content)) throw Error('sealed turn shape'); msgs.push({ role: t.role, content: t.content }); if (t.role === 'assistant') for (const b of t.content) if (b?.type === 'tool_use') sealedCalls.add(b.id) }
+      for (const r of pack.server || []) pending.push(r)
+      continue
+    }
+    if (it.type === 'reasoning') continue // OpenAI reasoning items mean nothing to Claude
+    if (it.type === 'function_call') {
+      if (sealedCalls.has(it.call_id)) continue
+      let input = {}; try { input = JSON.parse(it.arguments || '{}') } catch {}
+      flush(); const last = msgs.at(-1), block = { type: 'tool_use', id: it.call_id.replace(/[^a-zA-Z0-9_-]/g, '_'), name: it.name, input }
+      if (last?.role === 'assistant' && Array.isArray(last.content)) last.content.push(block); else msgs.push({ role: 'assistant', content: [block] })
+      continue
+    }
+    if (it.type === 'function_call_output') { pending.push({ type: 'tool_result', tool_use_id: it.call_id.replace(/[^a-zA-Z0-9_-]/g, '_'), content: it.output }); continue }
+  }
+  flush()
+  while (msgs.length && msgs[0].role !== 'user') msgs.shift()
+  return msgs
+}
+
+export function createAssistant({ fetcher = fetch, authenticate, unseal = null, seal = null, memorySource = null }) {
   const api = new Hono()
+  // ---------- Claude branch of /chat (same response contract the browser already speaks) ----------
+  async function claudeChat(c, o) {
+    const { s, env, input, ctx, requestId, cfg, web, timezone, currency, name, profile, guest, privateMode, memory, memoryUsed, lastUser, stored, tierSource, tier, tierChanged, fallback, retrievalMs, t0 } = o
+    const secret = env.EVIE_SESSION_KEY, owner = s.user.id
+    let messages; try { messages = await toClaudeMessages(input, { unseal, secret, owner }) } catch (e) { console.error('CLAUDE_INPUT', String(e?.message || e).slice(0, 60)); return err(c, 'Conversación inválida.') }
+    if (!messages.length) return err(c, 'Conversación vacía.')
+    // v10 memory: Supabase (shared with Chat and Kisha); the legacy D1 block is only a fallback.
+    let mem = memory, used = memoryUsed, memoryProfile = null
+    if (!privateMode && memorySource) {
+      try {
+        memoryProfile = await memorySource.profile(c, s)
+        const list = await memorySource.relevant(c, s, lastUser)
+        if (list.length) { mem = memoryBlock(list); used = { facts: list.map((m) => ({ id: m.id, text: m.text, updated_day: String(m.updated_at || '').slice(0, 10), source: m.kind, source_session: m.source_conversation })), sessions: memoryUsed.sessions } }
+      } catch (e) { console.error('MEMORY_SUPABASE', String(e?.message || e).slice(0, 60)) }
+    }
+    const system = iviSystem({ userBlock: iviUserBlock({ profile: profileBlock(profile, lastUser), memoryProfile }), context: iviContext({ name, today: day(timezone), timezone, currency, channel: o.channel, mode: cleanMode(ctx.mode), dials: personaDials(ctx.persona), tier: cfg.id, web, guest, privateMode, memory: mem }) })
+    const tools = [...claudeTools(TOOLS), ...claudeTools(SERVER_TOOLS), ...(web ? [webSearchTool({ timezone, city: profile?.city })] : [])]
+    const client = claudeClient(env, fetcher), base = messages.length, ms = []
+    let msg = null, cost = 0, searches = 0, serverResults = [], fellBack = false
+    for (let hop = 0; hop < cfg.hops + 3; hop++) {
+      const ts = Date.now()
+      try { msg = await claudeRun(client, { model: cfg.model, max_tokens: cfg.max_output_tokens, system, messages, tools, output_config: { effort: cfg.effort }, cache_control: { type: 'ephemeral' } }) }
+      catch (e) { const x = claudeError(e); console.error('CLAUDE_REJECTED', x.code, cfg.id); if (cost > 0) { await usage(env, owner, 'cost_micro', cost); await usage(env, '__global__', 'cost_micro', cost) } return c.json({ error: x.message, code: x.code, request_id: requestId }, x.status) }
+      ms.push(Date.now() - ts)
+      await usage(env, owner, 'chat', 1); cost += claudeCost(env, msg); searches += searchesOf(msg); fellBack = fellBack || servedByFallback(msg)
+      if (msg.stop_reason === 'pause_turn') { messages = [...messages, { role: 'assistant', content: msg.content }]; continue }
+      if (msg.stop_reason !== 'tool_use') break
+      const uses = toolUses(msg), clientUses = uses.filter((u) => TOOL_NAMES.has(u.name))
+      const results = uses.filter((u) => !TOOL_NAMES.has(u.name)).map((u) => SERVER_NAMES.has(u.name) ? { type: 'tool_result', tool_use_id: u.id, content: JSON.stringify(currentTime(timezone)) } : { type: 'tool_result', tool_use_id: u.id, is_error: true, content: 'Herramienta no disponible.' })
+      if (clientUses.length) { serverResults = results; break }
+      messages = [...messages, { role: 'assistant', content: msg.content }, { role: 'user', content: results }]
+    }
+    if (searches) await usage(env, owner, 'web_search', searches)
+    await usage(env, owner, 'chat:' + cfg.id, 1)
+    if (cost > 0) { await usage(env, owner, 'cost_micro', cost); await usage(env, '__global__', 'cost_micro', cost) }
+    const clientUses = msg?.stop_reason === 'tool_use' ? toolUses(msg).filter((u) => TOOL_NAMES.has(u.name)) : []
+    let calls = [], reasoning = []
+    if (clientUses.length) {
+      if (!seal || !secret) return err(c, 'Configuración de sesión incompleta.', 503)
+      calls = clientUses.map((u) => ({ type: 'function_call', call_id: u.id, name: u.name, arguments: JSON.stringify(u.input || {}) }))
+      const turns = [...messages.slice(base), { role: 'assistant', content: msg.content }]
+      reasoning = [{ type: 'reasoning', id: 'cl_' + requestId.slice(-12).replace(/[^a-z0-9]/g, '') + Date.now().toString(36), encrypted_content: await seal({ v: 1, o: owner, turns, server: serverResults }, secret) }]
+    }
+    const text = textOf(msg) || (calls.length ? '' : stopNote(msg) || 'Listo.')
+    const sources = sourcesOf(msg)
+    // Learn from a finished voice exchange (off the response path; never private; daily cap).
+    if (!calls.length && !privateMode && memorySource && lastUser.trim().length >= 25 && msg?.stop_reason === 'end_turn' && await usage(env, owner, 'memory_extract') < MEMORY_LIMITS.extractDaily) {
+      const job = (async () => { try { await usage(env, owner, 'memory_extract', 1); const settings = await memorySettings(env, owner, unseal); const l = await learnFromExchange({ env, fetcher, store: memorySource.store(c, s), user: lastUser, assistant: text, settings }); if (l.cost > 0) { await usage(env, owner, 'cost_micro', l.cost); await usage(env, '__global__', 'cost_micro', l.cost) } } catch (e) { console.error('MEMORY_LEARN', String(e?.message || e).slice(0, 80)) } })()
+      try { c.executionCtx.waitUntil(job) } catch { await job }
+    }
+    const spoken = text.replace(/\s*\(\[[^\]]*\]\([^)]*\)\)/g, '').replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '$1').replace(/https?:\/\/\S+/g, '').replace(/[*_#`>]+/g, '').replace(/\s{2,}/g, ' ').trim()
+    const total = Date.now() - t0
+    await observe(env, owner, 'retrieval:' + cfg.id, retrievalMs); for (const m of ms) await observe(env, owner, 'claude:' + cfg.id, m); await observe(env, owner, 'chat_total:' + cfg.id, total)
+    c.header('Server-Timing', `retrieval;dur=${retrievalMs}, claude;dur=${ms.reduce((a, b) => a + b, 0)}, total;dur=${total}`)
+    return c.json({ request_id: requestId, provider: 'claude', tier: { id: cfg.id, label: cfg.label, source: fallback ? 'fallback' : tierSource, model: msg?.model || cfg.model, effort: cfg.effort }, tier_requested: tierSource === 'once' ? tier : stored, tier_fallback: fallback, tier_changed: tierChanged, suggest_tier: calls.length ? null : suggestTier(cfg.id, lastUser), timings: { retrieval_ms: retrievalMs, claude_ms: ms, total_ms: total }, memory_used: { facts: used.facts.map((f) => ({ id: f.id, text: f.text, day: f.updated_day, source: f.source, source_session: f.source_session })), sessions: used.sessions.map((x) => ({ id: x.id, day: x.day })) }, private: privateMode, text, spoken, calls, reasoning, model: msg?.model || cfg.model, stop_reason: msg?.stop_reason || null, refusal_fallback: fellBack, web: searches > 0, web_unavailable: false, sources, checked_at: searches ? currentTime(timezone).iso_local : null, cache: { read: msg?.usage?.cache_read_input_tokens || 0, write: msg?.usage?.cache_creation_input_tokens || 0 } })
+  }
   api.get('/status', async (c) => {
     const s = await authenticate(c); if (!s) return err(c, 'Inicia sesión.', 401)
     const env = c.env || {}, lim = limits(env, s.user.role), used = {}
     for (const k of Object.keys(lim)) used[k] = await usage(env, s.user.id, k)
-    return c.json({ chat: !!env.OPENAI_API_KEY, stt: !!env.GROQ_API_KEY, tts: !!(env.FISH_AUDIO_API_KEY && env.FISH_AUDIO_VOICE_ID), model: env.EVIE_MODEL_FAST || DEFAULTS.model, researchModel: env.EVIE_MODEL_RESEARCH || env.EVIE_MODEL_FAST || DEFAULTS.model, research: !!env.OPENAI_API_KEY && env.EVIE_WEB_SEARCH !== 'off', ttsModel: env.FISH_AUDIO_MODEL || DEFAULTS.ttsModel, limits: lim, used })
+    const provider = aiProvider(env), claude = provider === 'claude'
+    return c.json({ chat: !!provider, provider, stt: !!env.GROQ_API_KEY, tts: !!(env.FISH_AUDIO_API_KEY && env.FISH_AUDIO_VOICE_ID), model: claude ? tierConfig(env, 'enfoque').model : env.EVIE_MODEL_FAST || DEFAULTS.model, researchModel: claude ? tierConfig(env, 'enfoque').model : env.EVIE_MODEL_RESEARCH || env.EVIE_MODEL_FAST || DEFAULTS.model, research: !!provider && env.EVIE_WEB_SEARCH !== 'off', refusal_fallbacks: claude, ttsModel: env.FISH_AUDIO_MODEL || DEFAULTS.ttsModel, limits: lim, used })
   })
 
   // ---------- AI tier (ai_reasoning_tier): per-account, authenticated ----------
@@ -243,7 +347,8 @@ export function createAssistant({ fetcher = fetch, authenticate, unseal = null }
     const t0 = Date.now()
     const s = await authenticate(c); if (!s) return err(c, 'Inicia sesión.', 401)
     const env = c.env || {}
-    if (!env.OPENAI_API_KEY) return err(c, 'EVIE IA no está configurada (falta OPENAI_API_KEY).', 503)
+    const provider = aiProvider(env)
+    if (!provider) return err(c, 'Ivi IA no está configurada (falta ANTHROPIC_API_KEY en Cloudflare).', 503)
     let body; try { body = await c.req.json() } catch { return err(c, 'JSON inválido.') }
     let input; try { input = sanitizeInput(body?.input) } catch (e) { return err(c, e.message) }
     const requestId = typeof body.request_id === 'string' && /^r-[0-9a-f-]{36}$/.test(body.request_id) ? body.request_id : rid()
@@ -286,6 +391,7 @@ export function createAssistant({ fetcher = fetch, authenticate, unseal = null }
     const tr = Date.now()
     if (!privateMode && unseal && env.AUTH_DB && env.EVIE_SESSION_KEY) { try { await ensureMemorySchema(env.AUTH_DB); const st = await settingsOf(env, s.user.id, unseal); memoryUsed = await retrieve(env, s.user.id, unseal, lastUser, { ...st, timezone }); memory = contextBlock(memoryUsed) } catch (e) { console.error('MEMORY_RETRIEVE', String(e?.message || e).slice(0, 80)) } }
     const retrievalMs = Date.now() - tr
+    if (provider === 'claude') return claudeChat(c, { s, env, input, ctx, requestId, cfg, web, timezone, currency, name, profile, guest, privateMode, memory, memoryUsed, lastUser, lim, stored, tierSource, tier, tierChanged, fallback, retrievalMs, t0, channel: 'voz' })
     const sys = instructions({ name, today: day(timezone), timezone, currency, profile: profileBlock(profile, lastUser), web, memory, privateMode, tier: cfg.id, guest })
     let convo = [...input], data = null, usedWeb = false, webUnsupported = false, costTotal = 0
     const openaiMs = []

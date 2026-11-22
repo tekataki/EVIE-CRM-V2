@@ -2,6 +2,8 @@
 // negocio, cierre, noche, normal) que solo cambian la interfaz. Un nivel decide modelo, esfuerzo de
 // razonamiento, tokens, tiempo límite y política de herramientas — siempre en el SERVIDOR.
 // Precios y esfuerzos verificados en la documentación oficial de OpenAI (2026-10; ver docs/PROVIDERS.md).
+// v10: con ANTHROPIC_API_KEY los tres niveles usan Claude (claude-opus-5-5) y cambian output_config.effort.
+import { aiProvider, claudeModel, TIER_EFFORT, TIER_MAX_TOKENS } from './claude.js'
 export const TIER_IDS = ['chispa', 'enfoque', 'profundo']
 export const DEFAULT_TIER = 'enfoque'
 export const TIER_LABELS = { chispa: 'Chispa', enfoque: 'Enfoque', profundo: 'Profundo' }
@@ -17,16 +19,23 @@ export const PRICES = Object.freeze({ 'gpt-6-luna': [0.10, 0.01, 0.50], 'gpt-6.1
 export const WEB_SEARCH_USD = 0.01 // $10 / 1k calls (content tokens billed separately as input)
 
 export function isTier(t) { return TIER_IDS.includes(t) }
-/** Server config for a tier. Env overrides: EVIE_TIER_<ID>_MODEL / _EFFORT / _TOKENS. Legacy EVIE_MODEL_FAST/SMART respected. */
+const CLAUDE_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+/** Server config for a tier. Env overrides: EVIE_TIER_<ID>_MODEL / _EFFORT / _TOKENS. Legacy EVIE_MODEL_FAST/SMART respected.
+ *  With Claude (default once ANTHROPIC_API_KEY exists) every tier uses claude-opus-5-5 and the tier sets output_config.effort:
+ *  chispa → low, enfoque → medium, profundo → high. */
 export function tierConfig(env = {}, tier = DEFAULT_TIER) {
   const id = isTier(tier) ? tier : DEFAULT_TIER, up = id.toUpperCase(), b = BASE[id]
+  if (aiProvider(env) === 'claude') {
+    const e = env['EVIE_TIER_' + up + '_EFFORT'], tokens = Number(env['EVIE_TIER_' + up + '_TOKENS'])
+    return { id, label: TIER_LABELS[id], ...b, provider: 'claude', model: claudeModel(env), effort: CLAUDE_EFFORTS.includes(e) ? e : TIER_EFFORT[id], max_output_tokens: Number.isInteger(tokens) && tokens >= 1024 && tokens <= 64000 ? tokens : TIER_MAX_TOKENS[id] }
+  }
   const legacy = id === 'profundo' ? env.EVIE_MODEL_SMART : env.EVIE_MODEL_FAST
   const model = env['EVIE_TIER_' + up + '_MODEL'] || legacy || b.model
   let effort = env['EVIE_TIER_' + up + '_EFFORT'] || b.effort
   const allowed = EFFORTS[model]
   if (allowed && !allowed.includes(effort)) effort = effort === 'none' && allowed.includes('low') ? 'low' : allowed[Math.min(1, allowed.length - 1)]
   const tokens = Number(env['EVIE_TIER_' + up + '_TOKENS'])
-  return { id, label: TIER_LABELS[id], ...b, model, effort, max_output_tokens: Number.isInteger(tokens) && tokens >= 128 && tokens <= 8000 ? tokens : b.max_output_tokens }
+  return { id, label: TIER_LABELS[id], ...b, provider: 'openai', model, effort, max_output_tokens: Number.isInteger(tokens) && tokens >= 128 && tokens <= 8000 ? tokens : b.max_output_tokens }
 }
 /** Fallback chain when a tier's model is unavailable (model_not_found, unsupported effort, 5xx): profundo→enfoque→chispa. */
 export function fallbackOf(tier) { return tier === 'profundo' ? 'enfoque' : tier === 'enfoque' ? 'chispa' : null }

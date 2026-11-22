@@ -19,7 +19,7 @@ window.EvieMemoryView=(()=>{
  async function reload(){if(!root?.isConnected||busy)return;const r=await EvieMemory.load(true);if(!root?.isConnected)return;if(!r?.memories||!r?.settings){root.innerHTML='<p class="mem-off">No se pudo cargar la memoria. Revisa tu conexión; nada se perdió.</p>';return;}data=r;
   const f=root.querySelector('#mem-settings');if(f&&f.contains(document.activeElement)&&window.FormSafety?.busy?.()){renderLists();return;}render();}
  function render(){if(!root?.isConnected||!data?.settings)return;const st=data.settings,pend=EvieMemory.pendingSensitive();
-  root.innerHTML=`<div id="mem-settings" class="mem-settings" role="group" aria-label="Ajustes de memoria" data-draft-ignore>
+  root.innerHTML=`<a class="button mem-v10-link" href="#chat/memoria">${Views.icon('brain-circuit')}Ver todo lo que Ivi sabe de ti (memoria de largo plazo)</a><div id="mem-settings" class="mem-settings" role="group" aria-label="Ajustes de memoria" data-draft-ignore>
     <div class="mem-switches">${SW.map(([k,l,h])=>`<label class="evp-switch"><input type="checkbox" form="mem-noform" data-mem-sw name="${k}" ${st[k]?'checked':''} ${k!=='enabled'&&!st.enabled?'disabled':''}><span><strong>${e(l)}</strong><small>${e(h)}</small></span></label>`).join('')}</div>
     <div class="evp-actions"><button class="button primary" type="button" data-mem-save>Guardar ajustes de memoria</button><button class="button" type="button" data-memory-private="${EvieMemory.isPrivate()?'off':'on'}">${EvieMemory.isPrivate()?'Salir del modo privado':'Empezar conversación privada'}</button></div>
     <p class="evp-hint">Dile a Ivi «recuerda que…» u «olvida…». Lo que digas en una conversación privada no se guarda ni aparece después.</p>

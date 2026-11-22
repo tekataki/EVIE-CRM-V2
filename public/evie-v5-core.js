@@ -9,7 +9,7 @@ window.EvieV5Core=(()=>{
  const WAKE=/^(?:(?:oye|hey|ey|ok)\s+)?(?:ivi|ivy|ivee|ibi|evie|evi|libi|liby|livi)\b[\s,]*/;
  const strip=t=>norm(t).replace(WAKE,'');
  const rawStrip=t=>String(t||'').replace(/^\s*(?:(?:oye|hey|ok)\s+)?(?:ivi|ivy|evie|evi|libi|liby)[\s,.:]+/i,'').trim();
- const SECTIONS={finanzas:'finanzas',agenda:'agenda',mapa:'mapa',negocios:'negocios',soma:'negocios',habitos:'habitos',objetivos:'objetivos',fisico:'fisico',gimnasio:'fisico',gym:'fisico',configuracion:'configuracion',automatizaciones:'automatizaciones',inicio:'inicio',bitacora:'bitacora',aprendizaje:'aprendizaje',libros:'libros',pendientes:'pendientes'};
+ const SECTIONS={chat:'chat',conversaciones:'chat',memoria:'chat',finanzas:'finanzas',agenda:'agenda',mapa:'mapa',negocios:'negocios',soma:'negocios',habitos:'habitos',objetivos:'objetivos',fisico:'fisico',gimnasio:'fisico',gym:'fisico',configuracion:'configuracion',automatizaciones:'automatizaciones',inicio:'inicio',bitacora:'bitacora',aprendizaje:'aprendizaje',libros:'libros',pendientes:'pendientes'};
  function surface(text){const q=strip(text);
   if(/^(?:cierra|quita|oculta)(?: (?:esta|la|esa))? tarjeta$/.test(q))return {kind:'close_card',card:null};
   let m=q.match(/^(?:abre|abrir|abreme|muestra|muestrame|pon|ponme)(?: (?:una|la|el))? (?:tarjeta|ventana) (?:de|del|de la) (\w+)$/);if(m&&SECTIONS[m[1]])return {kind:'card',card:m[1]==='gym'?'gimnasio':m[1]};

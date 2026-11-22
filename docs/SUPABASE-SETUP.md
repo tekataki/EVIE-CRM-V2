@@ -17,11 +17,21 @@ Navegador (PC / teléfono, PWA)  →  Cloudflare Pages "evie-crm-v2" (Worker /ap
 | Supabase | `EVIE CRM V2` · ref `mehhbdnxskfbortgglnd` · org dali-os · us-west-2 | ✅ activo |
 | URL | `https://mehhbdnxskfbortgglnd.supabase.co` | |
 | Clave pública | en Cloudflare (`SUPABASE_PUBLISHABLE_KEY`) y en `.dev.vars`; también en Supabase → Project Settings → API Keys | |
-| Migraciones Supabase | 0001 accounts · 0002 media · 0003 validation_guards · 0004 automations · 0005 hardening · **0006 guests_sync** (`202611220001`) | ✅ las 6 (0004–0006 aplicadas el 2026-11-21) |
+| Migraciones Supabase | 0001 accounts · 0002 media · 0003 validation_guards · 0004 automations · 0005 hardening · 0006 guests_sync (`202611220001`) · **0007 ai_chat** (`202611230001`) | ✅ las 7 (0007 aplicada el 2026-11-22) |
+| IA | Claude (`ANTHROPIC_API_KEY`, secreto en Cloudflare); OpenAI solo si `EVIE_AI_PROVIDER=openai` | ⏳ falta que agregues la llave |
 | Tarea programada (pg_cron) | `evie-guest-purge` cada 15 min | ✅ |
 | Cloudflare D1 `evie-auth` | tablas 0001–0008 (incluye v5: tareas, escenas, planes, invitados) | ✅ |
 | Sitio en vivo | archivos iguales a `main` (commit 4cec587) | ✅ |
 | Worker → Supabase | inicio de sesión falso responde "Usuario o contraseña no válidos" | ✅ conecta |
+
+### v10 (2026-11-22): Chat con Ivi y memoria de largo plazo
+- Migración `migrations/supabase/202611230001_ai_chat.sql` (aditiva; rollback **destructivo** en `rollback/202611230001_ai_chat_down.sql`, solo con tu permiso):
+  - `ai_conversations` (título cifrado, fijada, archivada, privada, nivel), `ai_messages` (contenido cifrado, `seq` consecutivo), `ai_memories` (tipo, contenido cifrado, importancia, confianza, conversación de origen, `superseded_by`, `deleted_at`), `ai_memory_events` (auditoría cifrada) y `ai_state` (perfil de memoria cifrado).
+  - RLS en las 5 tablas: cada quien solo ve y escribe sus filas (`owner_id = (select auth.uid())`) + bloqueo de invitados caducados (`evie_guest_blocked()`), igual que el resto.
+  - Funciones (`security invoker`, solo `authenticated`): `ai_append_messages` (agrega mensajes con `seq` consecutivo bajo bloqueo de la conversación), `ai_truncate_messages` (regenerar / editar el último) y `evie_chat_stamp()` (huella barata para sincronizar chats y memoria entre dispositivos; `/api/data/stamp` la devuelve como `chat`).
+  - Disparador `ai_messages_same_owner`: un mensaje solo puede apuntar a una conversación del mismo dueño.
+- Verificado: prueba de RLS en producción dentro de una transacción revertida (el dueño escribe; otro usuario ve 0 filas) y `get_advisors` sin hallazgos nuevos. Las mismas reglas corren en `tests/ai-chat-sql.test.cjs` y `tests/chat.test.cjs` sobre PostgreSQL (PGlite).
+- La memoria anterior de Ivi (D1 `evie_memories`, 0 filas hoy) se copia una sola vez por cuenta a Supabase la primera vez que se usa; D1 se queda como respaldo hasta retirarla.
 
 ### Qué se arregló el 2026-11-21
 1. **Automatizaciones**: la migración 0004 nunca se había aplicado. Crear un atajo hacía fallar el guardado y,
