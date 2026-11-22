@@ -47,8 +47,12 @@ Navegador (PC / teléfono, PWA)  →  Cloudflare Pages "evie-crm-v2" (Worker /ap
   crear su cuenta. Información de la marca: página principal `https://evie-crm-v2.pages.dev`, aviso de privacidad
   `https://evie-crm-v2.pages.dev/privacidad` (`public/privacidad.html`), dominios autorizados
   `mehhbdnxskfbortgglnd.supabase.co` y `evie-crm-v2.pages.dev`. Centro de verificación: **no se requiere** (solo
-  `openid email profile`). Opcional: verificar la marca (dominio en Google Search Console) para que la pantalla de
-  Google muestre «EVIE» en vez de la dirección de Supabase. Si agregas un logotipo, Google pedirá verificación.
+  `openid email profile`). Si agregas un logotipo, Google pedirá verificación.
+- **Verificación de marca (para que Google muestre «EVIE»):** el 2026-11-22 el primer intento automático dijo que
+  la página principal no estaba registrada a tu nombre. Ese mismo día se verificó `https://evie-crm-v2.pages.dev/` en
+  **Google Search Console** con la etiqueta `google-site-verification` de `public/index.html` (**no la borres**).
+  Google pide esperar 24 h: desde el **2026-11-23**, en Google Cloud → Google Auth Platform → Información de la
+  marca → «Verificar la marca» (o «Ver problemas» → «Corregí los problemas» → Continuar).
 - Revisa el texto de `public/privacidad.html` (responsable, contacto, menores) y ajústalo si hace falta.
 - El secreto del cliente solo está en Supabase (y en el JSON que hayas descargado). Nunca va en el repositorio.
 
