@@ -2,6 +2,9 @@
 // Dos caducidades DISTINTAS:
 //   1. Código de invitación sin usar: caduca 72 h después de crearlo (auth_invites.expires_at).
 //   2. Cuenta de invitado: dura 72 h desde que se CANJEA el código (guest_accounts.expires_at).
+// Supabase (migración 202611220001_guests_sync): tabla evie_guests + RLS restrictiva + pg_cron. Sin
+// SUPABASE_SERVICE_ROLE_KEY, el invitado se crea con el alta normal y se registra con su propia sesión;
+// Supabase fija la caducidad (72 h), bloquea al vencer y borra al usuario (cascada) cada 15 min.
 // El invitado da un nombre visible + el código (sin contraseña). El servidor crea un usuario Supabase sintético
 // con contraseña aleatoria que nunca sale del Worker. La caducidad se aplica en CADA solicitud, antes de cualquier
 // refresh; al caducar se revocan sus sesiones y se ejecuta una limpieza auditable y reintentable.
@@ -39,8 +42,12 @@ export async function cleanupGuest(env, owner, { fetcher = fetch } = {}) {
   //    user. crm_records, user_preferences, profiles, sync_devices and contacts are ON DELETE CASCADE from auth.users.
   const key = env.SUPABASE_SERVICE_ROLE_KEY, base = String(env.SUPABASE_URL || '').replace(/\/$/, '')
   let remoteOk = false
-  if (!key || !base) step('supabase', false, 'no_service_role_key')
-  else {
+  if (!base) step('supabase', false, 'no_url')
+  else if (!key) {
+    // Supabase side is handled by the database itself: RLS blocks the expired guest immediately and the
+    // pg_cron job 'evie-guest-purge' deletes the auth user (ON DELETE CASCADE) within 15 minutes.
+    remoteOk = true; step('supabase.pg_cron_purge', true, 'scheduled')
+  } else {
     const H = { apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }
     const list = async (prefix) => { const l = await fetcher(base + '/storage/v1/object/list/user-media', { method: 'POST', headers: H, body: JSON.stringify({ prefix, limit: 1000, offset: 0 }), signal: AbortSignal.timeout(15000) }); if (l.status === 404 || l.status === 400) return []; if (!l.ok) throw Error('list'); return (await l.json()).filter((x) => x && typeof x.name === 'string') }
     const del = async (paths) => { if (!paths.length) return; const d = await fetcher(base + '/storage/v1/object/user-media', { method: 'DELETE', headers: H, body: JSON.stringify({ prefixes: paths }), signal: AbortSignal.timeout(15000) }); if (!d.ok) throw Error('delete') }
@@ -80,8 +87,23 @@ export async function sweepGuests(env, { fetcher = fetch, max = 3 } = {}) {
   return out
 }
 
-export function createGuests({ fetcher = fetch, remote, issueSession, digest, limited, owner }) {
+export function createGuests({ fetcher = fetch, remote, issueSession, digest, limited, owner, unseal }) {
   const api = new Hono()
+  // Early end: mark the guest as ended in Supabase using the guest's OWN session (no admin key needed).
+  async function endRemote(c, id) {
+    try {
+      const row = await c.env.AUTH_DB.prepare('SELECT tokens FROM auth_sessions WHERE owner_id=? ORDER BY expires_at DESC LIMIT 1').bind(id).first()
+      if (!row || !unseal) return false
+      const tok = await unseal(row.tokens, c.env.EVIE_SESSION_KEY)
+      let r = await remote(c, '/rest/v1/rpc/evie_guest_end', { method: 'POST', access: tok.access_token, body: {} })
+      if (r.status === 401 && tok.refresh_token) {
+        const rr = await remote(c, '/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: tok.refresh_token } })
+        if (!rr.ok) return false
+        r = await remote(c, '/rest/v1/rpc/evie_guest_end', { method: 'POST', access: (await rr.json()).access_token, body: {} })
+      }
+      return r.ok
+    } catch { return false }
+  }
   const jsonError = (c, m, s = 400, extra = {}) => c.json({ error: m, ...extra }, s)
   // Redeem: display name + code, no password. Single use (atomic UPDATE … RETURNING), rate limited per IP and per code.
   api.post('/redeem', async (c) => {
@@ -93,7 +115,6 @@ export function createGuests({ fetcher = fetch, remote, issueSession, digest, li
     if (!/^[A-Z0-9]{4}(-[A-Z0-9]{4}){2}$/.test(code)) return jsonError(c, 'Revisa el código de invitación (formato XXXX-XXXX-XXXX).')
     const ip = c.req.header('CF-Connecting-IP') || 'local', id = await digest('invite:' + code)
     if (await limited(c, 'guest-ip:' + ip, 10) || await limited(c, 'guest-code:' + id, 5)) return jsonError(c, 'Demasiados intentos. Espera 15 minutos.', 429)
-    if (!env.SUPABASE_SERVICE_ROLE_KEY) return jsonError(c, 'Las invitaciones temporales requieren SUPABASE_SERVICE_ROLE_KEY en el servidor.', 503)
     await ensureV5(env.AUTH_DB)
     const now = Date.now()
     const invite = await env.AUTH_DB.prepare("UPDATE auth_invites SET used_at=? WHERE id=? AND kind='guest' AND used_at IS NULL AND expires_at>? RETURNING id,created_by").bind(now, id, now).first()
@@ -103,13 +124,26 @@ export function createGuests({ fetcher = fetch, remote, issueSession, digest, li
     const handle = 'guest-' + [...crypto.getRandomValues(new Uint8Array(6))].map((x) => x.toString(16).padStart(2, '0')).join('')
     const password = [...crypto.getRandomValues(new Uint8Array(32))].map((x) => x.toString(16).padStart(2, '0')).join('')
     const email = handle + '@' + domain, base = env.SUPABASE_URL.replace(/\/$/, '')
-    let created
-    try { created = await fetcher(base + '/auth/v1/admin/users', { method: 'POST', redirect: 'manual', headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, email_confirm: true, user_metadata: { username: handle, guest: true } }), signal: AbortSignal.timeout(20000) }) } catch { await release(); return jsonError(c, 'El proveedor de cuentas no respondió.', 504) }
-    if (!created.ok) { await release(); console.error('GUEST_CREATE_REJECTED', created.status); return jsonError(c, 'No se pudo crear el acceso de invitado. Intenta de nuevo.', 502) }
-    const r = await remote(c, '/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password } })
-    if (!r.ok) { await release(); return jsonError(c, 'No se pudo iniciar la sesión de invitado.', 502) }
-    const result = await r.json()
-    const expires = now + GUEST_MS
+    let result
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+      // Public sign-up (Supabase "Confirm email" off): returns the session directly. No admin key needed.
+      const r = await remote(c, '/auth/v1/signup', { method: 'POST', body: { email, password, data: { username: handle, guest: true } } })
+      if (!r.ok) { await release(); console.error('GUEST_SIGNUP_REJECTED', r.status); return jsonError(c, 'No se pudo crear el acceso de invitado. Intenta de nuevo.', 502) }
+      result = await r.json()
+      if (!result?.access_token || !result?.user?.id) { await release(); return jsonError(c, 'Supabase pidió confirmar el correo: desactiva "Confirm email" en Authentication → Providers → Email.', 409) }
+    } else {
+      let created
+      try { created = await fetcher(base + '/auth/v1/admin/users', { method: 'POST', redirect: 'manual', headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, email_confirm: true, user_metadata: { username: handle, guest: true } }), signal: AbortSignal.timeout(20000) }) } catch { await release(); return jsonError(c, 'El proveedor de cuentas no respondió.', 504) }
+      if (!created.ok) { await release(); console.error('GUEST_CREATE_REJECTED', created.status); return jsonError(c, 'No se pudo crear el acceso de invitado. Intenta de nuevo.', 502) }
+      const r = await remote(c, '/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password } })
+      if (!r.ok) { await release(); return jsonError(c, 'No se pudo iniciar la sesión de invitado.', 502) }
+      result = await r.json()
+    }
+    // Supabase records the guest and sets the 72 h expiry itself (evie_guest_register, called as the guest).
+    const reg = await remote(c, '/rest/v1/rpc/evie_guest_register', { method: 'POST', access: result.access_token, body: { display_name: name } })
+    if (!reg.ok) { await release(); console.error('GUEST_REGISTER_REJECTED', reg.status); return jsonError(c, 'Supabase no registró al invitado. Aplica la migración 202611220001_guests_sync.', 502) }
+    let remoteExpiry = NaN; try { remoteExpiry = Date.parse(await reg.json()) } catch {}
+    const expires = Number.isFinite(remoteExpiry) ? Math.min(now + GUEST_MS, remoteExpiry) : now + GUEST_MS
     await env.AUTH_DB.prepare("INSERT INTO guest_accounts(owner_id,display_name,invite_id,created_by,redeemed_at,expires_at,status) VALUES(?,?,?,?,?,?,'active')").bind(result.user.id, name, invite.id, invite.created_by, now, expires).run()
     if (!await issueSession(c, result, handle, { expiresAt: expires })) { await env.AUTH_DB.prepare("UPDATE guest_accounts SET status='expired', expires_at=? WHERE owner_id=?").bind(now, result.user.id).run(); return jsonError(c, 'No se pudo iniciar la sesión de invitado.', 502) }
     await env.AUTH_DB.prepare('UPDATE auth_invites SET used_by=? WHERE id=?').bind(result.user.id, invite.id).run()
@@ -127,6 +161,8 @@ export function createGuests({ fetcher = fetch, remote, issueSession, digest, li
     const id = c.req.param('id'); if (!/^[0-9a-f-]{36}$/i.test(id)) return jsonError(c, 'Invitado inválido.')
     const r = await c.env.AUTH_DB.prepare("UPDATE guest_accounts SET status=CASE WHEN status='active' THEN 'expired' ELSE status END, expires_at=MIN(expires_at,?) WHERE owner_id=?").bind(Date.now(), id).run()
     if (!r.meta?.changes) return jsonError(c, 'Ese invitado no existe.', 404)
+    const ended = await endRemote(c, id)
+    if (!ended) console.error('GUEST_REMOTE_END', 'pending') // Supabase still blocks it at its own 72 h expiry
     await c.env.AUTH_DB.prepare('DELETE FROM auth_sessions WHERE owner_id=?').bind(id).run()
     return c.json(await cleanupGuest(c.env, id, { fetcher }))
   })

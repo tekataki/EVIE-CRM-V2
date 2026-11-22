@@ -11,25 +11,41 @@ import { Hono } from 'hono'
 const b64u = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const rand = (n = 32) => b64u(crypto.getRandomValues(new Uint8Array(n)))
 export async function s256(v) { return b64u(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)))) }
+// Whether Google sign-in is available. EVIE_GOOGLE_AUTH='true' forces it on, 'false'/'off' forces it off;
+// otherwise it follows the Supabase project itself (GET /auth/v1/settings → external.google), cached 5 min,
+// so turning the provider on in Supabase is enough — no Cloudflare redeploy needed.
+const googleCache = new Map()
+export async function googleEnabled(env, fetcher = fetch) {
+  const flag = String(env?.EVIE_GOOGLE_AUTH || '').toLowerCase()
+  if (flag === 'true') return true
+  if (flag === 'false' || flag === 'off' || !env?.SUPABASE_URL || !env?.SUPABASE_PUBLISHABLE_KEY) return false
+  const key = env.SUPABASE_URL, hit = googleCache.get(key)
+  if (hit && hit.until > Date.now()) return hit.on
+  let on = false
+  try { const r = await fetcher(env.SUPABASE_URL.replace(/\/$/, '') + '/auth/v1/settings', { headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY }, signal: AbortSignal.timeout(5000) }); if (r.ok) on = (await r.json())?.external?.google === true } catch {}
+  googleCache.set(key, { on, until: Date.now() + (on ? 300000 : 60000) })
+  return on
+}
 export function usernameFrom(email, taken) {
   const base = (String(email || '').split('@')[0] || 'usuario').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 18) || 'usuario'
   let name = base.length >= 3 ? base : (base + 'evie').slice(0, 18), i = 1
+  if (/^guest-/.test(name)) name = 'g' + name.slice(0, 17) // 'guest-…' is reserved for temporary guests
   while (taken.has(name)) name = base.slice(0, 18) + '-' + (++i)
   return name
 }
 
-export function createGoogleAuth({ remote, issueSession, verified, seal, unseal, digest, limited }) {
+export function createGoogleAuth({ remote, issueSession, verified, seal, unseal, digest, limited, fetcher = fetch }) {
   const api = new Hono()
-  const enabled = (env) => env.EVIE_GOOGLE_AUTH === 'true'
+  const enabled = (env) => googleEnabled(env, fetcher)
   const origin = (c) => (c.env.EVIE_PUBLIC_ORIGIN || new URL(c.req.url).origin).replace(/\/$/, '')
   const callback = (c) => origin(c) + '/api/auth/google/callback'
   const db = (c) => c.env.AUTH_DB
   const back = (c, status) => c.redirect(origin(c) + '/?google=' + status + '#inicio', 302)
 
   api.post('/start', async (c) => {
-    if (!enabled(c.env)) return c.json({ error: 'El acceso con Google no está activado en este servidor (EVIE_GOOGLE_AUTH).' }, 503)
+    if (!await enabled(c.env)) return c.json({ error: 'El acceso con Google aún no está activado (Supabase → Authentication → Providers → Google).' }, 503)
     let b; try { b = await c.req.json() } catch { b = {} }
-    const mode = ['signin', 'link'].includes(b?.mode) ? b.mode : null
+    const mode = ['signin', 'link', 'recover'].includes(b?.mode) ? b.mode : null
     if (!mode) return c.json({ error: 'Modo inválido.' }, 400)
     const ip = c.req.header('CF-Connecting-IP') || 'local'
     if (await limited(c, 'google:' + ip, 20)) return c.json({ error: 'Demasiados intentos. Espera 15 minutos.' }, 429)
@@ -53,7 +69,7 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
   })
 
   api.get('/callback', async (c) => {
-    if (!enabled(c.env)) return back(c, 'disabled')
+    if (!await enabled(c.env)) return back(c, 'disabled')
     const state = c.req.query('s') || '', code = c.req.query('code') || ''
     if (!/^[A-Za-z0-9_-]{20,64}$/.test(state)) return back(c, 'invalid')
     if (!code && c.req.query('error')) { if (state) await db(c).prepare('DELETE FROM google_auth_states WHERE state=?').bind(await digest('gstate:' + state)).run(); return back(c, 'denied') }
@@ -72,6 +88,9 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
       // The identity must have been attached to the SAME signed-in account. Anything else is refused.
       if (id !== st.owner || !acct) return back(c, 'link_mismatch')
       await db(c).prepare('INSERT INTO google_links(owner_id,email,linked_at) VALUES(?,?,?) ON CONFLICT(owner_id) DO UPDATE SET email=excluded.email,linked_at=excluded.linked_at').bind(id, email, Date.now()).run()
+    } else if (!acct && st.mode === 'recover') {
+      // Recovery never creates accounts: the Google identity must already belong to an EVIE account.
+      return back(c, 'not_linked')
     } else if (!acct) {
       const n = (await db(c).prepare('SELECT COUNT(*) AS n FROM auth_accounts').bind().first())?.n || 0
       let role = null
@@ -103,7 +122,7 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
       const meta = result.user?.user_metadata || {}, gname = String(google?.identity_data?.full_name || meta.full_name || meta.name || '').trim().slice(0, 60)
       return c.redirect(origin(c) + '/?google=new#inicio' + (gname ? '&gn=' + encodeURIComponent(gname) : ''), 302)
     }
-    return back(c, st.mode === 'link' ? 'linked' : 'ok')
+    return back(c, st.mode === 'link' ? 'linked' : st.mode === 'recover' ? 'recover' : 'ok')
   })
 
   // Desktop only: exchange the deep-link code + the secret nonce for a session cookie in the app's partition.
@@ -124,7 +143,7 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
     const me = await db(c).prepare('SELECT email,linked_at FROM google_links WHERE owner_id=?').bind(s.user.id).first()
     const total = (await db(c).prepare('SELECT COUNT(*) AS n FROM auth_accounts').bind().first())?.n || 0
     const linked = (await db(c).prepare('SELECT COUNT(*) AS n FROM google_links l JOIN auth_accounts a ON a.owner_id=l.owner_id').bind().first())?.n || 0
-    return c.json({ enabled: enabled(c.env), linked: !!me, email: me?.email || null, linked_at: me?.linked_at || null, all_linked: total > 0 && linked === total, ...(s.user.role === 'owner' ? { accounts: total, accounts_linked: linked } : {}) })
+    return c.json({ enabled: await enabled(c.env), linked: !!me, email: me?.email || null, linked_at: me?.linked_at || null, all_linked: total > 0 && linked === total, ...(s.user.role === 'owner' ? { accounts: total, accounts_linked: linked } : {}) })
   })
   return api
 }

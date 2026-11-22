@@ -103,6 +103,12 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v6 (2026-11-21)
+- **Invitados de 72 h funcionando** sin clave secreta: estructura propia en Supabase (`evie_guests`, RLS restrictiva, limpieza con `pg_cron`).
+- **Continuar con Google** se activa solo cuando el proveedor está encendido en Supabase; **«¿Olvidaste tu contraseña?» → Recuperar con Google**.
+- **Sincronización entre dispositivos** cada 15 s y al volver a la app; **fotos** en la nube privada de cada cuenta.
+- Detalle y pasos pendientes: `docs/SUPABASE-SETUP.md`. Pruebas: `tests/v6-backend.test.cjs`, `tools/e2e-v6.mjs`.
+
 ## Arquitectura
 `public/` (frontend) + `src/` (API Hono) → `npm run build` → `dist/` con `_worker.js` → **Cloudflare Pages**. Datos: **Supabase** (`crm_records`, `user_preferences` con RLS). D1 `AUTH_DB` (`evie-auth`): sesiones, roles, invitaciones, uso de IA, tokens de conexiones.
 

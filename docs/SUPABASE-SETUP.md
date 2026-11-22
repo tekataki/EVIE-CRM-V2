@@ -17,7 +17,8 @@ Navegador (PC / teléfono, PWA)  →  Cloudflare Pages "evie-crm-v2" (Worker /ap
 | Supabase | `EVIE CRM V2` · ref `mehhbdnxskfbortgglnd` · org dali-os · us-west-2 | ✅ activo |
 | URL | `https://mehhbdnxskfbortgglnd.supabase.co` | |
 | Clave pública | en Cloudflare (`SUPABASE_PUBLISHABLE_KEY`) y en `.dev.vars`; también en Supabase → Project Settings → API Keys | |
-| Migraciones Supabase | 0001 accounts · 0002 media · 0003 validation_guards · 0004 automations · 0005 hardening | ✅ las 5 (0004 y 0005 aplicadas el 2026-11-21) |
+| Migraciones Supabase | 0001 accounts · 0002 media · 0003 validation_guards · 0004 automations · 0005 hardening · **0006 guests_sync** (`202611220001`) | ✅ las 6 (0004–0006 aplicadas el 2026-11-21) |
+| Tarea programada (pg_cron) | `evie-guest-purge` cada 15 min | ✅ |
 | Cloudflare D1 `evie-auth` | tablas 0001–0008 (incluye v5: tareas, escenas, planes, invitados) | ✅ |
 | Sitio en vivo | archivos iguales a `main` (commit 4cec587) | ✅ |
 | Worker → Supabase | inicio de sesión falso responde "Usuario o contraseña no válidos" | ✅ conecta |
@@ -32,6 +33,34 @@ Navegador (PC / teléfono, PWA)  →  Cloudflare Pages "evie-crm-v2" (Worker /ap
    nuevo no ve nada de nadie; no puede escribir sin `evie_apply`, ni editar filas ajenas, ni subir a la carpeta de
    otro; los atajos `javascript:` se rechazan. Los 104 registros existentes quedaron iguales.
 
+### v6 (2026-11-21): invitados, Google, recuperación y sincronización
+| Función | Cómo funciona | Estado |
+|---|---|---|
+| **Invitados de 72 h** | Ya **no necesitan la clave secreta**. El Worker crea al invitado con el alta normal y, con la sesión del propio invitado, llama a `evie_guest_register()`. Supabase guarda la fila en `evie_guests` y fija la caducidad (72 h, no se puede alargar). Al vencer o al terminarlo el propietario, una RLS restrictiva lo bloquea al instante en todas las tablas y `evie_apply`; `pg_cron` borra al usuario cada 15 min (en cascada: perfil, preferencias, registros, contactos). Los invitados no suben fotos a la nube: sus fotos se quedan en su dispositivo, así no quedan archivos huérfanos. Los usuarios `guest-…` están reservados. | ✅ listo |
+| **Continuar con Google** | El Worker consulta a Supabase si el proveedor Google está encendido (`/auth/v1/settings`, caché de 5 min). Al activarlo en Supabase, el botón se habilita solo, **sin tocar Cloudflare**. Google solo abre cuentas que ya lo vincularon, o crea una con código de invitación. | ⏳ falta que actives Google en Supabase (abajo) |
+| **¿Olvidaste tu contraseña?** | En la pantalla de acceso → «Recuperar con Google». Entra con la cuenta de Google vinculada y la app pide una contraseña nueva (no pide la anterior). Nunca crea cuentas. | ✅ código listo; depende de Google |
+| **Sincronización entre dispositivos** | Cada cambio se sube ~1 s después. Cada dispositivo pregunta cada 15 s una huella barata de la cuenta (`evie_sync_stamp()`) y descarga solo si otro dispositivo cambió algo. Al volver a la app (celular) baja los cambios al instante. Ajustes de la app (tema, preferencias de EVIE, incluido el sonido de "pensando") van en la cuenta. | ✅ |
+| **Fotos entre dispositivos** | Antes cada foto vivía solo en el navegador donde se subió. Ahora se suben a `user-media/<tu-id>/` (privado, con tu sesión) y otro dispositivo las descarga la primera vez que las muestra. Las fotos anteriores se suben solas la próxima vez que abras la app en el dispositivo que las tiene. | ✅ (en la app de Windows siguen locales) |
+
+Lo que sigue siendo **por dispositivo** a propósito: temporizadores (para que la alarma no suene en todos), la última sección abierta, borradores sin guardar y las tarjetas abiertas del HUD.
+
+### Activar Google (lo haces tú: requiere tu cuenta de Google y pegar un secreto)
+1. https://console.cloud.google.com → crea o elige un proyecto → **APIs & Services → OAuth consent screen**:
+   tipo *External*, nombre "EVIE", tu correo de soporte; ámbitos solo `openid`, `email`, `profile`.
+   Agrega tu correo (y el de quien uses) en *Test users* o publica la app.
+2. **Credentials → Create credentials → OAuth client ID → Web application**.
+   *Authorized redirect URIs*: `https://mehhbdnxskfbortgglnd.supabase.co/auth/v1/callback`
+3. Copia el **Client ID** y el **Client secret**.
+4. Supabase → https://supabase.com/dashboard/project/mehhbdnxskfbortgglnd/auth/providers → **Google** → Enable →
+   pega Client ID y Client secret → Save.
+5. Supabase → Authentication → **Sign In / Providers** → activa **Allow manual linking** (para «Vincular Google»).
+6. Supabase → Authentication → **URL Configuration**:
+   - Site URL: `https://evie-crm-v2.pages.dev`
+   - Redirect URLs → Add: `https://evie-crm-v2.pages.dev/api/auth/google/callback**`
+7. Espera 1 minuto y recarga EVIE: «Continuar con Google» ya no aparece gris.
+8. Entra con tu usuario y contraseña → Configuración → **Acceso con Google → Vincular**. Desde ahí ya puedes entrar
+   con Google y recuperar tu cuenta si olvidas la contraseña. Cada persona vincula la suya.
+
 ### Avisos que quedan (no urgentes)
 - Linter: `evie_apply` es `SECURITY DEFINER` y la ejecuta un usuario con sesión. **Es intencional**: es la única
   puerta de escritura, usa siempre `auth.uid()`, `search_path` vacío y sin SQL dinámico.
@@ -42,8 +71,7 @@ Navegador (PC / teléfono, PWA)  →  Cloudflare Pages "evie-crm-v2" (Worker /ap
   - El registro usa el alta pública de Supabase. Por eso "Allow new users to sign up" tiene que seguir encendido y
     "Confirm email" apagado. Alguien con la clave pública podría crear un usuario directo en Supabase, aunque solo
     vería sus propios datos vacíos. La clave no está en el frontend.
-  - **Invitados de 72 h (v5) no funcionan**: canjear un código de invitado responde 503
-    "Las invitaciones temporales requieren SUPABASE_SERVICE_ROLE_KEY". Las invitaciones normales sí funcionan.
+  - Los invitados de 72 h **ya funcionan sin ella** (v6, ver arriba).
   - Si la agregas (Supabase → Project Settings → API Keys → secret, como *Secret* en Cloudflare y redespliegas),
     puedes apagar "Allow new users to sign up" y el registro seguirá funcionando por invitación.
 

@@ -17,7 +17,7 @@ window.EvieV5=(()=>{
  /* ---------- lifecycle events (no private content) + bounded thinking cue ---------- */
  let cueTimer=null,cueStart=0,cueStage=null;
  function cueStop(){clearTimeout(cueTimer);cueTimer=null;cueStage=null;}
- function cueTick(){const p=C().cuePlan({stage:cueStage,elapsedMs:Date.now()-cueStart,muted:!!window.EvieAssistant?.pref?.().muted||localStorage.getItem('evie-thinking-cue')==='off',reduced:matchMedia?.('(prefers-reduced-motion: reduce)').matches});if(!p.play){cueStop();return;}window.EvieSounds?.play('process');cueTimer=setTimeout(cueTick,p.next);}
+ function cueTick(){const p=C().cuePlan({stage:cueStage,elapsedMs:Date.now()-cueStart,muted:!!window.EvieAssistant?.pref?.().muted||!(()=>{const v=window.Store?.get?.()?.preferences?.evie?.thinkingCue;if(typeof v==='boolean')return v;try{return localStorage.getItem('evie-thinking-cue')!=='off';}catch{return true;}})(),reduced:matchMedia?.('(prefers-reduced-motion: reduce)').matches});if(!p.play){cueStop();return;}window.EvieSounds?.play('process');cueTimer=setTimeout(cueTick,p.next);}
  function onEvent(ev){document.documentElement.dataset.evieStage=ev.stage;document.dispatchEvent(new CustomEvent('evie:lifecycle',{detail:ev}));
   if(['thinking','searching','tool_running'].includes(ev.stage)){if(!cueTimer){cueStart=Date.now();cueStage=ev.stage;cueTimer=setTimeout(cueTick,900);}else cueStage=ev.stage;}else cueStop();}
  const lifecycle=()=>C().lifecycle(onEvent);

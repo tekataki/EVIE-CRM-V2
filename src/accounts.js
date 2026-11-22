@@ -5,7 +5,7 @@ import { createConnections } from './connections.js'
 import { createAssistant } from './assistant.js'
 import { createKisha } from './kisha.js'
 import { createResearch } from './research.js'
-import { createGoogleAuth } from './google-auth.js'
+import { createGoogleAuth, googleEnabled } from './google-auth.js'
 import { createMemory } from './memory.js'
 import { createMemoryV2 } from './memory-v2.js'
 import { createMap, mapStatus } from './map.js'
@@ -53,9 +53,9 @@ const schemaReady=new WeakMap()
 export function ensureSchema(db){if(!db)return Promise.resolve();let p=schemaReady.get(db);if(!p){p=(async()=>{for(const sql of SCHEMA)await db.prepare(sql).bind().run()})().catch(e=>{schemaReady.delete(db);throw e});schemaReady.set(db,p)}return p}
 export function createAccounts({fetcher=fetch}={}) {
  const api=new Hono()
- api.use('*',async(c,next)=>{const max=c.req.path.endsWith('/data/push')?16*1024*1024:c.req.path.endsWith('/ai/stt')?4*1024*1024:256*1024;return bodyLimit({maxSize:max,onError:c=>jsonError(c,'La solicitud supera el límite.',413)})(c,next)})
+ api.use('*',async(c,next)=>{const max=c.req.path.endsWith('/data/push')?16*1024*1024:c.req.path.includes('/data/media/')?11*1024*1024:c.req.path.endsWith('/ai/stt')?4*1024*1024:256*1024;return bodyLimit({maxSize:max,onError:c=>jsonError(c,'La solicitud supera el límite.',413)})(c,next)})
  api.use('*',async(c,next)=>{c.header('Cache-Control','no-store, private');c.header('X-Content-Type-Options','nosniff');await next()})
- api.get('/runtime',c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:c.env?.EVIE_GOOGLE_AUTH==='true',passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,map:{configured:mapStatus(c.env).configured,traffic:mapStatus(c.env).traffic},providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
+ api.get('/runtime',async c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:await googleEnabled(c.env||{},fetcher),guestInvites:true,mediaSync:true,passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,map:{configured:mapStatus(c.env).configured,traffic:mapStatus(c.env).traffic},providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
  api.use('*',async(c,next)=>{
   const env=c.env||{}
   if(env.EVIE_ACCOUNTS_ENABLED!=='true')return jsonError(c,'Las conexiones externas están desactivadas.',503)
@@ -64,7 +64,7 @@ export function createAccounts({fetcher=fetch}={}) {
   if(c.req.method!=='GET'){
    const origin=c.req.header('Origin');const expected=new URL(c.req.url).origin
    if(c.req.header('X-Evie-Request')!=='1'||origin!==expected)return jsonError(c,'Solicitud no autorizada.',403)
-   if(!c.req.path.endsWith('/ai/stt')&&c.req.method!=='DELETE'&&!c.req.header('Content-Type')?.startsWith('application/json'))return jsonError(c,'Usa JSON.',415)
+   if(!c.req.path.endsWith('/ai/stt')&&!c.req.path.includes('/data/media/')&&c.req.method!=='DELETE'&&!c.req.header('Content-Type')?.startsWith('application/json'))return jsonError(c,'Usa JSON.',415)
   }
   await ensureSchema(env.AUTH_DB)
   await ensureV5(env.AUTH_DB)
@@ -140,6 +140,7 @@ export function createAccounts({fetcher=fetch}={}) {
   const domain=c.env.EVIE_AUTH_DOMAIN||'accounts.evie.local';if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain))return jsonError(c,'Dominio de cuentas no válido.',503)
   const email=data.username+'@'+domain
   let invite=null,role='member'
+  if(signup&&/^guest-/.test(data.username))return jsonError(c,'Los usuarios que empiezan con «guest-» están reservados para invitados temporales.')
   if(signup){
    // Closed registration: only an owner-issued invite, or the very first account with EVIE_BOOTSTRAP_TOKEN.
    const n=(await accounts(c))?.n||0
@@ -195,6 +196,24 @@ export function createAccounts({fetcher=fetch}={}) {
  api.use('/data/*',async(c,next)=>{const s=await auth(c);if(!s||c.req.header('X-Evie-User')!==s.user.id)return jsonError(c,'La sesión cambió. Inicia sesión de nuevo.',401);c.set('account',s);await next()})
  api.post('/data/pull',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||typeof b.after!=='string'||b.after.length>200||Object.keys(b).some(k=>k!=='after'))return jsonError(c,'Cursor inválido.');const r=await remote(c,'/rest/v1/rpc/evie_pull',{method:'POST',access:s.tokens.access_token,body:{after_key:b.after}});if(!r.ok)return jsonError(c,'No se pudo leer la cuenta.',502);const rows=await r.json();return c.json({owner:s.user.id,rows,next:rows.length===500?rows.at(-1).collection+'/'+rows.at(-1).record_id:''})})
  api.post('/data/push',async c=>{const s=c.get('account'),b=await c.req.json();if(!b||!Array.isArray(b.changes)||!b.changes.length||b.changes.length>5000||Object.keys(b).some(k=>k!=='changes'))return jsonError(c,'Lote de 1 a 5000 cambios requerido.');const r=await remote(c,'/rest/v1/rpc/evie_apply',{method:'POST',access:s.tokens.access_token,body:{changes:b.changes}});if(!r.ok)return jsonError(c,r.status===409?'Otro dispositivo cambió estos registros.':'No se pudieron guardar los cambios.',r.status===409?409:422);return c.json({owner:s.user.id,rows:await r.json()})})
+ // Cheap change detector for cross-device sync: the client polls this and pulls only when it changes.
+ api.post('/data/stamp',async c=>{const s=c.get('account');const r=await remote(c,'/rest/v1/rpc/evie_sync_stamp',{method:'POST',access:s.tokens.access_token,body:{}});if(!r.ok)return jsonError(c,'No se pudo comprobar la sincronización.',502);const stamp=await r.json();return c.json({owner:s.user.id,stamp:typeof stamp==='string'?stamp:''})})
+ // Images: private bucket user-media/<owner>/<id>[-t].<ext>, always with the user's own token (Storage RLS).
+ const MEDIA=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-t)?\.(webp|png|jpg|jpeg)$/
+ const MIME={webp:'image/webp',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg'}
+ const objectUrl=(c,s,name,read)=>c.env.SUPABASE_URL.replace(/\/$/,'')+'/storage/v1/object/'+(read?'authenticated/':'')+'user-media/'+s.user.id+'/'+name
+ const storageHeaders=(c,s,extra={})=>({apikey:c.env.SUPABASE_PUBLISHABLE_KEY,Authorization:'Bearer '+s.tokens.access_token,...extra})
+ api.put('/data/media/:name',async c=>{const s=c.get('account'),name=c.req.param('name');if(!MEDIA.test(name))return jsonError(c,'Imagen inválida.');if(s.user.role==='guest')return jsonError(c,'Las imágenes de invitados se quedan en su dispositivo.',403)
+  const type=MIME[name.split('.').pop()];if(c.req.header('Content-Type')!==type)return jsonError(c,'Tipo de imagen inválido.',415)
+  const body=await c.req.arrayBuffer();if(!body.byteLength||body.byteLength>10485760)return jsonError(c,'La imagen supera 10 MB.',413)
+  const r=await fetcher(objectUrl(c,s,name),{method:'POST',redirect:'manual',headers:storageHeaders(c,s,{'Content-Type':type,'x-upsert':'true','cache-control':'31536000'}),body,signal:AbortSignal.timeout(30000)})
+  if(!r.ok){console.error('MEDIA_UPLOAD_REJECTED',r.status);return jsonError(c,'No se pudo subir la imagen.',502)}return c.json({ok:true,name})})
+ api.get('/data/media/:name',async c=>{const s=c.get('account'),name=c.req.param('name');if(!MEDIA.test(name))return jsonError(c,'Imagen inválida.')
+  const r=await fetcher(objectUrl(c,s,name,true),{headers:storageHeaders(c,s),redirect:'manual',signal:AbortSignal.timeout(30000)})
+  if(r.status===400||r.status===404)return jsonError(c,'Imagen no encontrada.',404);if(!r.ok)return jsonError(c,'No se pudo leer la imagen.',502)
+  return new Response(r.body,{status:200,headers:{'Content-Type':MIME[name.split('.').pop()],'Cache-Control':'no-store, private','X-Content-Type-Options':'nosniff'}})})
+ api.delete('/data/media/:name',async c=>{const s=c.get('account'),name=c.req.param('name');if(!MEDIA.test(name))return jsonError(c,'Imagen inválida.')
+  const r=await fetcher(objectUrl(c,s,name),{method:'DELETE',headers:storageHeaders(c,s),redirect:'manual',signal:AbortSignal.timeout(15000)});if(!r.ok&&r.status!==404&&r.status!==400)return jsonError(c,'No se pudo borrar la imagen.',502);return c.json({ok:true})})
  api.route('/connections',createConnections({fetcher,seal,unseal,authenticate:async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id&&s.user.role!=='guest'?s:null}}))
  const bound=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
  api.route('/profile',createProfile({authenticate:bound,seal,unseal}))
@@ -204,8 +223,8 @@ export function createAccounts({fetcher=fetch}={}) {
  api.route('/ai',createAssistant({fetcher,authenticate:bound,unseal}))
  api.route('/kisha',createKisha({fetcher,authenticate:bound,seal,unseal}))
  api.route('/info',createResearch({fetcher,authenticate:bound,unseal}))
- api.route('/auth/google',createGoogleAuth({remote,issueSession,verified:async c=>{const s=await verified(c);return s&&s.user.role!=='guest'?s:null},seal,unseal,digest,limited}))
- api.route('/auth/guest',createGuests({fetcher,remote,issueSession,digest,limited,owner}))
+ api.route('/auth/google',createGoogleAuth({remote,issueSession,verified:async c=>{const s=await verified(c);return s&&s.user.role!=='guest'?s:null},seal,unseal,digest,limited,fetcher}))
+ api.route('/auth/guest',createGuests({fetcher,remote,issueSession,digest,limited,owner,unseal}))
  api.route('/',createV5({authenticate:bound,seal,unseal}))
  api.onError((err,c)=>{
   console.error('EVIE_ACCOUNTS_ERROR', err?.stack || err?.message || String(err))
