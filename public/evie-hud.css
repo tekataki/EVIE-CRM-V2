@@ -226,3 +226,5 @@ body.hud-home .topbar :is(.icon-button,.search-trigger,#sync-status,.avatar):foc
 :root[data-theme=light] body.hud-home .topbar :is(.icon-button,.search-trigger,#sync-status,.avatar){background:rgba(255,255,255,.55)!important;border-color:rgba(40,60,120,.12)!important}
 body.hud-home .app-shell,body.hud-home main{background:transparent!important}
 @media (min-width:1024px){body.hud-home.drawer-open .sidebar{transform:none!important;visibility:visible;box-shadow:0 20px 60px rgba(0,0,0,.45);z-index:60}body.hud-home.drawer-open .drawer-backdrop{display:block!important;z-index:55}}
+/* v10: the redesigned core writes its own read-outs along the ring; hide the HTML caption to avoid overlap. */
+.hud-core [data-renderer="evie"] .orb-coordinate,.hud-core [data-renderer="evie"]~.orb-coordinate{display:none}

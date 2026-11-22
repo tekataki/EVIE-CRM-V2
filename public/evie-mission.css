@@ -111,3 +111,7 @@ html[data-theme="light"] :is(.ms,.ms-mini,.ind,.wk,.wk-panel,.ms-form){--ms-text
 @media (max-width:520px){.ind-grid{grid-template-columns:1fr}.ind-rent{grid-template-columns:1fr 1fr 1fr}.ms-row{grid-template-columns:1fr}.ms-kpis dd{font-size:16px}.ms-head .ms-actions{width:100%}.ms-head .ms-actions .button{flex:1;justify-content:center}}
 @keyframes ms-fill{from{width:0}}@keyframes ms-draw{from{stroke-dasharray:0 100}}@keyframes ms-shine{to{transform:translateX(100%)}}
 @media (prefers-reduced-motion:reduce){.ms-meter i,.ms-silhouette .draw{animation:none}.ms-meter i::after{display:none}}
+/* v10 polish (both themes): habit templates sit inside the panel padding like the rest of its content. */
+section.panel:has(>.ev-templates)>h3,section.panel>.ev-templates{padding-inline:clamp(14px,3vw,22px)}section.panel>.ev-templates{padding-bottom:18px}section.panel:has(>.ev-templates)>h3{margin-top:14px}
+/* v10 polish: the library view switch groups its three buttons instead of spreading them across the page. */
+.toolbar[aria-label="Vista de biblioteca"]{display:flex;justify-content:flex-start!important;gap:8px;flex-wrap:wrap}

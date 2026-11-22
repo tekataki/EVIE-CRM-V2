@@ -32,6 +32,7 @@ window.EvieWeekly=(()=>{
    won:clients.filter(c=>c.cabin?.outcome?.result==='won'&&inRange(String(c.cabin.outcome.at||'').slice(0,10),from,end)).length,
    lost:clients.filter(c=>c.cabin?.outcome?.result==='lost'&&inRange(String(c.cabin.outcome.at||'').slice(0,10),from,end)).length,
    overdue:clients.filter(c=>c.nextDate&&c.nextDate<today()&&!closed.test(c.stage||'')&&!c.cabin?.outcome).length};
+  const dj=(Array.isArray(P().dojo?.sessions)?P().dojo.sessions:[]).filter(x=>inRange(String(x.at||'').slice(0,10),from,end));soma.dojo=dj.length;soma.dojoBest=dj.reduce((a,x)=>Math.max(a,x.score?.total||0),0);
   // Finanzas
   let finance={income:0,expense:0,net:0};try{const t=FinanceCore.periodTotals(tx,from,end);finance={income:t.income,expense:t.expense,net:t.net};}catch{}
   // Escuela
@@ -55,7 +56,7 @@ window.EvieWeekly=(()=>{
   return `<div class="wk-tiles">
    ${m.mission?`<div class="wk-tile"><span>${ic('rocket')}Misión</span><b>${m.mission.week>=0?'+':''}${money(m.mission.week)}</b><small>${e(m.mission.name)} · ${m.mission.pct} %</small></div>`:''}
    <div class="wk-tile" data-trend="${d(m.fisico.sessions,m.fisico.prev)}"><span>${ic('dumbbell')}Físico</span><b>${m.fisico.sessions} ${m.fisico.sessions===1?'entreno':'entrenos'}</b><small>semana anterior: ${m.fisico.prev}${m.fisico.groups?` · ${m.fisico.groups} grupos`:''}</small></div>
-   <div class="wk-tile"><span>${ic('handshake')}SOMA</span><b>${money(m.soma.income)}</b><small>${m.soma.newClients} nuevos · ${m.soma.won} ganados · ${m.soma.lost} perdidos</small></div>
+   <div class="wk-tile"><span>${ic('handshake')}SOMA</span><b>${money(m.soma.income)}</b><small>${m.soma.newClients} nuevos · ${m.soma.won} ganados · ${m.soma.lost} perdidos${m.soma.dojo?` · Dojo: ${m.soma.dojo} (mejor ${m.soma.dojoBest})`:''}</small></div>
    <div class="wk-tile" data-trend="${m.finance.net>=0?'up':'down'}"><span>${ic('wallet')}Finanzas</span><b>${m.finance.net>=0?'+':'−'}${money(Math.abs(m.finance.net))}</b><small>entró ${money(m.finance.income)} · salió ${money(m.finance.expense)}</small></div>
    ${m.school?`<div class="wk-tile"><span>${ic('graduation-cap')}Escuela</span><b>${m.school.tasksDone} ${m.school.tasksDone===1?'tarea':'tareas'}</b><small>${m.school.reviews} repasos${m.school.average!=null?` · promedio ${m.school.average}`:''}</small></div>`:''}
    <div class="wk-tile"><span>${ic('heart-pulse')}Ánimo</span>${m.mood.locked?'<b>Privado</b><small>Actívalo en el diario de Kisha</small>':m.mood.entries?`<b>${e(m.mood.top.map(x=>x.label).join(' · ')||'—')}</b><small>${m.mood.entries} ${m.mood.entries===1?'entrada':'entradas'} del diario</small>`:'<b>—</b><small>Sin entradas esta semana</small>'}</div>
@@ -93,7 +94,7 @@ window.EvieWeekly=(()=>{
   if(sec==='objetivos'&&!UI.id){const main=document.getElementById('main-content');if(main&&!main.querySelector('#wk-panel')){const a=main.querySelector('#ms-panel')||main.querySelector('.page-heading');a?.insertAdjacentHTML('afterend',panel());window.lucide?.createIcons?.({root:main.querySelector('#wk-panel')});}}
   if(sec!=='inicio'||!window.EvieHUD)return;const t=today(),d=dow(t),h=new Date().getHours();if(!((d===0&&h>=17)||(d===1&&h<12)))return;if(current())return;
   let last='';try{last=localStorage.getItem('evie-weekly-last')||'';}catch{}const end=weekEnd();if(last===end)return;try{localStorage.setItem('evie-weekly-last',end);}catch{}
-  setTimeout(()=>window.EvieHUD?.open?.('weekly'),900);}
+  setTimeout(()=>{if(UI.section==='inicio')window.EvieHUD?.open?.('weekly');else try{localStorage.removeItem('evie-weekly-last');}catch{}},900);}
  function intent(text){const t=String(text||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');if(!/revision (semanal|del domingo|de la semana)|resumen (semanal|de (la|mi) semana)|como me fue (esta|en la) semana/.test(t))return '';
   if(UI.section==='inicio'&&window.EvieHUD)EvieHUD.open('weekly');else openDialog();const m=build();
   return `Tu semana: ${m.fisico.sessions} ${m.fisico.sessions===1?'entreno':'entrenos'}, SOMA cobró ${money(m.soma.income)}${m.mission?` y la misión ${m.mission.week>=0?'sumó':'bajó'} ${money(Math.abs(m.mission.week))}`:''}. Te dejé tus 3 prioridades en pantalla.`;}

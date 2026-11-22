@@ -124,3 +124,9 @@ html.evie-ui[data-theme="light"] ::selection{background:rgba(47,111,234,.22)}
 html.evie-ui[data-theme="light"] *{scrollbar-width:thin;scrollbar-color:rgba(16,28,56,.18) transparent}
 html.evie-ui[data-theme="light"] ::-webkit-scrollbar-thumb{background:rgba(16,28,56,.16);border-radius:10px;border:3px solid transparent;background-clip:padding-box}
 @media (prefers-reduced-motion:reduce){html.evie-ui[data-theme="light"] :is(.panel,.stat-card,.evm-card,.hud-card,.button,.nav-item){transition:none!important}}
+/* Granja: the hero keeps its deep-green panel in light theme (its mint text and hologram are designed for it). */
+html.evie-ui[data-theme="light"] .rancho-hero{background:radial-gradient(ellipse at 88% 40%,#174f40,transparent 65%),#0b2420!important;color:#ecfff7!important;border-color:#28664b!important;box-shadow:0 18px 50px rgba(11,36,32,.28)!important}
+html.evie-ui[data-theme="light"] .rancho-hero :is(h1,h2,h3,p,.rancho-eyebrow,.rancho-visual-label,.rancho-hero-copy,.rancho-brief,.rancho-notes){color:#ecfff7!important}
+html.evie-ui[data-theme="light"] .rancho-hero :is(.rancho-eyebrow,.rancho-visual-label){color:#9adbc3!important}
+html.evie-ui[data-theme="light"] .rancho-hero hr,html.evie-ui[data-theme="light"] .rancho-hero .rancho-start{border-color:#2d6b55!important}
+html.evie-ui[data-theme="light"] #main-content .rancho-hero h1{background:linear-gradient(180deg,#ecfff7 40%,#9adbc3)!important;-webkit-background-clip:text!important;background-clip:text!important;-webkit-text-fill-color:transparent!important;color:#ecfff7!important}

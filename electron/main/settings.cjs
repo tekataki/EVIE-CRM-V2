@@ -1,11 +1,12 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {validate,object,enumeration,text}=require('../security/contracts.cjs');
+const {VOICE_SHORTCUTS,DEFAULT_VOICE_SHORTCUT}=require('./shortcuts.cjs');
 const model={...text(160),pattern:'^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$'};
-const schema=object({appearance:enumeration(['acrylic','transparent','solid']),opacity:{type:'number',minimum:0,maximum:100},lowGlow:{type:'boolean'},globalShortcut:{type:'boolean'},lightConfirm:{type:'boolean'},model,fastModel:model,preciseModel:model,modelMode:enumeration(['selected','fast','precise']),voice:{type:'string',maxLength:200},rate:{type:'integer',minimum:-5,maximum:5},volume:{type:'integer',minimum:0,maximum:100},setupDone:{type:'boolean'}},[]);
+const schema=object({appearance:enumeration(['acrylic','transparent','solid']),opacity:{type:'number',minimum:0,maximum:100},lowGlow:{type:'boolean'},globalShortcut:{type:'boolean'},voiceShortcut:enumeration([...VOICE_SHORTCUTS]),lightConfirm:{type:'boolean'},model,fastModel:model,preciseModel:model,modelMode:enumeration(['selected','fast','precise']),voice:{type:'string',maxLength:200},rate:{type:'integer',minimum:-5,maximum:5},volume:{type:'integer',minimum:0,maximum:100},setupDone:{type:'boolean'}},[]);
 module.exports=dir=>{
  fs.mkdirSync(dir,{recursive:true});const file=path.join(dir,'desktop-settings.json'),root=path.join(process.env.LOCALAPPDATA||os.homedir(),'EVIE','ai');
- let state={settingsVersion:2,appearance:'acrylic',opacity:90,lowGlow:false,globalShortcut:false,lightConfirm:true,model:'qwen3.5:4b',modelMode:'selected',fastModel:'qwen3:4b',preciseModel:'qwen3.5:4b',voice:'',rate:0,volume:85,setupDone:true,microphoneConsent:false,microphoneAsked:false,apps:{},locations:{},files:{},grants:{},domains:['calendar.google.com','open.spotify.com'],whisperBinary:path.join(root,'whisper','whisper-cli.exe'),whisperModel:path.join(root,'models','ggml-small.bin')};
+ let state={settingsVersion:2,appearance:'acrylic',opacity:90,lowGlow:false,globalShortcut:false,voiceShortcut:DEFAULT_VOICE_SHORTCUT,lightConfirm:true,model:'qwen3.5:4b',modelMode:'selected',fastModel:'qwen3:4b',preciseModel:'qwen3.5:4b',voice:'',rate:0,volume:85,setupDone:true,microphoneConsent:false,microphoneAsked:false,apps:{},locations:{},files:{},grants:{},domains:['calendar.google.com','open.spotify.com'],whisperBinary:path.join(root,'whisper','whisper-cli.exe'),whisperModel:path.join(root,'models','ggml-small.bin')};
  const save=next=>{fs.writeFileSync(file+'.tmp',JSON.stringify(next,null,2),{mode:0o600});fs.renameSync(file+'.tmp',file);state=next;};
  if(fs.existsSync(file)){
   const raw=fs.readFileSync(file,'utf8');let old;

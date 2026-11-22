@@ -81,3 +81,5 @@ html.evie-ui .sc .sc-search input:not([type=checkbox]):not([type=radio]):not([ty
  .sp-opt{border:1px solid #c8cfdd;border-radius:12px;padding:12px;break-inside:avoid}.sp-opt h3{margin:4px 0 6px;font-size:16px}
  .sp-price{font-size:16px;font-weight:700;margin:8px 0 0}.sp footer{margin-top:22px;font-size:12px;color:#56607a}
 }
+
+.sc-head-actions{display:flex;flex-wrap:wrap;gap:8px}.sc-head-actions .button{display:inline-flex;align-items:center;gap:6px;min-height:40px;text-decoration:none}

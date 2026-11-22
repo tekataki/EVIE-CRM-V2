@@ -49,6 +49,7 @@ window.EvieBriefing=(()=>{
   parts.push(b.gym.label+(b.ready.length?` Listos para entrenar: ${b.ready.slice(0,3).join(', ')}.`:''));
   if(b.follow.length)parts.push(`Seguimientos de ventas: ${b.follow.slice(0,3).map(f=>f.name).join(', ')}.`);
   if(b.mission)parts.push(`${b.mission.title} al ${b.mission.pct} por ciento.`);
+  for(const a of localAlerts().slice(0,2))parts.push(`Aviso local: ${a.titulo}${a.cuando?', '+a.cuando:''}.`);
   parts.push(`Frase del día: ${b.phrase[0]} Significa: ${b.phrase[1]}`);
   return parts.join(' ');}
 
@@ -59,12 +60,16 @@ window.EvieBriefing=(()=>{
   const day=b.date.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
   return `<div class="bf"><div class="bf-top"><div><span class="bf-eyebrow">PROTOCOLO MATUTINO</span><p class="bf-date">${e(day.charAt(0).toUpperCase()+day.slice(1))}</p></div>${wx}</div>
    ${departuresLine()}
+   ${alertsBlock()}
    <section class="bf-sec"><h4>${ic('calendar-clock')}Hoy</h4>${blocks.length?`<ol class="bf-blocks">${blocks.map(x=>`<li data-kind="${e(x.kind)}"><time>${x.time?e(fmt(toMin(x.time))):'—'}</time><span>${e(x.title)}</span></li>`).join('')}</ol>`:'<p class="bf-muted">Sin bloques con hora. Día libre para avanzar.</p>'}</section>
    <section class="bf-sec ${b.gym.tight?'is-warn':''}"><h4>${ic('dumbbell')}Entreno</h4><p>${e(b.gym.label)}</p>${b.ready.length?`<p class="bf-muted">Listos: ${e(b.ready.slice(0,4).join(' · '))}</p>`:''}</section>
    ${b.follow.length?`<section class="bf-sec is-warn"><h4>${ic('handshake')}Seguimientos</h4><ul class="bf-list">${b.follow.slice(0,4).map(f=>`<li><a href="#soma/${e(f.id)}">${e(f.name)}</a>${f.action?`<small>${e(f.action)}</small>`:''}${f.late?'<em>atrasado</em>':''}</li>`).join('')}</ul></section>`:''}
    ${b.mission?`<section class="bf-sec"><h4>${ic('rocket')}${e(b.mission.title)}</h4><div class="bf-meter" style="--p:${b.mission.pct}"><i></i></div><small>${b.mission.pct} %</small></section>`:''}
    <section class="bf-sec bf-en"><h4>${ic('languages')}Frase en inglés</h4><p lang="en">«${e(b.phrase[0])}»</p><small>${e(b.phrase[1])}</small></section>
    <div class="bf-actions"><button type="button" class="button primary" data-bf="speak">${ic('volume-2')}Escuchar</button><button type="button" class="button" data-bf="schedule">${ic('clock-4')}Mi horario</button><button type="button" class="button" data-bf="ivi">${ic('sparkles')}Pedirle más a Ivi</button></div></div>`;}
+ /** Verified local alerts for today from the Radar (street closures, events, outages, weather). */
+ const localAlerts=()=>{try{return window.EvieRadar?.alerts?.()||[];}catch{return [];}};
+ function alertsBlock(){const a=localAlerts();return a.length?`<section class="bf-sec is-warn"><h4>${ic('siren')}Avisos locales</h4><ul class="bf-list">${a.slice(0,3).map(x=>`<li><strong>${e(x.titulo)}</strong>${x.cuando?`<small>${e(x.cuando)}</small>`:''}</li>`).join('')}</ul></section>`:'';}
  function departuresLine(){const list=todayCommitments().filter(c=>c.place&&c.alert!==false);if(!list.length)return '';const m=nowMin();
   const next=list.find(c=>toMin(c.time)>m);if(!next)return '';const eta=etaCache[next.id];
   const leave=eta?toMin(next.time)-Math.ceil(eta.min)-(Number(next.buffer)||5):null;
@@ -111,13 +116,13 @@ window.EvieBriefing=(()=>{
  async function tick(){if(busy)return;busy=true;try{const m=nowMin(),day=Domain.today();
   for(const c of todayCommitments().filter(x=>x.place&&x.alert!==false)){const arrive=toMin(c.time);if(m>arrive||arrive-m>90)continue;const key=day+'|'+c.id;if(notified.has(key))continue;
    const t=await eta(c),leave=arrive-Math.ceil(t.min)-(Number(c.buffer)||5);
-   if(m>=leave-1){notified.add(key);notify('Sal ahora · '+c.label,`Para llegar a «${c.label}» a las ${fmt(arrive)}: son ${Math.round(t.min)} min${t.traffic?' con tráfico':''}. Sal ahora.`,'evie-depart-'+c.id);}}
+   if(m>=leave-1){notified.add(key);const al=localAlerts()[0];notify('Sal ahora · '+c.label,`Para llegar a «${c.label}» a las ${fmt(arrive)}: son ${Math.round(t.min)} min${t.traffic?' con tráfico':''}. Sal ahora.${al?' Ojo: '+al.titulo+'.':''}`,'evie-depart-'+c.id);}}
   if(UI.section==='inicio'){const p=document.querySelector('.bf-depart');if(p){const fresh=departuresLine();if(fresh)p.outerHTML=fresh;}}}finally{busy=false;}}
  setInterval(()=>{if(!document.hidden||navigator.userActivation)tick();},60000);
  /* ---------------- auto-open + actions ---------------- */
  function afterRender(){if(UI.section!=='inicio'||!window.EvieHUD)return;const s=settings();if(s.auto===false||new Date().getHours()>=12)return;
   let last='';try{last=localStorage.getItem('evie-briefing-last')||'';}catch{}const today=Domain.today();if(last===today)return;try{localStorage.setItem('evie-briefing-last',today);}catch{}
-  setTimeout(()=>window.EvieHUD?.open?.('briefing'),500);}
+  setTimeout(()=>{if(UI.section==='inicio')window.EvieHUD?.open?.('briefing');else try{localStorage.removeItem('evie-briefing-last');}catch{}},500);}
  document.addEventListener('click',ev=>{const b=ev.target.closest?.('[data-bf]');if(!b||b.closest('#bf-form'))return;const a=b.dataset.bf;
   if(a==='speak'){const text=speech(build(),lastWeather);if(window.EvieAssistant?.say)EvieAssistant.say(text);else App.toast(text,'success');}
   else if(a==='schedule')scheduleDialog();

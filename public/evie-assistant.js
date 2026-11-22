@@ -155,7 +155,7 @@ window.EvieAssistant=(()=>{
  /* ---------- OpenAI loop via server ---------- */
  async function chat(text,signal,lc=null){
   history.push({role:'user',content:text});history=history.slice(-14);
-  window.EvieProfile?.load?.().catch(()=>{});const context={name:name(),timezone:zone(),currency:DALI_CONFIG.currency,mode:window.IviCore?.personaMode?.()||'asistente',persona:Store.get()?.preferences?.iviPersona||{}};let input=[...history];
+  window.EvieProfile?.load?.().catch(()=>{});const context={name:name(),timezone:zone(),currency:DALI_CONFIG.currency,mode:window.IviCore?.personaMode?.()||'asistente',persona:Store.get()?.preferences?.iviPersona||{},situation:window.IviProactive?.situation?.()||null};let input=[...history];
   for(let step=0;step<4;step++){
    const r=await EvieAccounts.request('ai/chat',{method:'POST',body:{input,context,private:!!window.EvieMemory?.isPrivate?.(),...(lc?{request_id:lc.id}:{}),...(step===0?(window.EvieV5?.chatExtras?.()||{}):{})},signal});window.EvieV5?.chatMeta?.(r);if(r.memory_used)lastMemoryUsed=r.memory_used;if(signal?.aborted)throw Object.assign(Error('cancelado'),{name:'AbortError'});
    if(!r.calls?.length){const say=(r.text||'').trim()||'Listo.';history.push({role:'assistant',content:say.slice(0,3900)});return {memory:lastMemoryUsed,text:say,spoken:(r.spoken||say).trim(),sources:Array.isArray(r.sources)?r.sources:[],checked:r.checked_at||null,webUnavailable:!!r.web_unavailable};}
@@ -227,7 +227,7 @@ window.EvieAssistant=(()=>{
     const blob=new Blob(chunks,{type:blobType(chunks,mr,type)});if(blob.size<800||dur<.5){append('evie','No se grabó audio. ¿Lo intentas de nuevo?');note('mic','empty');return set('idle');}
     set('transcribing');document.dispatchEvent(new CustomEvent('evie:lifecycle',{detail:{request_id:null,stage:'transcribing',at_ms:0}}));let text='';
     try{const hint=encodeURIComponent(['EVIE',name(),'SOMA','ALVENTO','BBVA','bitácora','pendiente'].filter(Boolean).join(', '));const to=setTimeout(()=>ctl?.abort(),30000);
-     const res=await fetch('/api/ai/stt',{method:'POST',credentials:'same-origin',signal:t.signal,headers:{'Content-Type':blob.type,'X-Evie-Request':'1','X-Evie-User':EvieAccounts.current().id,'X-Evie-Duration':String(Math.ceil(dur)),'X-Evie-Hint':hint},body:blob});clearTimeout(to);
+     const res=window.EvieSTT?await EvieSTT.post(blob,{'X-Evie-Duration':String(Math.ceil(dur)),'X-Evie-Hint':hint},t.signal):await fetch('/api/ai/stt',{method:'POST',credentials:'same-origin',signal:t.signal,headers:{'Content-Type':blob.type,'X-Evie-Request':'1','X-Evie-User':EvieAccounts.current().id,'X-Evie-Duration':String(Math.ceil(dur)),'X-Evie-Hint':hint},body:blob});clearTimeout(to);
      const j=await res.json().catch(()=>({}));if(!res.ok){note('stt',res.status);throw Error(j.error||'No se pudo transcribir.');}text=String(j.text||'').trim();}
     catch(err){if(!alive(t.id))return;return fail('stt',err.name==='AbortError'?'La transcripción tardó demasiado. Intenta otra vez.':err.message,t.id);}
     if(!alive(t.id))return;if(!text){append('evie','No te entendí bien. ¿Lo repites?');return set('idle');}

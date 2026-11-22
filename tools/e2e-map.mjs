@@ -72,6 +72,8 @@ if (SHOT) await p.screenshot({ path: `${SHOT}-route.png` })
 await ctx.grantPermissions(['geolocation']); await ctx.setGeolocation({ latitude: A.lat, longitude: A.lon, accuracy: 8 })
 await p.click('[data-map=start]'); await until(() => document.querySelector('[data-map=stop]'))
 assert.equal((await stats()).status, 'navigating'); assert.equal(await p.evaluate(() => document.documentElement.dataset.mapNav), '1'); ok('«Iniciar navegación» starts a foreground session with a visible Stop control')
+// Let the browser's own (emulated, ±8 m) first GPS reading land before the synthetic fixes, so it cannot overwrite them.
+await p.waitForTimeout(1500)
 const fix = (pt, acc = 8) => p.evaluate(([pt, acc]) => EvieMap._onFix({ lat: pt.lat, lon: pt.lon, accuracy: acc, speed: 8, timestamp: Date.now() }), [pt, acc])
 let ev = await fix({ lat: 19.7010, lon: -103.4650 }, 90); assert.equal(ev.kind, 'gps'); assert.equal((await stats()).status, 'weak'); assert.match(await p.innerText('#map-status'), /impreciso/)
 ok('weak GPS (±90 m) → says so, no confident instruction')

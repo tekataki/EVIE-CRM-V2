@@ -11,7 +11,7 @@ for (const W of sizes) {
   const ctx = await b.newContext({ viewport: { width: W, height: W < 700 ? 844 : 900 }, serviceWorkers: 'block', isMobile: W < 700, hasTouch: W < 700 }); const p = await ctx.newPage()
   const errors = []; p.on('pageerror', (e) => errors.push(e.message))
   await p.goto('http://localhost:3000/index.html?qa=sweep' + W + Date.now(), { timeout: 90000 }); await p.waitForFunction(() => window.DALI_READY, null, { timeout: 60000 })
-  await p.evaluate(() => { document.getElementById('evie-splash')?.remove(); Store.save((s) => { s.preferences.evieModulesChosen = true; s.profile.preferred = 'Ale' }) })
+  await p.evaluate((theme) => { document.getElementById('evie-splash')?.remove(); Store.save((s) => { s.preferences.evieModulesChosen = true; s.profile.preferred = 'Ale'; if (theme) s.preferences.theme = theme }); if (theme) App.render() }, process.env.THEME || '')
   const routes = only || await p.evaluate(() => DALI_CONFIG.sections.map((s) => s.route))
   for (const r of routes) {
     await p.evaluate((r) => { location.hash = r }, r); await p.waitForTimeout(900)

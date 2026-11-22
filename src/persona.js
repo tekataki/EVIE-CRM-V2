@@ -9,6 +9,7 @@ Identidad y trato
 - Llamas al usuario por su nombre preferido (está en el bloque de contexto). Lo tratas como el piloto: tú informas, propones y ejecutas lo que pide; él decide.
 - Eres proactiva: si ves algo importante y relevante (un seguimiento vencido, una ventana para entrenar, una meta que se atrasa), lo mencionas en una frase y propones el siguiente paso. Sin sermones.
 - Tu humor es ligero y ocasional, nunca a costa de la claridad. Si el tema es serio (dinero, salud, familia, emociones), bajas el humor a cero.
+- Tienes sentido común de persona: si en <situacion_actual> ves un compromiso próximo, lluvia a la hora en que saldría o un aviso local (calle cerrada, evento, corte), menciónalo cuando venga al caso y pregunta lo natural («¿vas a salir a las 12:30?», «¿te aviso media hora antes?»). Una sola pregunta, sin interrogatorios ni alarmismo.
 - Vocabulario de protocolo cuando encaja, sin abusar: «Sistemas en línea», «Protocolo matutino», «Misión al 23 %», «Recalculando», «Listo para despegar». Nunca copies diálogos de películas.
 
 Verdad ante todo
@@ -111,4 +112,26 @@ export function iviSystem({ userBlock = null, context, cacheContext = false }) {
   if (userBlock) blocks.push({ type: 'text', text: userBlock, ...(cacheContext ? {} : { cache_control: { type: 'ephemeral' } }) })
   blocks.push({ type: 'text', text: context, ...(cacheContext ? { cache_control: { type: 'ephemeral' } } : {}) })
   return blocks
+}
+
+/** Live situation computed in the browser (next commitments with travel time, rain by hour, verified local alerts,
+ *  how the user wants to be addressed). DATA only, sanitized and bounded; '' when there is nothing. */
+export function iviSituation(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return ''
+  const c = (v, n) => String(v ?? '').replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n)
+  const hm = (v) => (/^\d{2}:\d{2}$/.test(String(v)) ? String(v) : '')
+  const up = (Array.isArray(s.upcoming) ? s.upcoming : []).slice(0, 12).map((x) => {
+    const t = hm(x?.time), l = c(x?.label, 60); if (!t || !l) return ''
+    const eta = Number.isFinite(x?.eta_min) ? ` · camino ~${Math.round(x.eta_min)} min${x?.traffic ? ' con tráfico' : ''}` : ''
+    return `- ${t} ${l}${x?.place ? ' (' + c(x.place, 60) + ')' : ''}${eta}${hm(x?.leave) ? ' · salir ' + x.leave : ''}`
+  }).filter(Boolean).slice(0, 4)
+  const rain = (Array.isArray(s.rain) ? s.rain : []).slice(0, 6).map((r) => (hm(r?.time) && Number.isFinite(r?.prob) ? `${r.time} ${Math.max(0, Math.min(100, Math.round(r.prob)))} %` : '')).filter(Boolean)
+  const al = (Array.isArray(s.alerts) ? s.alerts : []).slice(0, 3).map((a) => (c(a?.titulo, 100) + (a?.cuando ? ' (' + c(a.cuando, 40) + ')' : '')).trim()).filter(Boolean)
+  const now = c(s.weather, 60), call = c(s.address, 30), lines = []
+  if (call) lines.push(`El usuario pidió que lo llames «${call}» (con naturalidad, no en cada frase).`)
+  if (up.length) lines.push('Próximos compromisos de hoy:\n' + up.join('\n'))
+  if (now) lines.push('Clima ahora: ' + now + '.')
+  if (rain.length) lines.push('Probabilidad de lluvia por hora: ' + rain.join(', ') + '.')
+  if (al.length) lines.push('Avisos locales verificados: ' + al.join('; ') + '.')
+  return lines.length ? '<situacion_actual>\n' + lines.join('\n') + '\n</situacion_actual>' : ''
 }

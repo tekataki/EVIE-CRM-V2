@@ -53,7 +53,7 @@ test('weekly: metrics from real data, diary only with explicit permission, local
  st.journal=[{date:add(t,-1),summary:'texto privado del diario'}];
  const trends={called:0};const c=browser(['evie-weekly.js'],{state:st,extra:{KishaCore:{trends(){trends.called++;return {entries:2,emotions:[{key:'calma',label:'Calma',mean:61.4,n:2},{key:'ansiedad',label:'Ansiedad',mean:30,n:1}]};}}}});
  let m=c.EvieWeekly.build(t);assert.equal(m.from,add(t,-6));assert.equal(m.fisico.sessions,1);assert.equal(m.fisico.prev,3);assert.equal(m.fisico.groups,2);
- assert.deepEqual({...m.soma},{income:250000,newClients:1,won:1,lost:0,overdue:1});assert.equal(m.finance.net,-150000);assert.equal(m.mood.locked,true);assert.equal(trends.called,0,'diary not read without permission');
+ assert.deepEqual({...m.soma},{income:250000,newClients:1,won:1,lost:0,overdue:1,dojo:0,dojoBest:0});assert.equal(m.finance.net,-150000);assert.equal(m.mood.locked,true);assert.equal(trends.called,0,'diary not read without permission');
  const pr=c.EvieWeekly.priorities(m);assert.equal(pr.length,3);assert.match(pr[0].text,/seguimiento de SOMA/);assert.match(pr[1].text,/Entrena al menos 3 veces/);assert.match(pr[2].text,/Revisa tus gastos/);
  st.preferences.journalPrivacy={crossModule:true};m=c.EvieWeekly.build(t);assert.equal(m.mood.locked,false);assert.deepEqual(m.mood.top.map(x=>x.label),['Calma','Ansiedad']);
  const pay=c.EvieWeekly.aiPayload(m);assert.ok(!JSON.stringify(pay).includes('texto privado'),'no diary text leaves the browser');assert.equal(pay.mood.entries,2);});

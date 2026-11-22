@@ -12,7 +12,7 @@ import { readProfile } from './profile.js'
 import { limits, usage, budget, validTimeZone, wantsWeb, currentTime, profileBlock, readTier, SERVER_TOOLS } from './assistant.js'
 import { isTier, tierConfig, TIER_LABELS } from './tiers.js'
 import { aiProvider, claudeClient, claudeRun, claudeError, claudeCost, claudeTools, webSearchTool, textOf, sourcesOf, toolUses, stopNote, searchesOf } from './claude.js'
-import { iviSystem, iviUserBlock, iviDayContext, iviTurnNote, personaDials, cleanMode } from './persona.js'
+import { iviSystem, iviUserBlock, iviDayContext, iviTurnNote, personaDials, cleanMode, iviSituation } from './persona.js'
 import { supa, memoryStore, relevantMemories, memoryBlock, learnFromExchange, memorySettings, MEMORY_KINDS, MEMORY_LIMITS } from './ai-memory.js'
 import { openaiStream, openaiError } from './openai.js'
 
@@ -147,7 +147,9 @@ export function createChat({ fetcher = fetch, authenticate, seal, unseal, remote
     const system = iviSystem({ userBlock: iviUserBlock({ profile: profileBlock(profile, userMsg.text), memoryProfile: memProfile }), context: iviDayContext({ name, today: day(timezone), timezone, currency, mode: cleanMode(ctxIn.mode), dials: personaDials(ctxIn.persona), guest: role === 'guest', privateMode }), cacheContext: true })
     const hist = historyMessages(rows)
     const last = hist.at(-1); if (last?.role === 'user') hist[hist.length - 1] = { role: 'user', content: [{ type: 'text', text: last.content, cache_control: { type: 'ephemeral' } }] }
-    let messages = [...hist, { role: 'system', content: iviTurnNote({ tier: cfg.id, web, memory: memoryBlock(relevant) }) }]
+    // Volatile live situation goes in the trailing turn note (never in the cached system blocks).
+    const situation = privateMode ? '' : iviSituation(ctxIn.situation)
+    let messages = [...hist, { role: 'system', content: [iviTurnNote({ tier: cfg.id, web, memory: memoryBlock(relevant) }), situation].filter(Boolean).join('\n') }]
     const tools = provider === 'claude' ? [...claudeTools(SERVER_TOOLS), ...(web ? [webSearchTool({ timezone, city: profile?.city, maxUses: 3 })] : [])] : []
     const client = provider === 'claude' ? claudeClient(env, fetcher) : null, abort = c.req.raw?.signal || null
     const isNew = !row.title_sealed && mode === 'send' && rows.filter((m) => m.role === 'user').length === 1
@@ -157,7 +159,7 @@ export function createChat({ fetcher = fetch, authenticate, seal, unseal, remote
     async function generate(onText) {
       if (provider === 'openai') {
         // Same persona and context; the clock goes in the instructions (no tool loop) and web search is hosted.
-        const instructions = [...system.map((b) => b.text), iviTurnNote({ tier: cfg.id, web, memory: memoryBlock(relevant) }), `Hora local actual: ${currentTime(timezone).spoken_es} (${timezone}).`].join('\n\n')
+        const instructions = [...system.map((b) => b.text), iviTurnNote({ tier: cfg.id, web, memory: memoryBlock(relevant) }), situation, `Hora local actual: ${currentTime(timezone).spoken_es} (${timezone}).`].join('\n\n')
         const o = await openaiStream(env, fetcher, { tier: cfg.id, instructions, input: historyMessages(rows), web: web ? { timezone, city: profile?.city } : null, onText, signal: abort })
         let text = o.text.trim()
         if (!text) text = o.stop_reason === 'refusal' ? 'Prefiero no responder eso. ¿Lo vemos de otra forma?' : 'Listo.'

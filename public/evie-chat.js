@@ -22,7 +22,7 @@ window.EvieChat=(()=>{
  const anim=(els,kf,o={})=>{const m=M(),list=[...(els||[])].filter(Boolean);if(!m||!list.length)return;const clean=()=>list.forEach(n=>{n.style.opacity='';n.style.transform='';});try{const a=m.animate(list,kf,{type:'spring',stiffness:300,damping:28,...o});(a?.finished||Promise.resolve()).then(clean,clean);setTimeout(clean,1800);}catch{clean();}};
  const icons=root=>{try{window.lucide?.createIcons?.({root});}catch{}};
  const prefs=()=>Store.get()?.preferences||{};
- const context=()=>{const st=Store.get()||{},p=st.profile||{};return {name:String(p.preferred||p.name||'').slice(0,40),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,currency:window.DALI_CONFIG?.currency||'MXN',mode:prefs().iviMode||'asistente',persona:prefs().iviPersona||{}};};
+ const context=()=>{const st=Store.get()||{},p=st.profile||{};return {name:String(p.preferred||p.name||'').slice(0,40),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,currency:window.DALI_CONFIG?.currency||'MXN',mode:prefs().iviMode||'asistente',persona:prefs().iviPersona||{},situation:window.IviProactive?.situation?.()||null};};
  const when=iso=>{if(!iso)return '';const d=new Date(iso),now=new Date();const day=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();const diff=Math.round((day(now)-day(d))/864e5);
   return diff===0?d.toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'}):diff===1?'Ayer':diff<7?d.toLocaleDateString('es-MX',{weekday:'long'}):d.toLocaleDateString('es-MX',{day:'numeric',month:'short'});};
  const groupOf=c=>{if(c.pinned)return 'Fijadas';const d=new Date(c.updated_at),now=new Date(),diff=(new Date(now.getFullYear(),now.getMonth(),now.getDate())-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5;return diff<=0?'Hoy':diff<=1?'Ayer':diff<=7?'Últimos 7 días':'Anteriores';};
@@ -37,10 +37,20 @@ window.EvieChat=(()=>{
  /* ---------------- streaming ---------------- */
  let raf=0;
  function paintLive(){if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const el=document.getElementById('ch-live');if(!el||!S.stream)return;const md=el.querySelector('.ch-md');if(md){md.innerHTML=MD().render(S.stream.text)+'<span class="ch-caret" aria-hidden="true"></span>';}scrollEnd();});}
+ /** Desktop app (Electron): the same SSE stream through the account proxy (MessageChannel), as a fetch-like Response. */
+ function desktopStream(path,{body,signal}={}){return new Promise((resolve,reject)=>{const enc=new TextEncoder();let ctl=null,opened=false,abort=()=>{};
+  const stream=new ReadableStream({start(c){ctl=c;},cancel(){abort();}});
+  abort=window.evieDesktop.accountStream({path,method:'POST',body,userId:me()},ev=>{
+   if(ev.type==='open'){opened=true;resolve(new Response(stream,{status:ev.status,headers:{'Content-Type':'text/event-stream'}}));}
+   else if(ev.type==='chunk'){try{ctl.enqueue(enc.encode(ev.text));}catch{}}
+   else if(ev.type==='end'){try{ctl.close();}catch{}}
+   else if(ev.type==='json')resolve(new Response(JSON.stringify(ev.data),{status:ev.status,headers:{'Content-Type':'application/json'}}));
+   else{const err=ev.aborted?new DOMException('Operación cancelada.','AbortError'):Object.assign(Error(ev.error||'Ivi no pudo responder.'),{status:ev.status,code:ev.code});if(opened){try{ctl.error(err);}catch{}}else reject(err);}});
+  if(signal){if(signal.aborted)abort();else signal.addEventListener('abort',()=>abort(),{once:true});}});}
  async function send({text='',regenerate=false,edit=false}={}){
   if(S.stream)return;const t=String(text).trim();if(!regenerate&&!t)return;
   if(!cloud()){App.toast('El chat necesita tu cuenta EVIE con sesión iniciada.','error');return;}
-  if(window.evieDesktop?.account){App.toast('El chat con streaming está disponible en el navegador; en la app de escritorio llega en la siguiente fase.','error');return;}
+  if(window.evieDesktop?.account&&!window.evieDesktop?.accountStream){App.toast('Actualiza la app de escritorio para usar el chat con respuestas en vivo.','error');return;}
   let id;try{id=await ensureConversation();}catch(err){App.toast(err.message||'No pude crear la conversación.','error');return;}
   const ctl=new AbortController();S.stream={conv:id,ctl,text:'',mode:regenerate?'regenerate':edit?'edit':'send'};S.error=null;
   if(regenerate){if(S.msgs.at(-1)?.role==='assistant')S.msgs.pop();}
@@ -50,7 +60,8 @@ window.EvieChat=(()=>{
   paintThread();paintComposer();scrollEnd(true);anim(document.querySelectorAll('.ch-msg:last-child,.ch-msg.is-user:nth-last-child(2)'),{opacity:[0,1],y:[14,0]});
   window.EvieSounds?.play?.('send');
   try{
-   const res=await fetch('/api/chat/conversations/'+id+'/messages',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'X-Evie-Request':'1','Content-Type':'application/json',Accept:'text/event-stream','X-Evie-User':me()},body:JSON.stringify({text:t,regenerate,edit,tier:S.tier||undefined,research:S.research||undefined,context:context()}),signal:ctl.signal});
+   const payload={text:t,regenerate,edit,tier:S.tier||undefined,research:S.research||undefined,context:context()};
+   const res=window.evieDesktop?.accountStream?await desktopStream('chat/conversations/'+id+'/messages',{body:payload,signal:ctl.signal}):await fetch('/api/chat/conversations/'+id+'/messages',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'X-Evie-Request':'1','Content-Type':'application/json',Accept:'text/event-stream','X-Evie-User':me()},body:JSON.stringify(payload),signal:ctl.signal});
    if(!res.ok||!res.body){let msg='Ivi no pudo responder.';try{msg=(await res.json()).error||msg;}catch{}throw Object.assign(Error(msg),{status:res.status});}
    const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
    for(;;){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});let k;

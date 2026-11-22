@@ -24,7 +24,7 @@ export function cleanMetrics(b) {
     semana: { desde: date(r.from), hasta: date(r.to) },
     mision: m ? { nombre: aiClip(m.name, 60), avance_pct: num(m.pct, 0, 100), ahorro_semana_mxn: num(m.week_cents / 100), a_tiempo: m.on_track === true, requerido_mensual_mxn: num(m.required_monthly_cents / 100, 0) } : null,
     fisico: { entrenos: num(f.sessions, 0, 50), semana_anterior: num(f.prev, 0, 50), grupos_musculares: num(f.groups, 0, 30) },
-    soma: { cobrado_mxn: num(so.income / 100, 0), prospectos_nuevos: num(so.newClients, 0, 500), ganados: num(so.won, 0, 500), perdidos: num(so.lost, 0, 500), seguimientos_atrasados: num(so.overdue, 0, 500) },
+    soma: { cobrado_mxn: num(so.income / 100, 0), prospectos_nuevos: num(so.newClients, 0, 500), ganados: num(so.won, 0, 500), perdidos: num(so.lost, 0, 500), seguimientos_atrasados: num(so.overdue, 0, 500), practicas_dojo: num(so.dojo, 0, 100), mejor_dojo: num(so.dojoBest, 0, 100) },
     finanzas: { ingresos_mxn: num(fi.income / 100, 0), gastos_mxn: num(fi.expense / 100, 0), neto_mxn: num(fi.net / 100) },
     escuela: sc ? { tareas_hechas: num(sc.tasks_done, 0, 200), repasos: num(sc.reviews, 0, 5000), promedio: sc.average == null ? null : num(sc.average, 0, 100), atrasadas: num(sc.overdue, 0, 200), examenes: (Array.isArray(sc.exams) ? sc.exams : []).slice(0, 3).map((x) => ({ titulo: aiClip(x?.title, 80), materia: aiClip(x?.subject, 60), fecha: date(x?.due) })) } : null,
     animo: mo ? { entradas: num(mo.entries, 0, 50), emociones: (Array.isArray(mo.top) ? mo.top : []).slice(0, 3).map((x) => ({ emocion: aiClip(x?.label, 30), intensidad: num(x?.mean, 0, 100) })) } : null,

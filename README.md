@@ -103,6 +103,60 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v10 · Fase 6: escritorio, tema claro y Android (2026-11-22)
+- **App de escritorio (Electron)**: el proxy de cuenta ahora permite todas las rutas v10 (chat, memorias, Cabina,
+  Escuela, Revisión, Dojo, Radar, `data/stamp`) con métodos y rutas exactas, y **transmite en vivo** las respuestas del
+  Chat (SSE por un `MessageChannel`, con «detener» que cancela la petición). El dictado y la voz usan `ai/stt` por el
+  proxy (audio binario, `X-Evie-Lang` solo `es`/`en`). **Atajos globales**: Ctrl+Espacio abre EVIE con el cuadro de
+  Ivi listo para escribir; Ctrl+Mayús+Espacio (configurable) empieza a hablarle. Pruebas: `tests/desktop-v10.test.cjs`.
+- **Tema claro** revisado sección por sección (barrido `tools/qa-sweep.mjs` con `THEME=light` a 390 y 1440 px, sin
+  desbordes ni controles sin etiqueta): Granja conserva su panel verde, Hábitos y Biblioteca alinean sus controles, y
+  las líneas de error ocultas ya no aparecen como cajas vacías.
+- **Android**: plan documentado en `docs/ANDROID.md` (Capacitor sobre la PWA, avisos con la app cerrada, widgets,
+  compartir hacia EVIE y Health Connect). No se compila en este equipo.
+
+## Novedades v10 · Ivi proactiva, conexiones y núcleo rediseñado (2026-11-22)
+- **Ivi te habla primero** (`public/ivi-proactive.js`): ~30 min antes de algo con hora (Agenda, «Mi horario» o tus
+  clases) Ivi pregunta como una persona: «Jefe, ¿vas a salir a las 12:20? Veo que a la 1:00 tienes Escuela. Con
+  tráfico son 35 min. Va a llover (70 %): lleva paraguas. Ojo: cierre de calle por desfile.» Con voz si lo permites,
+  aviso en pantalla y notificación del sistema. Tarjeta **«Ivi te avisa»** en Inicio (salidas, lluvia por hora,
+  avisos locales del Radar, examen mañana, seguimientos de SOMA, misión atrasada). Ajustes: minutos antes, voz y
+  cómo te llama («jefe»). La misma «situación actual» viaja como DATOS al chat y a la voz para que Ivi responda con
+  sentido común. El clima ahora incluye probabilidad de lluvia por hora.
+- **Conexiones entre módulos** (`public/evie-connect.js`): cobro de SOMA → «Apartar» tu % para la Misión; prospecto
+  ganado → «Registrar cobro»; seguimiento → Agenda; ficha del prospecto → «Practicar esta visita» en el Dojo; avisos
+  del Radar → briefing y «Sal ahora»; prácticas del Dojo → Revisión semanal. Ya existían: Escuela ↔ Agenda ↔
+  briefing, Físico ↔ briefing, Misión ↔ Objetivos/Finanzas/Contenido, Independencia → Misión, Cabina ↔ Mapa.
+- **Núcleo de Inicio rediseñado** (estilo HUD de alta tecnología): reactor central, globo holográfico con
+  meridianos, anillos con bisel y marcas que giran en sentidos opuestos, barrido de escáner (más rápido al
+  procesar), onda circular que reacciona a tu voz y lecturas de estado escritas sobre el anillo. Sigue en Canvas 2D
+  (fluido en teléfonos) y respeta el movimiento reducido.
+- Las tarjetas automáticas (briefing, revisión, avisos) ya no te regresan a Inicio si te fuiste a otra sección.
+- Pruebas: `tools/e2e-connect.mjs` (12 comprobaciones).
+
+## Novedades v10 · Fase 5: Dojo de ventas y Radar local (2026-11-22)
+- **Dojo de ventas** (`#dojo`, también desde la Cabina): Ivi interpreta al dueño de un negocio (8 giros, 5
+  personalidades: escéptico, ocupado, cazador de precio, «ya tengo proveedor», indeciso). Presentas por voz o texto;
+  al final te califica claridad, objeciones y cierre (0–100) con fortalezas, mejoras y una frase modelo. **Modo
+  inglés B2** con correcciones (el dictado transcribe en inglés). Historial con tendencia.
+- **Radar local** (tarjeta del HUD): noticias de negocios, IA, ventas y tu estado; **avisos de tu ciudad** (cierres
+  de calles, eventos, cortes, clima) y **planes del fin de semana** dentro de tu tope (jueves a sábado), todo con
+  búsqueda web, etiqueta confirmado / no confirmado y solo enlaces que la búsqueda devolvió. Se actualiza una vez al
+  día y se guarda para tus otros dispositivos. La ciudad sale de tu perfil.
+- **Alvento** (extiende `#alvento`, `public/alvento-plus.js`): plan del drop (piezas, tallas S–XL por color,
+  colores), **comparador de cotizaciones** (más barata y más rápida respetando mínimos; avisa si un mínimo obliga a
+  pedir de más), **costo unitario y margen** (cotización elegida + etiquetas, empaque, envío y otros; punto de
+  equilibrio con costos fijos del drop) e **inventario por talla** con alerta de existencias bajas. «Crear SKUs»
+  genera los productos que faltan. El plan vive en el propio drop.
+- **Granja** (extiende `#granja`, pestaña Resumen, `public/granja-sim.js`): **simulador antes de comprar** — cerdas,
+  precio, alimento por día, otros gastos, camada, mortalidad, venta al destete o en engorda, meses a simular,
+  colchón inicial y dinero de SOMA al mes (por defecto, tu promedio real de 90 días). Calcula el flujo mes a mes
+  (gráfica), el **mes de equilibrio**, el **colchón mínimo** (con y sin SOMA) y si SOMA alcanza para el alimento hasta
+  las primeras ventas. Supuestos visibles; es una simulación, no un consejo.
+- Servidor: `/api/dojo/turn`, `/api/dojo/score`, `/api/radar/news`, `/api/radar/plans` (Claude u OpenAI).
+- Pruebas: `tests/dojo-radar.test.cjs`, `tests/alvento-granja.test.cjs` y E2E `tools/e2e-dojo-radar.mjs` (16) y
+  `tools/e2e-alvento-granja.mjs` (10), a 390 y 1440 px, oscuro y claro.
+
 ## Novedades v10 · Fase 4: Misión, Escuela, Independencia y Revisión del domingo (2026-11-22)
 - **Misión** (Objetivos y Finanzas): meta de ahorro con nombre, monto y fecha límite (son datos tuyos, no del código).
   Cuenta regresiva, ahorro mensual necesario y proyección con tus **ingresos reales de SOMA** (promedio de 90 días × el
@@ -238,7 +292,7 @@ API `/api`: `runtime`, `auth/*`, `memory/*`, `map/config|search|route`, `data/pu
 **docs/SETUP.md** (Cloudflare, Supabase, cuentas, claves, costos, Google; §8 lista consolidada v3.2), **docs/MAP.md**, **docs/MEMORY.md** y `.dev.vars.example`.
 
 ## Pruebas
-Pruebas de Node en 47 archivos (`tests/*.test.cjs`; ejecútalas archivo por archivo en máquinas con poca RAM), e2e `tools/e2e-chat.mjs`, `tools/e2e-soma.mjs`, `tools/e2e-drafts.mjs`, `e2e-memory.mjs`, `e2e-map.mjs`, `e2e-login.mjs`, `e2e-v31.mjs`, `e2e-hud.mjs`, `e2e-workspace.mjs`, `e2e-kisha.mjs`, `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs` y `tools/qa-sweep.mjs`, privacidad `tools/check-privacy.mjs`.
+Pruebas de Node en 53 archivos (`tests/*.test.cjs`; ejecútalas archivo por archivo en máquinas con poca RAM), e2e `tools/e2e-chat.mjs`, `tools/e2e-soma.mjs`, `tools/e2e-mission.mjs`, `tools/e2e-school.mjs`, `tools/e2e-dojo-radar.mjs`, `tools/e2e-alvento-granja.mjs`, `tools/e2e-connect.mjs`, `tools/e2e-drafts.mjs`, `e2e-memory.mjs`, `e2e-map.mjs`, `e2e-login.mjs`, `e2e-v31.mjs`, `e2e-hud.mjs`, `e2e-workspace.mjs`, `e2e-kisha.mjs`, `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs` y `tools/qa-sweep.mjs`, privacidad `tools/check-privacy.mjs`.
 
 ## Restaurar la versión anterior
 Tag `pre-v2.3-946d437` en GitHub, o *Cloudflare → Deployments → Rollback*.

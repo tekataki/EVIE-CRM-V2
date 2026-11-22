@@ -158,13 +158,16 @@ export function createResearch({ fetcher = fetch, authenticate, unseal = null })
     try { const r = await fetcher(GEO_URL + '?count=1&language=es&format=json&name=' + encodeURIComponent(place.split(',')[0]), { signal: AbortSignal.timeout(10000) }); if (!r.ok) throw Error(); geo = (await r.json()).results?.[0] } catch { return err(c, 'El servicio de clima no respondió.', 502) }
     if (!geo) return c.json({ needs_location: true, ask: `No encontré "${place}". ¿Me dices la ciudad y el estado?` })
     let w
-    try { const q = new URLSearchParams({ latitude: String(geo.latitude), longitude: String(geo.longitude), current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation', daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code', forecast_days: '3', timezone: geo.timezone || x.timezone }); const r = await fetcher(WX_URL + '?' + q, { signal: AbortSignal.timeout(10000) }); if (!r.ok) throw Error(); w = await r.json() } catch { return err(c, 'El servicio de clima no respondió.', 502) }
+    try { const q = new URLSearchParams({ latitude: String(geo.latitude), longitude: String(geo.longitude), current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation', daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code', hourly: 'precipitation_probability,weather_code', forecast_days: '3', timezone: geo.timezone || x.timezone }); const r = await fetcher(WX_URL + '?' + q, { signal: AbortSignal.timeout(10000) }); if (!r.ok) throw Error(); w = await r.json() } catch { return err(c, 'El servicio de clima no respondió.', 502) }
     await usage(x.env, x.s.user.id, 'weather', 1)
-    const cur = w.current || {}, d = w.daily || {}
+    const cur = w.current || {}, d = w.daily || {}, hr = w.hourly || {}
+    // v10: next 24 hours of rain probability (from the current hour) for Ivi's proactive «sal con paraguas» notes.
+    const nowH = String(cur.time || '').slice(0, 13), start = Math.max(0, (hr.time || []).findIndex((t) => String(t).slice(0, 13) >= nowH))
     return c.json({
       place: [geo.name, geo.admin1, geo.country_code].filter(Boolean).join(', '), timezone: w.timezone,
       current: { observed_at: cur.time || null, temperature_c: cur.temperature_2m ?? null, feels_like_c: cur.apparent_temperature ?? null, humidity: cur.relative_humidity_2m ?? null, wind_kmh: cur.wind_speed_10m ?? null, precipitation_mm: cur.precipitation ?? null, condition: weatherCode(cur.weather_code) },
       days: (d.time || []).map((t, i) => ({ date: t, max_c: d.temperature_2m_max?.[i] ?? null, min_c: d.temperature_2m_min?.[i] ?? null, rain_prob: d.precipitation_probability_max?.[i] ?? null, condition: weatherCode(d.weather_code?.[i]) })),
+      hours: (hr.time || []).slice(start, start + 24).map((t, k) => ({ time: String(t).slice(0, 16), rain_prob: hr.precipitation_probability?.[start + k] ?? null, condition: weatherCode(hr.weather_code?.[start + k]) })),
       retrieved_at: currentTime(x.timezone).iso_local, attribution: { text: 'Datos meteorológicos de Open-Meteo.com (CC BY 4.0)', url: 'https://open-meteo.com/' }
     })
   })

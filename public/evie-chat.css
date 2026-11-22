@@ -213,3 +213,5 @@ html[data-chat-open="1"] #evie-mic-fab{display:none!important}
 @keyframes ch-shimmer{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.ch-orb,.ch-orb i,.ch-caret,.ch-thinking i,.ch-mic.is-rec,.ch-skel span{animation:none!important}.ch-side{transition:none}.ch-thread{scroll-behavior:auto}}
 html[data-motion="reduced"] :is(.ch-orb,.ch-orb i,.ch-caret,.ch-thinking i){animation:none!important}
+/* v10: the inline error line stays hidden until there is an error (display:flex was overriding [hidden]). */
+.ch-error[hidden]{display:none!important}

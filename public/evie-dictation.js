@@ -13,7 +13,7 @@ window.EvieDictation=(()=>{
  const headers=(extra)=>{const u=window.EvieAccounts?.current?.();return {'X-Evie-Request':'1',...(u?{'X-Evie-User':u.id}:{}),...extra};};
  function pickType(){if(!window.MediaRecorder)return '';for(const t of ['audio/webm;codecs=opus','audio/webm','audio/mp4;codecs=mp4a.40.2','audio/mp4','audio/ogg;codecs=opus'])try{if(MediaRecorder.isTypeSupported?.(t))return t;}catch{}return '';}
  async function transcribe(blob,index,seconds,signal){let last;for(let attempt=0;attempt<3;attempt++){
-   try{const res=await fetch('/api/ai/stt',{method:'POST',credentials:'same-origin',signal,headers:headers({'Content-Type':blob.type||'audio/webm','X-Evie-Duration':String(Math.ceil(seconds)),'X-Evie-Chunk':String(index),'X-Evie-Lang':sttLang}),body:blob});
+   try{const res=window.EvieSTT?await EvieSTT.post(blob,{'X-Evie-Duration':String(Math.ceil(seconds)),'X-Evie-Chunk':String(index),'X-Evie-Lang':sttLang},signal):await fetch('/api/ai/stt',{method:'POST',credentials:'same-origin',signal,headers:headers({'Content-Type':blob.type||'audio/webm','X-Evie-Duration':String(Math.ceil(seconds)),'X-Evie-Chunk':String(index),'X-Evie-Lang':sttLang}),body:blob});
     const j=await res.json().catch(()=>({}));if(res.ok)return String(j.text||'').trim();last=Object.assign(Error(j.error||'No se pudo transcribir.'),{status:res.status});if([400,401,403,413,429,503].includes(res.status))break;}
    catch(x){if(x.name==='AbortError')throw x;last=x;}
    await new Promise(r=>setTimeout(r,600*(attempt+1)));}

@@ -1,9 +1,11 @@
 'use strict';
-/* EVIE neural core: a living, breathing sphere of connected nodes with light trails.
-   Canvas 2D only (no WebGL) so it runs on any phone. Reacts to the assistant state
-   (documentElement.dataset.evie = idle|listening|thinking|speaking) and to mic/voice level. */
+/* EVIE neural core: a living sphere of connected nodes inside a holographic HUD (v10 «Stark» redesign):
+   arc-reactor nucleus, wireframe globe, counter-rotating bezel rings with ticks, scanner sweep, voice-reactive
+   waveform ring, HUD brackets and status read-outs. Canvas 2D only (no WebGL) so it runs on any phone. Reacts to the
+   assistant state (documentElement.dataset.evie = idle|listening|thinking|speaking) and to mic/voice level. */
 window.EvieNeural=(()=>{
- let canvas=null,ctx=null,raf=null,nodes=[],edges=[],pulses=[],w=0,h=0,dpr=1,t0=0,visible=true,ro=null,io=null,mo=null,ptr={x:0,y:0,tx:0,ty:0},mic=0,out=0,energy=.2,ab=null;
+ let canvas=null,ctx=null,raf=null,nodes=[],edges=[],pulses=[],dust=[],w=0,h=0,dpr=1,t0=0,visible=true,ro=null,io=null,mo=null,ptr={x:0,y:0,tx:0,ty:0},mic=0,out=0,energy=.2,ab=null;
+ const LABEL={idle:'EN ESPERA',listening:'ESCUCHANDO',thinking:'PROCESANDO',speaking:'HABLANDO',error:'REVISAR',transcribing:'TRANSCRIBIENDO'};
  const palettes={
   idle:{a:[150,180,255],b:[190,160,255]},
   listening:{a:[110,231,255],b:[140,170,255]},
@@ -21,7 +23,38 @@ window.EvieNeural=(()=>{
   // satellites orbiting outside the sphere
   for(let i=0;i<6;i++){const a=i/6*Math.PI*2;nodes.push({x:Math.cos(a)*1.45,y:(Math.random()-.5)*.7,z:Math.sin(a)*1.45,s:a,size:1.4,hub:true,sat:true});}
   for(let i=0;i<nodes.length;i++){const d=[];for(let j=0;j<nodes.length;j++)if(i!==j){const a=nodes[i],b=nodes[j];d.push([(a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2,j]);}d.sort((p,q)=>p[0]-q[0]);const k=nodes[i].hub?4:2;for(let m=0;m<k;m++){const j=d[m][1];if(i<j||!edges.some(e=>e[0]===j&&e[1]===i))edges.push([i,j,Math.random()]);}}
+  dust=Array.from({length:innerWidth<600?26:42},()=>({a:Math.random()*Math.PI*2,r:1.05+Math.random()*.7,v:.02+Math.random()*.05,s:.4+Math.random()*1.2}));
  }
+ /* ---- HUD layers (screen space, around the globe) ---- */
+ function hud(cx,cy,R,t,A,B,ink,light,p){
+  const TAU=Math.PI*2,arc=(r,a0,a1)=>{ctx.beginPath();ctx.arc(cx,cy,r,a0,a1);ctx.stroke();};
+  // thin guide ring + bright arcs that orbit faster with energy
+  ctx.lineWidth=1;ctx.strokeStyle=`rgba(${A},${light?.22:.16})`;arc(R*1.3,0,TAU);
+  const spin=t*(.16+energy*.55);ctx.lineWidth=Math.max(1.6,R*.012);ctx.strokeStyle=`rgba(${B},${(light?.55:.5)+energy*.25})`;for(let k=0;k<3;k++){const a0=spin+k*TAU/3;arc(R*1.3,a0,a0+.46);}
+  // scanner sweep between the guide ring and the bezel (stronger while thinking)
+  const sa=t*(.8+energy*2.6),sweep=.95;if(ctx.createConicGradient){const g=ctx.createConicGradient(sa-sweep,cx,cy);g.addColorStop(0,`rgba(${A},0)`);g.addColorStop(sweep/TAU,`rgba(${A},${light?(p==='thinking'?.16:.06):(p==='thinking'?.34:.12)+energy*.08})`);g.addColorStop(sweep/TAU+.001,`rgba(${A},0)`);g.addColorStop(1,`rgba(${A},0)`);ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R*1.42,sa-sweep,sa);ctx.arc(cx,cy,R*1.3,sa,sa-sweep,true);ctx.closePath();ctx.fill();}
+  // tick bezel (counter-rotating): every 10th tick is long
+  const rb=R*1.42,rot=-t*.05;for(const long of [false,true]){ctx.beginPath();for(let i=0;i<120;i++){if((i%10===0)!==long)continue;const a=rot+i*TAU/120,len=long?R*.06:R*.022,c=Math.cos(a),s=Math.sin(a);ctx.moveTo(cx+c*rb,cy+s*rb);ctx.lineTo(cx+c*(rb+len),cy+s*(rb+len));}ctx.lineWidth=long?1.4:1;ctx.strokeStyle=`rgba(${long?B:A},${long?(light?.6:.5):(light?.3:.2)})`;ctx.stroke();}
+  // outer dashed ring drifting the other way
+  ctx.setLineDash([R*.07,R*.035]);ctx.lineDashOffset=-t*R*.09;ctx.lineWidth=1;ctx.strokeStyle=`rgba(${A},${light?.2:.13})`;arc(R*1.6,0,TAU);ctx.setLineDash([]);
+  // HUD markers on the outer ring at the diagonals (the orb is clipped to a circle, so no square brackets)
+  ctx.lineWidth=Math.max(2,R*.02);ctx.strokeStyle=`rgba(${ink},${light?.42:.34})`;for(let k=0;k<4;k++){const a=Math.PI/4+k*Math.PI/2;arc(R*1.6,a-.07,a+.07);}
+ }
+ function nucleus(cx,cy,R,t,A,ink,light){
+  const rc=R*.25,k=.75+energy*.5+Math.sin(t*2.2)*.06;
+  const g=ctx.createRadialGradient(cx,cy,0,cx,cy,rc*2.4);g.addColorStop(0,light?`rgba(${A},${.35*k})`:`rgba(255,255,255,${.32*k})`);g.addColorStop(.28,`rgba(${A},${.22*k})`);g.addColorStop(1,`rgba(${A},0)`);ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,rc*2.4,0,7);ctx.fill();
+  ctx.lineWidth=rc*.2;ctx.strokeStyle=`rgba(${A},${(light?.42:.38)*k})`;for(let i=0;i<10;i++){const a0=t*.35+i*Math.PI/5;ctx.beginPath();ctx.arc(cx,cy,rc*.8,a0,a0+Math.PI/5*.62);ctx.stroke();}
+  ctx.lineWidth=1;ctx.strokeStyle=`rgba(${ink},${light?.5:.45})`;ctx.beginPath();for(let i=0;i<6;i++){const a=-t*.2+i*Math.PI/3,x=cx+Math.cos(a)*rc*.46,y=cy+Math.sin(a)*rc*.46;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.stroke();
+  const c=ctx.createRadialGradient(cx,cy,0,cx,cy,rc*.42);c.addColorStop(0,light?`rgba(255,255,255,.95)`:`rgba(255,255,255,${.85*k})`);c.addColorStop(.45,`rgba(${A},${.7*k})`);c.addColorStop(1,`rgba(${A},0)`);ctx.fillStyle=c;ctx.beginPath();ctx.arc(cx,cy,rc*.42,0,7);ctx.fill();
+ }
+ function wave(cx,cy,R,t,A,p){const lvl=Math.max(mic,out,p==='listening'?.22:p==='speaking'?.3:0);if(lvl<.04)return;ctx.lineWidth=1.3;ctx.strokeStyle=`rgba(${A},${.3+lvl*.45})`;ctx.beginPath();
+  for(let i=0;i<=120;i++){const a=i/120*Math.PI*2,n=(Math.sin(i*.9+t*9)+Math.sin(i*2.3-t*6)*.5+Math.sin(i*5.1+t*13)*.25)/1.75,r=R*1.19+R*.11*lvl*(.55+.45*n),x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.stroke();}
+ /** Status read-outs written ALONG the ring (top: state, bottom: energy) — inside the circular clip of the orb. */
+ function arcText(txt,cx,cy,r,center,bottom){const gap=1.6,ch=[...txt],ws=ch.map(c=>ctx.measureText(c).width+gap),tot=ws.reduce((a,b)=>a+b,0)/r;let a=bottom?center+tot/2:center-tot/2;
+  for(let i=0;i<ch.length;i++){const d=ws[i]/r,ang=bottom?a-d/2:a+d/2;ctx.save();ctx.translate(cx+Math.cos(ang)*r,cy+Math.sin(ang)*r);ctx.rotate(bottom?ang-Math.PI/2:ang+Math.PI/2);ctx.fillText(ch[i],0,0);ctx.restore();a+=bottom?-d:d;}}
+ function labels(cx,cy,R,ink,A,p){const H=Math.min(w,h)/2;if(H<110)return;const fs=Math.max(8,Math.min(10.5,H*.055));ctx.font=`700 ${fs}px ui-monospace,SFMono-Regular,Menlo,monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle=`rgba(${ink},.66)`;arcText('IVI · '+(LABEL[p]||'EN ESPERA'),cx,cy,R*1.535,-Math.PI/2,false);
+  ctx.fillStyle=`rgba(${A},.78)`;arcText(`ENERGÍA ${String(Math.round(Math.min(1,energy/1.2)*100)).padStart(2,'0')} %`,cx,cy,R*1.535,Math.PI/2,true);}
  function size(){if(!canvas)return;const r=canvas.getBoundingClientRect();dpr=Math.min(2,devicePixelRatio||1);w=Math.max(1,r.width);h=Math.max(1,r.height);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
  const mix=(a,b,k)=>a.map((v,i)=>v+(b[i]-v)*k);
  function frame(now){
@@ -31,10 +64,25 @@ window.EvieNeural=(()=>{
   const target=({idle:.18,listening:.45,thinking:.75,speaking:.55,error:.3}[p]||.2)+mic*1.4+out*1.2;
   energy+=(Math.min(1.6,target)-energy)*.07;
   ptr.x+=(ptr.tx-ptr.x)*.05;ptr.y+=(ptr.ty-ptr.y)*.05;
-  // fade previous frame -> light trails, keeps transparency of the glass behind
-  ctx.globalCompositeOperation='destination-out';ctx.fillStyle=`rgba(0,0,0,${reduced()?1:.22})`;ctx.fillRect(0,0,w,h);ctx.globalCompositeOperation=light?'source-over':'lighter';
-  const cx=w/2,cy=h/2,R=Math.min(w,h)*.33*(1+energy*.06+Math.sin(t*1.3)*.012),rotY=t*(.12+energy*.25)+ptr.x*.6,rotX=Math.sin(t*.2)*.25+ptr.y*.4;
+  // crisp HUD: full clear (the old trail fade smeared the rings); transparency of the glass behind is kept
+  ctx.clearRect(0,0,w,h);ctx.globalCompositeOperation=light?'source-over':'lighter';
+  const cx=w/2,cy=h/2,R=Math.min(w,h)*.285*(1+energy*.06+Math.sin(t*1.3)*.012),rotY=t*(.12+energy*.25)+ptr.x*.6,rotX=Math.sin(t*.2)*.25+ptr.y*.4;
   const cy1=Math.cos(rotY),sy1=Math.sin(rotY),cx1=Math.cos(rotX),sx1=Math.sin(rotX);
+  const A=`${col.a[0]|0},${col.a[1]|0},${col.a[2]|0}`,B=`${col.b[0]|0},${col.b[1]|0},${col.b[2]|0}`,ink=light?'20,34,90':'235,244,255';
+  const proj=(x,y,z)=>{const x1=x*cy1-z*sy1,z1=x*sy1+z*cy1,y1=y*cx1-z1*sx1,z2=y*sx1+z1*cx1,f=2.6/(2.6+z2);return {x:cx+x1*R*f,y:cy+y1*R*f,z:z2};};
+  // bloom behind everything
+  const bl=ctx.createRadialGradient(cx,cy,R*.2,cx,cy,R*1.9);bl.addColorStop(0,`rgba(${A},${(light?.10:.14)+energy*.08})`);bl.addColorStop(.5,`rgba(${B},${light?.04:.05})`);bl.addColorStop(1,`rgba(${B},0)`);ctx.fillStyle=bl;ctx.fillRect(0,0,w,h);
+  hud(cx,cy,R,t,A,B,ink,light,p);
+  // drifting dust leaving the core
+  if(!reduced())for(const d of dust){d.r+=d.v*.01*(1+energy*2);if(d.r>1.9){d.r=1.05;d.a=Math.random()*Math.PI*2;}}
+  for(const d of dust){const x=cx+Math.cos(d.a+t*.02)*R*d.r,y=cy+Math.sin(d.a+t*.02)*R*d.r,al=Math.max(0,1-(d.r-1.05)/.85)*(light?.45:.55);ctx.fillStyle=`rgba(${A},${al})`;ctx.fillRect(x,y,d.s,d.s);}
+  // holographic globe: latitudes, meridians and the satellites' orbit
+  ctx.lineWidth=.8;ctx.strokeStyle=`rgba(${A},${light?.16:.11})`;
+  const poly=(pts)=>{ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.stroke();};
+  for(const ly of [-.66,-.33,0,.33,.66]){const r=Math.sqrt(1-ly*ly)*1.02,pts=[];for(let i=0;i<=44;i++){const a=i/44*Math.PI*2;pts.push(proj(Math.cos(a)*r,ly*1.02,Math.sin(a)*r));}poly(pts);}
+  for(let m=0;m<6;m++){const a0=m*Math.PI/6,pts=[];for(let i=0;i<=44;i++){const b=i/44*Math.PI*2;pts.push(proj(Math.cos(b)*Math.cos(a0)*1.02,Math.sin(b)*1.02,Math.cos(b)*Math.sin(a0)*1.02));}poly(pts);}
+  ctx.setLineDash([3,5]);ctx.strokeStyle=`rgba(${B},${light?.2:.14})`;{const pts=[];for(let i=0;i<=56;i++){const a=i/56*Math.PI*2;pts.push(proj(Math.cos(a)*1.45,0,Math.sin(a)*1.45));}poly(pts);}ctx.setLineDash([]);
+  nucleus(cx,cy,R,t,A,ink,light);
   const P=nodes.map(nd=>{let {x,y,z}=nd;if(nd.sat){const a=nd.s+t*.35;x=Math.cos(a)*1.45;z=Math.sin(a)*1.45;}
    const wob=1+Math.sin(t*1.7+nd.s)*.035*(1+energy*2);x*=wob;y*=wob;z*=wob;
    const x1=x*cy1-z*sy1,z1=x*sy1+z*cy1,y1=y*cx1-z1*sx1,z2=y*sx1+z1*cx1,f=2.6/(2.6+z2);
@@ -55,9 +103,8 @@ window.EvieNeural=(()=>{
   for(let i=0;i<P.length;i++){const p=P[i],nd=nodes[i],depth=(2-p.z)/3,r=nd.size*p.f*(nd.hub?1.6:1)*(1+Math.sin(t*2+nd.s)*.2*energy);
    const c=nd.hub?col.b:col.a;ctx.fillStyle=`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${Math.min(1,.25+depth*.7)})`;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.4,r),0,7);ctx.fill();
    if(nd.hub&&depth>.5){ctx.fillStyle=light?`rgba(80,90,210,${.10*depth*(1+energy)})`:`rgba(255,255,255,${.12*depth*(1+energy)})`;ctx.beginPath();ctx.arc(p.x,p.y,r*3.2,0,7);ctx.fill();}}
-  // core glow
-  const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.1);glow.addColorStop(0,`rgba(${col.a[0]|0},${col.a[1]|0},${col.a[2]|0},${.05+energy*.08})`);glow.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
-  ctx.globalCompositeOperation='source-over';
+  // voice waveform ring + read-outs on top
+  wave(cx,cy,R,t,A,p);ctx.globalCompositeOperation='source-over';labels(cx,cy,R,ink,A,p);
   mic*=.9;out*=.9;
   if(raf===null&&visible&&!document.hidden&&!reduced())raf=requestAnimationFrame(frame);
  }

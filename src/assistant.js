@@ -7,7 +7,7 @@ import { retrieve, settingsOf, contextBlock, ensureMemorySchema } from './memory
 import { tierConfig, isTier, DEFAULT_TIER, TIER_IDS, TIER_LABELS, fallbackOf, costMicro, parseTierCommand, suggestTier, WEB_SEARCH_USD } from './tiers.js'
 import { ensureV5, getSetting, putSetting, observe, rid, percentiles } from './v5-schema.js'
 import { aiProvider, claudeClient, claudeRun, claudeError, claudeCost, claudeTools, webSearchTool, textOf, sourcesOf, toolUses, stopNote, searchesOf, servedByFallback } from './claude.js'
-import { iviSystem, iviUserBlock, iviContext, personaDials, cleanMode } from './persona.js'
+import { iviSystem, iviUserBlock, iviContext, personaDials, cleanMode, iviSituation } from './persona.js'
 import { memoryBlock, learnFromExchange, memorySettings, MEMORY_LIMITS } from './ai-memory.js'
 
 const OPENAI_URL = 'https://api.openai.com/v1/responses'
@@ -68,7 +68,7 @@ export const TOOLS = [
   { name: 'draft_google_event', description: 'Propone UN evento en el Google Calendar del usuario (solo si lo pidió explícitamente para Google Calendar). Muestra vista previa; se crea únicamente cuando el usuario toca Confirmar. Si no está conectado o es de solo lectura, la app lo explica.', parameters: S({ title: { type: 'string', maxLength: 200 }, date: { type: 'string', description: 'YYYY-MM-DD' }, time: nstr('HH:MM o null si es todo el día'), duration_minutes: { type: ['integer', 'null'], minimum: 5, maximum: 1440 }, reminder_minutes: { type: ['integer', 'null'], minimum: 0, maximum: 40320 } }) },
   { name: 'draft_goal', description: 'Propone un objetivo nuevo.', parameters: S({ title: { type: 'string', maxLength: 140 } }) },
   // HUD: contextual cards over the Neural Core. Opening/closing a card never changes data.
-  { name: 'show_card', description: 'Muestra una tarjeta contextual en Inicio sobre el núcleo de EVIE (módulo real o información). Úsala cuando el usuario pide "abre X", "muéstrame X" o pide la hora/agenda/pendientes. "kisha" abre a la Mascota Virtual. "capabilities" explica lo que EVIE puede hacer.', parameters: S({ card: { type: 'string', enum: ['briefing', 'weekly', 'finanzas', 'automatizaciones', 'mapa', 'agenda', 'pendientes', 'today', 'clock', 'kisha', 'capabilities', 'habitos', 'objetivos', 'gimnasio', 'soma', 'aprendizaje', 'negocios', 'libros', 'vision', 'tendencias', 'logros', 'timer'] } }) },
+  { name: 'show_card', description: 'Muestra una tarjeta contextual en Inicio sobre el núcleo de EVIE (módulo real o información). Úsala cuando el usuario pide "abre X", "muéstrame X" o pide la hora/agenda/pendientes. "kisha" abre a la Mascota Virtual. "capabilities" explica lo que EVIE puede hacer.', parameters: S({ card: { type: 'string', enum: ['briefing', 'weekly', 'radar', 'proactive', 'finanzas', 'automatizaciones', 'mapa', 'agenda', 'pendientes', 'today', 'clock', 'kisha', 'capabilities', 'habitos', 'objetivos', 'gimnasio', 'soma', 'aprendizaje', 'negocios', 'libros', 'vision', 'tendencias', 'logros', 'timer'] } }) },
   { name: 'close_card', description: 'Cierra una tarjeta abierta en Inicio ("cierra finanzas", "quita esto"). card=null cierra la tarjeta activa; "all" cierra todas. No borra datos.', parameters: S({ card: nstr('nombre de la tarjeta, "all" o null para la activa') }) },
   { name: 'open_shortcut', description: 'Abre una automatización guardada por el usuario (atajo a un SITIO WEB) por su nombre o frase, p. ej. "abre la página de SOMA". Si el usuario dice "apartado"/"módulo" de SOMA usa show_card(soma). Nunca inventes URLs: solo existen las guardadas. Devuelve opened|attempted|ambiguous|not_found; si es attempted di que el usuario puede tocar Abrir en la tarjeta.', parameters: S({ name: { type: 'string' } }) },
   { name: 'get_pendientes', description: 'Pendientes unificados del usuario (agenda, objetivos, hábitos, pagos, cobros SOMA) ordenados por urgencia, con severidad roja/amarilla/verde y fuente.', parameters: S({}) },
@@ -258,7 +258,7 @@ export function createAssistant({ fetcher = fetch, authenticate, unseal = null, 
         if (list.length) { mem = memoryBlock(list); used = { facts: list.map((m) => ({ id: m.id, text: m.text, updated_day: String(m.updated_at || '').slice(0, 10), source: m.kind, source_session: m.source_conversation })), sessions: memoryUsed.sessions } }
       } catch (e) { console.error('MEMORY_SUPABASE', String(e?.message || e).slice(0, 60)) }
     }
-    const system = iviSystem({ userBlock: iviUserBlock({ profile: profileBlock(profile, lastUser), memoryProfile }), context: iviContext({ name, today: day(timezone), timezone, currency, channel: o.channel, mode: cleanMode(ctx.mode), dials: personaDials(ctx.persona), tier: cfg.id, web, guest, privateMode, memory: mem }) })
+    const system = iviSystem({ userBlock: iviUserBlock({ profile: profileBlock(profile, lastUser), memoryProfile }), context: [iviContext({ name, today: day(timezone), timezone, currency, channel: o.channel, mode: cleanMode(ctx.mode), dials: personaDials(ctx.persona), tier: cfg.id, web, guest, privateMode, memory: mem }), iviSituation(ctx.situation)].filter(Boolean).join('\n') })
     const tools = [...claudeTools(TOOLS), ...claudeTools(SERVER_TOOLS), ...(web ? [webSearchTool({ timezone, city: profile?.city })] : [])]
     const client = claudeClient(env, fetcher), base = messages.length, ms = []
     let msg = null, cost = 0, searches = 0, serverResults = [], fellBack = false
@@ -392,7 +392,7 @@ export function createAssistant({ fetcher = fetch, authenticate, unseal = null, 
     if (!privateMode && unseal && env.AUTH_DB && env.EVIE_SESSION_KEY) { try { await ensureMemorySchema(env.AUTH_DB); const st = await settingsOf(env, s.user.id, unseal); memoryUsed = await retrieve(env, s.user.id, unseal, lastUser, { ...st, timezone }); memory = contextBlock(memoryUsed) } catch (e) { console.error('MEMORY_RETRIEVE', String(e?.message || e).slice(0, 80)) } }
     const retrievalMs = Date.now() - tr
     if (provider === 'claude') return claudeChat(c, { s, env, input, ctx, requestId, cfg, web, timezone, currency, name, profile, guest, privateMode, memory, memoryUsed, lastUser, lim, stored, tierSource, tier, tierChanged, fallback, retrievalMs, t0, channel: 'voz' })
-    const sys = instructions({ name, today: day(timezone), timezone, currency, profile: profileBlock(profile, lastUser), web, memory, privateMode, tier: cfg.id, guest })
+    const sys = [instructions({ name, today: day(timezone), timezone, currency, profile: profileBlock(profile, lastUser), web, memory, privateMode, tier: cfg.id, guest }), iviSituation(ctx.situation)].filter(Boolean).join('\n\n')
     let convo = [...input], data = null, usedWeb = false, webUnsupported = false, costTotal = 0
     const openaiMs = []
     // Server tools (trusted clock) are resolved here in a bounded loop; client tools go back to the browser.
