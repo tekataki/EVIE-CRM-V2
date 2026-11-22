@@ -60,16 +60,18 @@ export function openaiSources(data) {
 }
 export const openaiSearches = (data) => (Array.isArray(data?.output) ? data.output : []).filter((o) => o.type === 'web_search_call').length
 
-/** Structured output (strict JSON schema). Returns { json, cost, model }. Throws OpenAIError. */
-export async function openaiJson(env, fetcher, { tier = 'enfoque', system, user, schema, name = 'evie_json', maxTokens = 3000, timeoutMs = 60000, signal = null }) {
+/** Structured output (strict JSON schema). `web` adds the hosted web search (required) — sources come back in `data`.
+ *  Returns { json, cost, model, data, searches }. Throws OpenAIError. */
+export async function openaiJson(env, fetcher, { tier = 'enfoque', system, user, schema, name = 'evie_json', maxTokens = 3000, timeoutMs = 60000, signal = null, web = null }) {
   const cfg = tierConfig(env, tier)
   const payload = { model: cfg.model, instructions: system, input: [{ role: 'user', content: user }], max_output_tokens: Math.max(maxTokens, cfg.max_output_tokens), store: false, reasoning: { effort: cfg.effort }, text: { format: { type: 'json_schema', name: String(name).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64), schema: strictSchema(schema), strict: true } } }
-  const data = await (await post(env, fetcher, payload, timeoutMs, signal)).json()
-  const cost = costMicro(env, cfg.model, data?.usage)
+  if (web) Object.assign(payload, { tools: [{ type: 'web_search', search_context_size: 'medium', user_location: { type: 'approximate', country: 'MX', ...(web.timezone ? { timezone: web.timezone } : {}), ...(web.city ? { city: String(web.city).slice(0, 60) } : {}) } }], tool_choice: 'required', include: ['web_search_call.action.sources'] })
+  const data = await (await post(env, fetcher, payload, web ? Math.max(timeoutMs, 90000) : timeoutMs, signal)).json()
+  const searches = openaiSearches(data), cost = costMicro(env, cfg.model, data?.usage) + searches * WEB_SEARCH_USD * 1e6
   if (refused(data)) throw Object.assign(new OpenAIError(502, 'refusal'), { cost })
   if (data?.status === 'incomplete') throw Object.assign(new OpenAIError(502, 'max_tokens'), { cost })
   let json; try { json = JSON.parse(outputText(data)) } catch { throw Object.assign(new OpenAIError(502, 'bad_json'), { cost }) }
-  return { json, cost, model: cfg.model }
+  return { json, cost, model: cfg.model, data, searches }
 }
 
 /** Streams a text answer (SSE from the Responses API). onText(delta) per chunk. Optional hosted web search.

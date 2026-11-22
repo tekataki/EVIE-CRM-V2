@@ -25,7 +25,10 @@ window.EvieBriefing=(()=>{
  function phrase(date=new Date()){const n=Math.floor(new Date(date.getFullYear(),date.getMonth(),date.getDate()).getTime()/864e5);return PHRASES[((n%PHRASES.length)+PHRASES.length)%PHRASES.length];}
 
  /* ---------------- data (pure-ish, from the local Store) ---------------- */
- function todayCommitments(dow=todayDow()){return commitments().filter(c=>c.days.includes(dow)).sort((a,b)=>toMin(a.time)-toMin(b.time));}
+ /** Own fixed commitments + today's classes from Escuela (only the first class can trigger «Sal ahora»). */
+ function todayCommitments(dow=todayDow()){const own=commitments().filter(c=>c.days.includes(dow)),seen=new Set(own.map(c=>String(c.label).toLowerCase()+c.time));
+  const classes=(window.EvieSchool?.classesOn?.(dow)||[]).filter(c=>c&&/^\d{2}:\d{2}$/.test(c.time)&&!seen.has(String(c.label).toLowerCase()+c.time)).sort((a,b)=>toMin(a.time)-toMin(b.time)).map((c,i)=>({...c,days:c.days||[dow],alert:i===0&&c.alert!==false,school:true}));
+  return [...own,...classes].sort((a,b)=>toMin(a.time)-toMin(b.time));}
  /** Gym window before the first commitment of the day (minus travel), from wake time + 30 min. */
  function gymWindow(dow=todayDow()){const s=settings(),first=todayCommitments(dow)[0],start=toMin(s.wake)+30;
   if(!first)return {start,end:null,minutes:null,label:'Sin compromisos fijos hoy: entrena cuando te acomode.'};
@@ -35,7 +38,7 @@ window.EvieBriefing=(()=>{
  function agendaToday(){const st=Store.get()||{},t=Domain.today();if(!window.Agenda)return [];
   return (st.agendaItems||[]).filter(r=>!r.deleted_at&&!['done','archived'].includes(r.status)&&Agenda.occurrence(r,t)&&!Agenda.isDone(r,t)).map(r=>({title:r.title,time:r.start_at&&String(r.start_at).length>10?String(r.start_at).slice(11,16):null,area:r.area})).sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'));}
  function followUps(){const t=Domain.today(),closed=/complet|perdid|pausad|ganad/i;return (Store.get()?.clients||[]).filter(c=>!c.deleted_at&&c.nextDate&&c.nextDate<=t&&!closed.test(c.stage||'')).map(c=>({id:c.id,name:c.title||c.name||'Cliente',action:c.nextAction||'',late:c.nextDate<t}));}
- function mission(){const g=(Store.get()?.goals||[]).filter(x=>!x.archived&&!x.deleted_at&&x.target>0&&/misi[oó]n/i.test(x.title||'')).sort((a,b)=>b.target-a.target)[0];return g?{title:g.title,pct:Math.max(0,Math.min(100,Math.round(g.progress/g.target*100)))}:null;}
+ function mission(){const p=window.EvieMission?.plan?.();if(p)return {title:'Misión '+p.name,pct:Math.round(p.pct)};const g=(Store.get()?.goals||[]).filter(x=>!x.archived&&!x.deleted_at&&x.target>0&&/misi[oó]n/i.test(x.title||'')).sort((a,b)=>b.target-a.target)[0];return g?{title:g.title,pct:Math.max(0,Math.min(100,Math.round(g.progress/g.target*100)))}:null;}
  function recoveryReady(){const r=window.EvieFisico?.recovery?EvieFisico.recovery():{};return Object.values(r).filter(x=>x.state==='green').map(x=>x.label);}
  function build(){return {date:new Date(),agenda:agendaToday(),commitments:todayCommitments(),gym:gymWindow(),follow:followUps(),mission:mission(),ready:recoveryReady(),phrase:phrase()};}
  /** Spoken version (no markup), built locally. */

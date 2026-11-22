@@ -25,14 +25,18 @@ window.IviCore=(()=>{
   const closed=/ganad|perdid|cerrad|cancel/i;const follow=(st.clients||[]).filter(c=>!c.deleted_at&&c.nextDate&&c.nextDate<=t&&!closed.test(c.stage||''));
   const items=(st.agendaItems||[]).filter(r=>!r.deleted_at&&!['done','archived'].includes(r.status)&&window.Agenda&&Agenda.occurrence(r,t)&&!Agenda.isDone(r,t));
   const school=items.filter(r=>r.area==='school');
-  const mission=(st.goals||[]).filter(g=>!g.archived&&!g.deleted_at&&g.target>0&&/mision|misión|moto|zx/i.test(g.title||'')).sort((a,b)=>b.target-a.target)[0];
-  const pct=mission?Math.max(0,Math.min(100,Math.round(mission.progress/mission.target*100))):null;
+  // v10 · Fase 4: Escuela and Misión feed the bar when their modules exist (fallback: agenda items / a «Misión…» goal).
+  const sch=window.EvieSchool?.summary?.()||null;
+  const mp=window.EvieMission?.plan?.()||null;
+  const mission=mp?{title:'Misión: '+mp.name}:(st.goals||[]).filter(g=>!g.archived&&!g.deleted_at&&g.target>0&&/^misi[oó]n\b/i.test(g.title||'')).sort((a,b)=>b.target-a.target)[0];
+  const pct=mp?Math.round(mp.pct):mission?Math.max(0,Math.min(100,Math.round(mission.progress/mission.target*100))):null;
+  const schoolSys=sch?{key:'school',icon:'graduation-cap',label:'Escuela',value:String(sch.tasksDue7),hint:sch.nextExam?`examen ${sch.nextExam.days<=0?'hoy':sch.nextExam.days===1?'mañana':'en '+sch.nextExam.days+' días'}`:sch.today?.length?`${sch.today.length} ${sch.today.length===1?'clase':'clases'} hoy`:'sin entregas',tone:sch.overdue||(sch.nextExam&&sch.nextExam.days<=3)?'warn':'good',href:'#escuela'}:null;
   return {
    recovery:{key:'recovery',icon:'activity',label:'Recuperación',value:vals.length?`${ready} listos`:'—',hint:resting?`${resting} descansando`:'todo recuperado',tone:resting>4?'warn':'good',href:'#fisico'},
    followups:{key:'followups',icon:'handshake',label:'Seguimientos',value:String(follow.length),hint:follow.length?follow.slice(0,2).map(c=>c.title||c.name).join(' · '):'al día',tone:follow.length?'warn':'good',href:'#soma'},
    today:{key:'today',icon:'calendar-check',label:'Hoy',value:String(items.length),hint:items.length?'pendientes':'libre',tone:items.length>6?'warn':'good',href:'#agenda'},
-   school:{key:'school',icon:'graduation-cap',label:'Escuela',value:String(school.length),hint:school.length?'para hoy':'sin entregas hoy',tone:school.length?'warn':'good',href:'#agenda'},
-   mission:{key:'mission',icon:'rocket',label:'Misión',value:pct==null?'—':pct+' %',hint:mission?e(mission.title).slice(0,24):'crea una meta «Misión…»',tone:pct==null?'idle':'good',href:'#objetivos'}};}
+   school:schoolSys||{key:'school',icon:'graduation-cap',label:'Escuela',value:String(school.length),hint:school.length?'para hoy':'sin entregas hoy',tone:school.length?'warn':'good',href:'#agenda'},
+   mission:{key:'mission',icon:'rocket',label:'Misión',value:pct==null?'—':pct+' %',hint:mp?(mp.done?'cumplida':mp.onTrack?'a tiempo':mp.eta?mp.late+' m tarde':'sin proyección'):mission?e(mission.title).slice(0,24):'crea tu misión',tone:pct==null?'idle':mp&&!mp.onTrack?'warn':'good',href:'#objetivos'}};}
  const ORDER={asistente:['today','followups','recovery','school','mission'],ventas:['followups','today','mission','recovery','school'],gym:['recovery','today','mission','followups','school'],estudio:['school','today','recovery','followups','mission'],noche:['today','mission','recovery','followups','school']};
  const SUGGEST={
   asistente:[['sunrise','Protocolo matutino','protocol:briefing'],['list-checks','¿Qué tengo hoy?','ask:¿Qué tengo hoy?'],['brain-circuit','¿Qué sabes de mí?','route:chat/memoria']],
@@ -75,6 +79,8 @@ window.IviCore=(()=>{
   return {ok:false,error:'Protocolo desconocido.'};}
  /** Local voice intent: «Ivi, protocolo matutino», «buenos días Ivi», «debrief», «prepara la visita a X». */
  function intent(text){const q=(window.IvyTools?.norm?IvyTools.norm(text):String(text).toLowerCase()).replace(/[¿?¡!.,]/g,'').replace(/^(?:oye |hey )?(?:ivi|ivy|evie|evi|ibi)[, ]*/,'').trim();
+  // v10 · Fase 4 modules answer from real local data (no AI): misión, revisión semanal, escuela.
+  for(const mod of [window.EvieMission,window.EvieWeekly,window.EvieSchool]){const r=mod?.intent?.(text);if(typeof r==='string'&&r)return r;}
   if(/^(protocolo matutino|briefing|briefing (del dia|de hoy)|buenos dias|dame mi briefing)$/.test(q))return protocol('briefing').say;
   if(/^(protocolo de cierre|debrief|cierre del dia|cierra el dia)$/.test(q))return protocol('debrief').say;
   const m=q.match(/^(?:prepara(?:me)? (?:la |mi )?visita|protocolo de visita)(?: (?:a|con|para) (.+))?$/);if(m){const r=protocol('visita',{client:m[1]||null});return r.say||(r.status==='choose'?'Elige el prospecto en pantalla.':'No encontré ese prospecto.');}

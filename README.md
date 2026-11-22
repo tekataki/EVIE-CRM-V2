@@ -103,6 +103,26 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v10 · Fase 4: Misión, Escuela, Independencia y Revisión del domingo (2026-11-22)
+- **Misión** (Objetivos y Finanzas): meta de ahorro con nombre, monto y fecha límite (son datos tuyos, no del código).
+  Cuenta regresiva, ahorro mensual necesario y proyección con tus **ingresos reales de SOMA** (promedio de 90 días × el
+  % que destinas + aporte extra). **Escenarios** (+ingreso / −gasto) con su fecha estimada. El ahorro se registra con
+  aportes o se liga al saldo real de una de tus cuentas. **Holograma 3D** (Three.js) de una moto deportiva que se arma
+  pieza por pieza con tu avance (respaldo SVG con movimiento reducido). La **serie de contenido** (TikTok, Reels o
+  Shorts) usa la sección Contenido. Se refleja en un objetivo normal que ven Inicio, el briefing e Ivi.
+- **Escuela** (`#escuela`): materias con horario que se bloquea en Agenda, tareas y exámenes (también en Agenda),
+  **tarjetas con repaso espaciado (SM-2)** y «Generar con Ivi» desde tus apuntes, **resúmenes en audio** (la IA los
+  escribe y la voz de Ivi los lee) y calificaciones con promedio ponderado y «cuánto necesitas». Tus clases cuentan
+  como compromisos del briefing (ventana para entrenar y «Sal ahora» para la primera clase).
+- **Independencia** (Finanzas): meses de autonomía con tu dinero disponible y tus gastos reales, fondo de emergencia
+  y renta sola vs. compartida; un clic los lleva como escenarios a tu Misión.
+- **Revisión del domingo**: tu semana con datos reales (misión, entrenos, SOMA, finanzas, escuela y ánimo del diario
+  solo si lo permitiste), 3 prioridades editables, análisis opcional de Ivi (`/api/weekly/review`, solo números) y
+  «volverlas objetivos». Se abre sola el domingo desde las 17:00; también con «Ivi, revisión semanal».
+- Sin migraciones: todo vive en `preferences` (la app de escritorio trae su propia copia del frontend y una colección
+  nueva rompería la sincronización de versiones anteriores). Los episodios usan `contentItems`; las clases, `agendaItems`.
+- Pruebas: `tests/mission-weekly.test.cjs`, `tests/school.test.cjs` y E2E `tools/e2e-mission.mjs`, `tools/e2e-school.mjs`.
+
 ## Novedades v10 · Fase 3: Briefing diario y Cabina SOMA (2026-11-22)
 - **Briefing del día** (tarjeta del HUD y «Ivi, protocolo matutino»): clima, bloques de hoy (compromisos fijos +
   Agenda), ventana para entrenar antes de tu primer compromiso con los músculos que ya están listos, seguimientos de
