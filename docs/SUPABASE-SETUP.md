@@ -50,7 +50,24 @@ Navegador (PC / teléfono, PWA)  →  Cloudflare Pages "evie-crm-v2" (Worker /ap
   `evie-crm-v2.pages.dev`. El borrador está en `docs/PRIVACIDAD-BORRADOR.md` (le faltan tus datos de responsable).
 - El secreto del cliente solo está en Supabase (y en el JSON que hayas descargado). Nunca va en el repositorio.
 
-### v7 (2026-11-22): acceso solo con Google
+### v8 (2026-11-22, más tarde): correo + contraseña, o Google
+| Pantalla | Qué hace |
+|---|---|
+| **Iniciar sesión** | «Continuar con Google» (rápido) **o** correo + contraseña. «¿Olvidaste tu contraseña?» → «Recuperar con Google» (si tu correo es de Google). Las cuentas antiguas pueden escribir su usuario en el campo de correo. |
+| **Crear mi cuenta** | «Crear cuenta con Google» **o** correo + contraseña + confirmación (mínimo 10 caracteres). Abierto a cualquiera; `EVIE_SIGNUP=invite` lo cierra. |
+| **Tengo un código de invitación** | Igual que antes: invitado de prueba 72 h. |
+
+- **Misma cuenta con correo y con Google:** si te registras con tu correo de Gmail y después tocas «Continuar con
+  Google», Supabase une las dos formas en **una sola cuenta** (vinculación automática por correo comprobado).
+- **Protección:** como «Confirm email» está apagado en Supabase, nadie comprueba el correo al registrarse. Para que
+  un extraño no pueda registrar tu correo antes que tú, la primera vez que el dueño real entra con Google a una cuenta
+  así, EVIE **desactiva la contraseña anterior y cierra las demás sesiones** y te pide una nueva (`email_trust` en D1).
+- **Recomendado (opcional):** activar «Confirm email» con un SMTP propio (Supabase → Authentication → Emails → SMTP;
+  p. ej. Gmail con contraseña de aplicación). Sin SMTP propio, Supabase solo envía correos a miembros del equipo.
+  EVIE ya soporta ese modo: muestra «Te enviamos un correo» y limpia el enlace de confirmación al volver.
+- Las reglas de v7 «solo Google» y «la contraseña se rechaza tras vincular» **se retiraron**.
+
+### v7 (2026-11-22): acceso solo con Google (reemplazado por v8)
 | Pantalla | Qué hace |
 |---|---|
 | **Iniciar sesión** | «Continuar con Google». Abre la cuenta a la que pertenece esa cuenta de Google. |

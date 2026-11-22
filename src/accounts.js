@@ -5,7 +5,7 @@ import { createConnections } from './connections.js'
 import { createAssistant } from './assistant.js'
 import { createKisha } from './kisha.js'
 import { createResearch } from './research.js'
-import { createGoogleAuth, googleEnabled, googleSignupOpen } from './google-auth.js'
+import { createGoogleAuth, googleEnabled, googleSignupOpen, usernameFrom } from './google-auth.js'
 import { createMemory } from './memory.js'
 import { createMemoryV2 } from './memory-v2.js'
 import { createMap, mapStatus } from './map.js'
@@ -48,14 +48,15 @@ const SCHEMA=["CREATE TABLE IF NOT EXISTS auth_accounts (owner_id TEXT PRIMARY K
  "CREATE TABLE IF NOT EXISTS kisha_turns (owner_id TEXT NOT NULL, turn_id TEXT NOT NULL, data TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY (owner_id, turn_id))",
  "CREATE TABLE IF NOT EXISTS google_auth_states (state TEXT PRIMARY KEY, data TEXT NOT NULL, expires_at INTEGER NOT NULL)",
  "CREATE TABLE IF NOT EXISTS google_links (owner_id TEXT PRIMARY KEY, email TEXT NOT NULL DEFAULT '', linked_at INTEGER NOT NULL)",
- "CREATE TABLE IF NOT EXISTS desktop_handoffs (code TEXT PRIMARY KEY, data TEXT NOT NULL, expires_at INTEGER NOT NULL)"]
+ "CREATE TABLE IF NOT EXISTS desktop_handoffs (code TEXT PRIMARY KEY, data TEXT NOT NULL, expires_at INTEGER NOT NULL)",
+ "CREATE TABLE IF NOT EXISTS email_trust (owner_id TEXT PRIMARY KEY, via TEXT NOT NULL, at INTEGER NOT NULL)"]
 const schemaReady=new WeakMap()
 export function ensureSchema(db){if(!db)return Promise.resolve();let p=schemaReady.get(db);if(!p){p=(async()=>{for(const sql of SCHEMA)await db.prepare(sql).bind().run()})().catch(e=>{schemaReady.delete(db);throw e});schemaReady.set(db,p)}return p}
 export function createAccounts({fetcher=fetch}={}) {
  const api=new Hono()
  api.use('*',async(c,next)=>{const max=c.req.path.endsWith('/data/push')?16*1024*1024:c.req.path.includes('/data/media/')?11*1024*1024:c.req.path.endsWith('/ai/stt')?4*1024*1024:256*1024;return bodyLimit({maxSize:max,onError:c=>jsonError(c,'La solicitud supera el límite.',413)})(c,next)})
  api.use('*',async(c,next)=>{c.header('Cache-Control','no-store, private');c.header('X-Content-Type-Options','nosniff');await next()})
- api.get('/runtime',async c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:await googleEnabled(c.env||{},fetcher),googleSignup:googleSignupOpen(c.env)?'open':'invite',guestInvites:true,mediaSync:true,passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,map:{configured:mapStatus(c.env).configured,traffic:mapStatus(c.env).traffic},providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
+ api.get('/runtime',async c=>c.json({accountsEnabled:c.env?.EVIE_ACCOUNTS_ENABLED==='true',legacyOwnerId:c.env?.EVIE_LEGACY_OWNER_ID||null,inviteOnly:c.env?.EVIE_OPEN_SIGNUP!=='true',ai:{chat:!!c.env?.OPENAI_API_KEY,stt:!!c.env?.GROQ_API_KEY,tts:!!(c.env?.FISH_AUDIO_API_KEY&&c.env?.FISH_AUDIO_VOICE_ID)},googleAuth:await googleEnabled(c.env||{},fetcher),signup:googleSignupOpen(c.env)?'open':'invite',googleSignup:googleSignupOpen(c.env)?'open':'invite',guestInvites:true,mediaSync:true,passwordLogin:c.env?.EVIE_PASSWORD_LOGIN!=='off',research:!!c.env?.OPENAI_API_KEY&&c.env?.EVIE_WEB_SEARCH!=='off',weather:true,map:{configured:mapStatus(c.env).configured,traffic:mapStatus(c.env).traffic},providers:{spotify:false,whatsapp:false,instagram:false,gmail:false}}))
  api.use('*',async(c,next)=>{
   const env=c.env||{}
   if(env.EVIE_ACCOUNTS_ENABLED!=='true')return jsonError(c,'Las conexiones externas están desactivadas.',503)
@@ -108,13 +109,15 @@ export function createAccounts({fetcher=fetch}={}) {
   return row.count>max
  }
  async function cleanup(c){if(Math.random()<0.1)await c.env.AUTH_DB.prepare('DELETE FROM auth_attempts WHERE expires_at<?').bind(Date.now()).run()}
- function providerMessage(status,code,signup){
+ function providerMessage(status,code,signup,byEmail=false){
   if(status===429||code==='over_email_send_rate_limit'||code==='over_request_rate_limit')return ['El proveedor de cuentas limitó los intentos. Espera unos minutos.',429]
-  if(signup&&(code==='user_already_exists'||code==='email_exists'))return ['Ese nombre de usuario ya está en uso. Elige otro.',409]
+  if(signup&&(code==='user_already_exists'||code==='email_exists'))return [byEmail?'Ya existe una cuenta con ese correo. Toca «Iniciar sesión» o entra con Google.':'Ese nombre de usuario ya está en uso. Elige otro.',409]
+  if(signup&&byEmail&&(code==='email_address_invalid'||code==='validation_failed'))return ['Ese correo no es válido. Revísalo.',400]
+  if(!signup&&byEmail&&code==='email_not_confirmed')return ['Confirma tu correo: abre el enlace que te enviamos y vuelve a entrar.',409]
   if(signup&&code==='weak_password')return ['La contraseña es demasiado débil. Usa una frase más larga.',400]
   if(signup&&(code==='signup_disabled'||code==='email_provider_disabled'))return ['El registro está desactivado en Supabase. Revisa docs/SETUP.md.',503]
   if(!signup&&code==='email_not_confirmed')return ['La cuenta existe pero no está confirmada. Revisa docs/SETUP.md (confirmación de correo).',409]
-  return signup?['No se pudo crear la cuenta. Intenta de nuevo.',400]:['Usuario o contraseña no válidos.',401]
+  return signup?['No se pudo crear la cuenta. Intenta de nuevo.',400]:[byEmail?'Correo o contraseña no válidos.':'Usuario o contraseña no válidos.',401]
  }
  // Logs only status + provider error code, never the body (it may contain emails).
  async function providerError(r){let code='';try{const j=await r.json();code=String(j.error_code||j.code||j.error||'').slice(0,60)}catch{}console.error('SUPABASE_AUTH_REJECTED',r.status,code);return code}
@@ -132,50 +135,66 @@ export function createAccounts({fetcher=fetch}={}) {
   setCookie(c,cookie,sid,{httpOnly:true,secure:true,sameSite:'Strict',path:'/',maxAge:Math.max(60,Math.floor((expires-Date.now())/1000))})
   return true
  }
+ // Accounts (2026-11-22): «Crear mi cuenta» = correo + contraseña (confirmada en la app) o Google; «Iniciar sesión» =
+ // correo + contraseña o Google. Old username accounts (synthetic address) still sign in with their username, and the
+ // old username sign-up keeps its invitation rules (compatibility; the app no longer shows it).
+ const EMAIL=/^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,24}$/i
  async function enter(c,signup){
-  let data;try{data=await c.req.json();const keys=Object.keys(data).sort().join(',');if(keys!=='password,username'&&!(signup&&keys==='invite,password,username'))throw Error();data.username=normalizeUsername(data.username);if(typeof data.password!=='string'||data.password.length<10||data.password.length>128)throw Error();if(data.invite!==undefined&&(typeof data.invite!=='string'||data.invite.length<8||data.invite.length>128))throw Error()}catch{return jsonError(c,'Revisa el usuario y la contraseña (10–128 caracteres).')}
+  let data;try{data=await c.req.json();const keys=Object.keys(data).sort().join(',')
+   if(typeof data.email==='string'){if(keys!=='email,password'&&!(signup&&keys==='email,invite,password'))throw Error();data.email=data.email.trim().toLowerCase();if(data.email.length>254||!EMAIL.test(data.email))throw Error()}
+   else{if(keys!=='password,username'&&!(signup&&keys==='invite,password,username'))throw Error();data.username=normalizeUsername(data.username)}
+   if(typeof data.password!=='string'||data.password.length<10||data.password.length>128)throw Error();if(data.invite!==undefined&&(typeof data.invite!=='string'||data.invite.length<8||data.invite.length>128))throw Error()}
+  catch{return jsonError(c,'Revisa tu correo y la contraseña (10 a 128 caracteres).')}
+  const byEmail=typeof data.email==='string'
   const ip=c.req.header('CF-Connecting-IP')||'local'
-  if(await limited(c,'ip:'+ip,30)||await limited(c,'user:'+data.username,8))return jsonError(c,'Demasiados intentos. Espera 15 minutos.',429)
+  if(await limited(c,'ip:'+ip,30)||await limited(c,'user:'+(byEmail?data.email:data.username),8))return jsonError(c,'Demasiados intentos. Espera 15 minutos.',429)
   await cleanup(c)
   const domain=c.env.EVIE_AUTH_DOMAIN||'accounts.evie.local';if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain))return jsonError(c,'Dominio de cuentas no válido.',503)
-  const email=data.username+'@'+domain
-  let invite=null,role='member'
-  if(signup&&/^guest-/.test(data.username))return jsonError(c,'Los usuarios que empiezan con «guest-» están reservados para invitados temporales.')
+  if(byEmail&&data.email.endsWith('@'+domain))return jsonError(c,'Usa tu correo real.')
+  const email=byEmail?data.email:data.username+'@'+domain
+  let invite=null,role='member',handle=byEmail?null:data.username
+  if(signup&&!byEmail&&/^guest-/.test(data.username))return jsonError(c,'Los usuarios que empiezan con «guest-» están reservados para invitados temporales.')
   if(signup){
-   // Closed registration: only an owner-issued invite, or the very first account with EVIE_BOOTSTRAP_TOKEN.
    const n=(await accounts(c))?.n||0
    if(typeof data.invite==='string'&&c.env.EVIE_BOOTSTRAP_TOKEN&&n===0&&data.invite===c.env.EVIE_BOOTSTRAP_TOKEN)role='owner'
    else if(typeof data.invite==='string'){
     const id=await digest('invite:'+data.invite.trim().toUpperCase())
     invite=await c.env.AUTH_DB.prepare("UPDATE auth_invites SET used_at=? WHERE id=? AND used_at IS NULL AND expires_at>? AND kind<>'guest' RETURNING id").bind(Date.now(),id,Date.now()).first()
-    if(!invite){const g=await c.env.AUTH_DB.prepare("SELECT 1 AS x FROM auth_invites WHERE id=? AND kind='guest'").bind(id).first();return jsonError(c,g?'Ese código es de invitado temporal: usa «Entrar con invitación» (solo tu nombre, sin contraseña).':'La invitación no es válida, ya se usó o expiró. Pide una nueva.',403)}
-   }else if(c.env.EVIE_OPEN_SIGNUP!=='true')return jsonError(c,'El registro es solo por invitación. Pide un código a quien administra EVIE.',403)
+    if(!invite){const g=await c.env.AUTH_DB.prepare("SELECT 1 AS x FROM auth_invites WHERE id=? AND kind='guest'").bind(id).first();return jsonError(c,g?'Ese código es de invitado temporal: usa «Tengo un código de invitación» (solo tu nombre, sin contraseña).':'La invitación no es válida, ya se usó o expiró. Pide una nueva.',403)}
+   // E-mail sign-up is open (EVIE_SIGNUP=invite closes it); the old username sign-up stays invitation-only.
+   }else if(byEmail?!googleSignupOpen(c.env):c.env.EVIE_OPEN_SIGNUP!=='true')return jsonError(c,'El registro es solo por invitación. Pide un código a quien administra EVIE.',403)
    else if(n===0)role='owner'
+   if(byEmail)handle=await freeHandle(c,data.email)
   }
   let r
   if(signup&&c.env.SUPABASE_SERVICE_ROLE_KEY){
    // Admin creation with email_confirm: synthetic addresses never need a confirmation email (fixes 422/429/null session).
-   const created=await fetcher(c.env.SUPABASE_URL.replace(/\/$/,'')+'/auth/v1/admin/users',{method:'POST',redirect:'manual',headers:{apikey:c.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+c.env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:data.password,email_confirm:true,user_metadata:{username:data.username}}),signal:AbortSignal.timeout(20000)})
-   if(!created.ok){const code=await providerError(created);await release(c,invite);const [m,st]=providerMessage(created.status,code,true);return jsonError(c,m,st)}
+   const created=await fetcher(c.env.SUPABASE_URL.replace(/\/$/,'')+'/auth/v1/admin/users',{method:'POST',redirect:'manual',headers:{apikey:c.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+c.env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password:data.password,email_confirm:true,user_metadata:{username:handle}}),signal:AbortSignal.timeout(20000)})
+   if(!created.ok){const code=await providerError(created);await release(c,invite);const [m,st]=providerMessage(created.status,code,true,byEmail);return jsonError(c,m,st)}
    r=await remote(c,'/auth/v1/token?grant_type=password',{method:'POST',body:{email,password:data.password}})
-  }else r=await remote(c,signup?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{method:'POST',body:{email,password:data.password,...(signup?{data:{username:data.username}}:{})}})
+  }else r=await remote(c,signup?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{method:'POST',body:{email,password:data.password,...(signup?{data:{username:handle}}:{})}})
   data.password=''
-  if(!r.ok){const code=await providerError(r);await release(c,invite);const [m,st]=providerMessage(r.status,code,signup);return jsonError(c,m,st)}
+  if(!r.ok){const code=await providerError(r);await release(c,invite);const [m,st]=providerMessage(r.status,code,signup,byEmail);return jsonError(c,m,st)}
   const result=await r.json()
+  // Supabase «Confirm email» on: the account exists but opens only after the person clicks the e-mail link.
+  if(signup&&byEmail&&!result.access_token)return c.json({pending:'confirm_email'},202)
   if(!UUID.test(result.user?.id)){await release(c,invite);return jsonError(c,'Supabase no devolvió una sesión: desactiva "Confirm email" o configura SUPABASE_SERVICE_ROLE_KEY (docs/SETUP.md).',409)}
-  // Google-only: an account that already moved to Google no longer opens with its old password
-  // (EVIE_GOOGLE_AUTH=false is the emergency switch that brings passwords back for everyone).
-  if(!signup&&await googleEnabled(c.env,fetcher)&&await c.env.AUTH_DB.prepare('SELECT 1 AS x FROM google_links WHERE owner_id=?').bind(result.user.id).first()){await remote(c,'/auth/v1/logout',{method:'POST',access:result.access_token}).catch(()=>null);return jsonError(c,'Esta cuenta ya entra con Google. Toca «Continuar con Google».',409)}
-  if(!await issueSession(c,result,data.username)){await release(c,invite);return jsonError(c,'Supabase no devolvió una sesión: desactiva "Confirm email" o configura SUPABASE_SERVICE_ROLE_KEY (docs/SETUP.md).',409)}
+  let acct=await c.env.AUTH_DB.prepare('SELECT username,role FROM auth_accounts WHERE owner_id=?').bind(result.user.id).first()
+  if(!acct&&(signup||byEmail||role==='owner')){
+   // First entry of an e-mail account (also after confirming the e-mail): create its EVIE account.
+   if(!signup){if(!googleSignupOpen(c.env)){await remote(c,'/auth/v1/logout',{method:'POST',access:result.access_token}).catch(()=>null);return jsonError(c,'Tu cuenta aún no está habilitada en EVIE. Pide una invitación.',403)}if(!(await accounts(c))?.n)role='owner';handle=await freeHandle(c,email)}
+   await c.env.AUTH_DB.prepare('INSERT INTO auth_accounts(owner_id,username,role,created_at) VALUES(?,?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(result.user.id,handle,role,Date.now()).run()
+   acct=await c.env.AUTH_DB.prepare('SELECT username,role FROM auth_accounts WHERE owner_id=?').bind(result.user.id).first()
+  }
+  const name=acct?.username||handle
+  if(!await issueSession(c,result,name)){await release(c,invite);return jsonError(c,'Supabase no devolvió una sesión: desactiva "Confirm email" o configura SUPABASE_SERVICE_ROLE_KEY (docs/SETUP.md).',409)}
   if(invite)await c.env.AUTH_DB.prepare('UPDATE auth_invites SET used_by=? WHERE id=?').bind(result.user.id,invite.id).run()
-  if(signup||role==='owner')await c.env.AUTH_DB.prepare('INSERT INTO auth_accounts(owner_id,username,role,created_at) VALUES(?,?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(result.user.id,data.username,role,Date.now()).run()
-  const acct=await c.env.AUTH_DB.prepare('SELECT role FROM auth_accounts WHERE owner_id=?').bind(result.user.id).first()
-  return c.json({user:{id:result.user.id,username:data.username,role:acct?.role||'member'}})
+  return c.json({user:{id:result.user.id,username:name,role:acct?.role||'member'}})
  }
+ // EVIE handle for an e-mail account (shown in the app; never used to sign in).
+ async function freeHandle(c,email){const taken=new Set(((await c.env.AUTH_DB.prepare('SELECT username FROM auth_accounts').bind().all()).results||[]).map(x=>x.username));return usernameFrom(email,taken)}
  const passwordOff=c=>c.env.EVIE_PASSWORD_LOGIN==='off'?jsonError(c,'El acceso con contraseña se retiró. Entra con Google.',410):null
- // Once Google is active, new accounts are created only with Google (EVIE_PASSWORD_SIGNUP=on reopens it).
- const passwordSignupOff=async c=>c.env.EVIE_PASSWORD_SIGNUP!=='on'&&await googleEnabled(c.env,fetcher)?jsonError(c,'Las cuentas nuevas se crean con Google. Toca «Crear cuenta con Google».',410):null
- api.post('/auth/signup',async c=>passwordOff(c)||await passwordSignupOff(c)||enter(c,true));api.post('/auth/signin',c=>passwordOff(c)||enter(c,false))
+ api.post('/auth/signup',c=>passwordOff(c)||enter(c,true));api.post('/auth/signin',c=>passwordOff(c)||enter(c,false))
  const verified=async c=>{const s=await auth(c);return s&&c.req.header('X-Evie-User')===s.user.id?s:null}
  const notGuest=async c=>{const s=await verified(c);if(!s)return [null,jsonError(c,'Inicia sesión de nuevo.',401)];if(s.user.role==='guest')return [null,jsonError(c,'Esta función no está disponible para invitados.',403)];return [s,null]}
  const owner=async c=>{const s=await verified(c);if(!s)return [null,jsonError(c,'Inicia sesión de nuevo.',401)];if(s.user.role!=='owner')return [null,jsonError(c,'Solo el propietario puede administrar personas.',403)];return [s,null]}

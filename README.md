@@ -103,6 +103,12 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v8 (2026-11-22)
+- **Correo + contraseña, o Google.** «Crear mi cuenta»: correo, contraseña y confirmación (o Google). «Iniciar
+  sesión»: correo y contraseña, o «Continuar con Google» en un toque. Con el mismo correo es la misma cuenta.
+- «¿Olvidaste tu contraseña?» → «Recuperar con Google». Protección contra quien registre tu correo antes que tú.
+- Pruebas: `tests/v8-email-auth.test.cjs` (9) y `tools/e2e-login.mjs` (15 comprobaciones; 12 sin Google).
+
 ## Novedades v7 (2026-11-22)
 - **Acceso solo con Google.** «Iniciar sesión» y «Crear mi cuenta» son Google; cualquier cuenta de Google crea su propio
   espacio (`EVIE_GOOGLE_SIGNUP=invite` lo cierra). Ya no hay registro con usuario y contraseña.

@@ -2,8 +2,10 @@
 // - Google is how accounts are created and opened (2026-11-22). A Google identity opens the EVIE account it
 //   belongs to; an unknown Google identity creates its own new, empty, private space (EVIE_GOOGLE_SIGNUP=invite
 //   restores invitation-only creation). Guests (72 h) use invitation codes instead (src/guests.js).
-// - Matching email addresses are never used to merge identities (EVIE's legacy accounts use synthetic
-//   addresses). A legacy username account moves to Google only by signing in once and linking explicitly.
+// - E-mail + password accounts and Google share one account when the address is the same: Supabase links them
+//   (automatic linking of a verified e-mail). Because open e-mail sign-up does not prove the address, the first
+//   Google sign-in on such an account retires the unproven password and other sessions (email_trust table).
+// - Legacy username accounts use synthetic addresses, so they never merge by e-mail; they link only explicitly.
 // - Linking is explicit: a signed-in user starts "link", and the callback must return the SAME user id.
 // - Desktop: the system browser finishes OAuth and returns a one-time code to evie-crm://auth; the app
 //   redeems it with a secret nonce only it knows. Google login grants no Calendar/Gmail scopes.
@@ -27,8 +29,9 @@ export async function googleEnabled(env, fetcher = fetch) {
   googleCache.set(key, { on, until: Date.now() + (on ? 300000 : 60000) })
   return on
 }
-// Google is the way to create accounts. 'invite' keeps creation closed to owner-issued codes.
-export const googleSignupOpen = (env) => String(env?.EVIE_GOOGLE_SIGNUP || 'open').toLowerCase() !== 'invite'
+// Anyone can create an account (Google or e-mail) unless EVIE_SIGNUP=invite (or the older EVIE_GOOGLE_SIGNUP=invite)
+// keeps creation closed to owner-issued codes.
+export const googleSignupOpen = (env) => String(env?.EVIE_SIGNUP || env?.EVIE_GOOGLE_SIGNUP || 'open').toLowerCase() !== 'invite'
 export function usernameFrom(email, taken) {
   const base = (String(email || '').split('@')[0] || 'usuario').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 18) || 'usuario'
   let name = base.length >= 3 ? base : (base + 'evie').slice(0, 18), i = 1
@@ -116,10 +119,27 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
       const username = usernameFrom(email, taken)
       await db(c).prepare('INSERT INTO auth_accounts(owner_id,username,role,created_at) VALUES(?,?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(id, username, role, Date.now()).run()
       await db(c).prepare('INSERT INTO google_links(owner_id,email,linked_at) VALUES(?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(id, email, Date.now()).run()
+      await db(c).prepare('INSERT INTO email_trust(owner_id,via,at) VALUES(?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(id, 'google', Date.now()).run()
       acct = { owner_id: id, username, role, created: true }
     } else {
+      // Supabase already decided this Google identity belongs to this user: a manual link, or the same verified
+      // e-mail (automatic linking). If the account also has a password set before anyone proved the address
+      // (open e-mail sign-up without e-mail confirmation), Google proves it now: retire that password and every
+      // other session, so a stranger who registered this address first keeps no access (pre-account takeover).
       const linked = await db(c).prepare('SELECT owner_id FROM google_links WHERE owner_id=?').bind(id).first()
-      if (!linked) return back(c, 'not_linked')
+      const trusted = await db(c).prepare('SELECT 1 AS x FROM email_trust WHERE owner_id=?').bind(id).first()
+      const password = (result.user?.identities || []).some((x) => x.provider === 'email')
+      const synthetic = /@accounts\.evie\.local$/i.test(String(result.user?.email || '')) || String(result.user?.email || '').toLowerCase().endsWith('@' + String(c.env.EVIE_AUTH_DOMAIN || 'accounts.evie.local').toLowerCase())
+      if (password && !trusted && !linked && !synthetic) {
+        const p = await remote(c, '/auth/v1/user', { method: 'PUT', access: result.access_token, body: { password: rand(32) } }).catch(() => null)
+        if (p?.ok) {
+          await remote(c, '/auth/v1/logout?scope=others', { method: 'POST', access: result.access_token }).catch(() => null)
+          await db(c).prepare('DELETE FROM auth_sessions WHERE owner_id=?').bind(id).run()
+          acct.reset = true
+        }
+      }
+      if (!(password && !trusted && !linked && !synthetic) || acct.reset) await db(c).prepare('INSERT INTO email_trust(owner_id,via,at) VALUES(?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(id, 'google', Date.now()).run()
+      if (!linked && !synthetic) await db(c).prepare('INSERT INTO google_links(owner_id,email,linked_at) VALUES(?,?,?) ON CONFLICT(owner_id) DO NOTHING').bind(id, email, Date.now()).run()
     }
     if (st.desktop) {
       const handoff = rand(32)
@@ -133,7 +153,7 @@ export function createGoogleAuth({ remote, issueSession, verified, seal, unseal,
       const meta = result.user?.user_metadata || {}, gname = String(google?.identity_data?.full_name || meta.full_name || meta.name || '').trim().slice(0, 60)
       return c.redirect(origin(c) + '/?google=new#inicio' + (gname ? '&gn=' + encodeURIComponent(gname) : ''), 302)
     }
-    return back(c, st.mode === 'link' ? 'linked' : st.mode === 'recover' ? 'recover' : 'ok')
+    return back(c, st.mode === 'link' ? 'linked' : acct.reset ? 'reset' : st.mode === 'recover' ? 'recover' : 'ok')
   })
 
   // Desktop only: exchange the deep-link code + the secret nonce for a session cookie in the app's partition.
