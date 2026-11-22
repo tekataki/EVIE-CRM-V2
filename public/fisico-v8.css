@@ -1,6 +1,7 @@
 /* fisico-v8.css · v8 (2026-11-22) — Físico › Cuerpo: escáner corporal con volumen + medidas y peso.
-   Usa los tokens globales de evie-v8.css (con fallbacks). Todo va con alcance .fm (pestaña) / .fm-form (diálogos),
-   así que Entrenamientos y Comidas no cambian. El escenario del cuerpo es siempre oscuro (pantalla HUD). */
+   Usa los tokens globales de evie-v8.css (con fallbacks). Todo va con alcance .fm (página) / .fm-form (diálogos).
+   v10: modo «Recuperación» (rojo/amarillo/verde) además de «Medidas». El escenario del cuerpo es siempre oscuro
+   (pantalla HUD) también en tema claro; las tarjetas laterales sí siguen el tema. */
 
 .fm,.fm-form{--fm-text:var(--v8-text,#f5f7ff);--fm-muted:var(--v8-muted,#9aa4bd);--fm-faint:var(--v8-faint,#6b7591);--fm-s1:var(--v8-surface,rgba(18,22,34,.72));
  --fm-stroke:var(--v8-stroke,rgba(255,255,255,.08));--fm-stroke-hi:var(--v8-stroke-hi,rgba(255,255,255,.16));--fm-accent:var(--v8-accent,#5aa9ff);--fm-accent-2:var(--v8-accent-2,#8b7bff);
@@ -211,6 +212,82 @@ html[data-theme="light"] .fm .fm-side .fm-ghost.button{background:rgba(255,255,2
 .fm-form .fm-big input{width:5.4ch;text-align:center;background:transparent!important;border:0!important;outline:none;box-shadow:none!important;color:inherit;font:inherit;font-size:52px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;padding:0;min-height:0}
 .fm-big .fm-unit{font-size:20px;padding:0}
 .fm-wform .fm-tip{flex:none}
+
+/* ---------- Recuperación muscular (v10): rojo <24 h · amarillo 24–48 h · verde ≥48 h · neutro >7 días ---------- */
+.fm{--rec-red:#ff4d6d;--rec-yellow:#ffc53d;--rec-green:#2ee6a0;--rec-idle:rgba(160,180,220,.35)}
+html[data-theme="light"] .fm{--rec-red:#e5304f;--rec-yellow:#d99a00;--rec-green:#0fae74;--rec-idle:rgba(90,105,140,.45)}
+.fm-hero{--rec-red:#ff4d6d;--rec-yellow:#ffc53d;--rec-green:#2ee6a0;--rec-idle:rgba(160,180,220,.35)}
+.fm [data-rec="red"]{--rc:var(--rec-red)}.fm [data-rec="yellow"]{--rc:var(--rec-yellow)}.fm [data-rec="green"]{--rc:var(--rec-green)}.fm [data-rec="idle"]{--rc:var(--rec-idle)}
+.fm-mode{display:inline-flex;gap:4px;margin:12px 0 0;padding:4px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.fm-mode button{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 16px;border-radius:999px;border:0;background:transparent;color:var(--fm-muted);font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .25s,color .25s,box-shadow .25s,transform .3s var(--fm-spring)}
+.fm-mode button svg{width:16px;height:16px}
+.fm-mode button[aria-pressed="true"]{color:#fff;background:linear-gradient(180deg,rgba(90,169,255,.4),rgba(139,123,255,.26));box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 8px 22px -10px rgba(90,169,255,.9)}
+.fm-mode button:active{transform:scale(.96)}
+.fm-mode button:focus-visible,.fm-qchip:focus-visible,.fm-qpreset:focus-visible{outline:2px solid var(--fm-cyan);outline-offset:2px}
+/* Colours on the 3D body: translucent fill + rim + glow, the state is also in the label (not colour alone). */
+.fm-stage[data-mode="rec"] .fb-m[data-rec]{fill:var(--rc)!important;fill-opacity:.12;stroke:var(--rc);stroke-opacity:.55;transition:fill-opacity .45s var(--fm-ease),stroke .3s,filter .45s}
+.fm-stage[data-mode="rec"] .fb-m[data-rec="red"]{fill-opacity:.62;stroke-opacity:1;filter:drop-shadow(0 0 7px var(--rec-red));animation:fm-rec-pulse 2.6s ease-in-out infinite}
+.fm-stage[data-mode="rec"] .fb-m[data-rec="yellow"]{fill-opacity:.5;stroke-opacity:.95;filter:drop-shadow(0 0 5px var(--rec-yellow))}
+.fm-stage[data-mode="rec"] .fb-m[data-rec="green"]{fill-opacity:.36;stroke-opacity:.85;filter:drop-shadow(0 0 4px var(--rec-green))}
+.fm-stage[data-mode="rec"] .fb-m[data-rec="idle"]{fill:url(#fb-skin-front)!important;stroke:rgba(150,200,255,.35)}
+.fm-stage[data-mode="rec"] .fm-face[data-view="back"] .fb-m[data-rec="idle"]{fill:url(#fb-skin-back)!important}
+.fm-stage[data-mode="rec"] .fb-m:hover,.fm-stage[data-mode="rec"] .fb-m:focus-visible{stroke:#fff;stroke-width:1.6;stroke-opacity:1}
+.fm-stage[data-mode="rec"] .fb-m[data-selected]{stroke:#fff;stroke-width:2;stroke-opacity:1;fill-opacity:.8;filter:drop-shadow(0 0 8px var(--rc,#62f0ff)) drop-shadow(0 0 18px var(--rc,#62f0ff))}
+.fm-legend{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.fm-legend li{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:12px;color:var(--fm-muted);min-width:0}
+.fm-legend li span:nth-child(2){flex:1;min-width:0;line-height:1.25}
+.fm-legend b{font-size:15px;color:var(--fm-text);font-variant-numeric:tabular-nums}
+.fm-sw,.fm-rec-dot{flex:none;width:11px;height:11px;border-radius:50%;background:var(--rc);box-shadow:0 0 0 3px color-mix(in srgb,var(--rc) 22%,transparent),0 0 12px var(--rc)}
+.fm-legend li[data-rec="idle"] .fm-sw{background:transparent;border:1.5px dashed var(--rec-idle);box-shadow:none}
+.fm-rec-detail{display:flex;gap:12px;align-items:flex-start;margin-top:10px;padding:12px 14px;border-radius:16px;border:1px solid color-mix(in srgb,var(--rc) 40%,transparent);background:linear-gradient(90deg,color-mix(in srgb,var(--rc) 16%,transparent),transparent)}
+.fm-rec-detail .fm-rec-dot{margin-top:5px;width:13px;height:13px}
+.fm-rec-detail strong{font-size:18px;letter-spacing:-.01em}
+.fm-rec-detail p{margin:3px 0 0;font-size:13.5px;line-height:1.4;color:var(--fm-text)}
+.fm-rec-detail small{display:block;margin-top:4px;color:var(--fm-muted);font-size:12px}
+.fm-quick{margin-top:14px;padding:14px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.015))}
+.fm-quick-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fm .fm-qday select{min-height:36px;border-radius:10px;font-size:13px;padding:4px 28px 4px 10px;width:auto;background:rgba(255,255,255,.06);color:var(--fm-text);border:1px solid rgba(255,255,255,.12)}
+.fm-qday select option{background:#0b1122;color:#f5f7ff}
+.fm-qchips{display:flex;flex-wrap:wrap;gap:6px}
+.fm-qchip,.fm-qpreset{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--fm-text);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .3s var(--fm-spring),box-shadow .25s}
+.fm-qchip:active,.fm-qpreset:active{transform:scale(.95)}
+.fm-qchip[aria-pressed="true"]{border-color:rgba(255,77,109,.7);background:linear-gradient(180deg,rgba(255,77,109,.32),rgba(255,77,109,.14));color:#fff;box-shadow:0 8px 20px -10px rgba(255,77,109,.9)}
+.fm-qfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px}
+.fm-qpresets{display:flex;flex-wrap:wrap;gap:6px}
+.fm-qpreset{min-height:38px;font-size:12.5px;color:var(--fm-muted);border-style:dashed}
+.fm-qpreset:hover{color:var(--fm-text);border-color:rgba(255,255,255,.3)}
+.fm .fm-qsave{min-height:46px;padding:0 22px;border-radius:14px;display:inline-flex;align-items:center;gap:8px}
+.fm .fm-qsave[disabled]{opacity:.45;filter:saturate(.4);cursor:not-allowed}
+.fm-rec-card .fm-rec-sum{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fm-rec-sum>div{padding:12px;border-radius:16px;border:1px solid color-mix(in srgb,var(--rc) 30%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 12%,transparent),transparent)}
+.fm-rec-sum small{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--rc)}
+.fm-rec-sum small svg{width:15px;height:15px}
+.fm-rec-sum p{margin:6px 0 0;font-size:13.5px;line-height:1.45}
+.fm-sub{margin:16px 0 8px;font-size:13px;font-weight:650;color:var(--fm-muted);letter-spacing:.02em}
+.fm-days{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.fm-day{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:16px;background:var(--fm-chip);border:1px solid var(--fm-stroke)}
+.fm-day-txt{flex:1;min-width:0;display:grid;grid-template-columns:auto 1fr;gap:0 8px;align-items:baseline}
+.fm-day-txt strong{font-size:14px}
+.fm-day-txt small{color:var(--fm-muted);font-size:12px}
+.fm-day-txt span{grid-column:1/-1;font-size:12.5px;color:var(--fm-muted);overflow-wrap:anywhere}
+.fm-empty-line{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:16px;border:1px dashed var(--fm-stroke-hi);font-size:13px;line-height:1.45;color:var(--fm-muted)}
+.fm-empty-line svg{width:17px;height:17px;flex:none;color:var(--fm-cyan);margin-top:1px}
+.fm-empty-line b{color:var(--fm-text);font-weight:600}
+html[data-theme="light"] .fm-rec-sum p,html[data-theme="light"] .fm-day-txt strong{color:var(--fm-text)}
+/* The hero stays a dark HUD screen in the light theme: its fields must not inherit the white light-theme inputs. */
+html.evie-ui[data-theme="light"] .fm-hero :is(select,input){background:rgba(255,255,255,.06)!important;color:#f5f7ff!important;border-color:rgba(255,255,255,.14)!important;box-shadow:none!important}
+html.evie-ui[data-theme="light"] .fm-hero .fm-pres select{background:transparent!important;border:0!important}
+html.evie-ui[data-theme="light"] .fm-hero .button:not(.primary){background:rgba(255,255,255,.06)!important;color:#f5f7ff!important;border-color:rgba(255,255,255,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.1)!important}
+@keyframes fm-rec-pulse{0%,100%{filter:drop-shadow(0 0 5px var(--rec-red))}50%{filter:drop-shadow(0 0 13px var(--rec-red))}}
+@media (max-width:699px){
+ .fm-hero-head{flex-wrap:wrap}.fm-hero-head .fm-pres{max-width:100%}
+ .fm-legend{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .fm-mode{display:flex;width:100%}.fm-mode button{flex:1;justify-content:center}
+ .fm-rec-card .fm-rec-sum{grid-template-columns:1fr}
+ .fm-qfoot{flex-direction:column;align-items:stretch}.fm .fm-qsave{justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){.fm-stage[data-mode="rec"] .fb-m[data-rec="red"]{animation:none}.fm-qchip,.fm-qpreset,.fm-mode button{transition:none}}
+html[data-motion="reduced"] .fm-stage[data-mode="rec"] .fb-m[data-rec="red"]{animation:none}
 
 /* ---------- Responsive ---------- */
 @media (max-width:1100px){

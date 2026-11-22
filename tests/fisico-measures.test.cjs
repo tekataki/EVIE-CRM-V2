@@ -7,7 +7,7 @@ const J=x=>JSON.parse(JSON.stringify(x));
 function env({metrics=[],today='2026-11-22',prefs={}}={}){
  const ctx={console,Date,Math,JSON,Intl,structuredClone,Number,String,Object,Array,Promise,setTimeout};ctx.window=ctx;vm.createContext(ctx);
  const run=f=>vm.runInContext(fs.readFileSync(path.join(__dirname,'../public',f),'utf8'),ctx,{filename:f});
- const state={preferences:{...prefs},metrics:structuredClone(metrics)};let n=0;const toasts=[];
+ const state={preferences:{...prefs},metrics:structuredClone(metrics),gymSessions:[]};let n=0;const toasts=[];
  ctx.document={addEventListener(){},querySelector:()=>null,querySelectorAll:()=>[],getElementById:()=>null,documentElement:{dataset:{}}};
  ctx.matchMedia=()=>({matches:true});
  // Real store.js is loaded only for its pure metrics rule (Store.validateMetric); a small in-memory Store drives the UI.
@@ -92,8 +92,8 @@ test('saveCheckin: creates, merges the same day (no duplicate date), edits repla
  assert.throws(()=>M.saveCheckin({date:'2026-11-22',weight:null,body_fat:null,measurements:{chest:400},note:''}),/fuera de rango/,'store guard still applies');
  M.del('old');assert.ok(x.state.metrics.find(r=>r.id==='old').deleted_at);x.toasts.at(-1).u();const back=x.state.metrics.filter(r=>!r.deleted_at&&r.weight===81);assert.equal(back.length,1,'undo re-creates the check-in');});
 
-test('Cuerpo tab: body map + tracker only (no today strip, group list, legend or recovery note); history newest first with deltas',()=>{
- const x=env({metrics:[rec('a','2026-10-21',{weight:80.6,measurements:{biceps_r:35.3}}),rec('b','2026-11-22',{weight:79.9,measurements:{biceps_r:36.5}})]});x.UI.fisicoPart={part:'arm',side:'r'};
+test('Cuerpo › Medidas: body map + tracker (no legacy today strip / group list); history newest first with deltas',()=>{
+ const x=env({metrics:[rec('a','2026-10-21',{weight:80.6,measurements:{biceps_r:35.3}}),rec('b','2026-11-22',{weight:79.9,measurements:{biceps_r:36.5}})]});x.UI.fisicoPart={part:'arm',side:'r'};x.UI.fisicoMode='measure';
  const h=x.M.tab({presentation:'neutral',presControl:'<select data-fis="pres"></select>'});
  for(const gone of ['fis-today','fis-groups','fis-legend','fis-note','fis-detail','sin registros'])assert.ok(!h.includes(gone),'removed: '+gone);
  assert.equal((h.match(/class="fb-m"/g)||[]).length,16);assert.equal((h.match(/<figure class="fis-figure fm-face"/g)||[]).length,2);assert.match(h,/class="fis-figures fm-figures"/);
@@ -101,4 +101,16 @@ test('Cuerpo tab: body map + tracker only (no today strip, group list, legend or
  assert.match(h,/Bíceps der\.<\/small><strong>36\.5<u>cm<\/u><\/strong><em class="good">\+1\.2 cm vs hace 1 mes<\/em>/,'tapped part shows latest + change vs 1 month');
  assert.match(h,/Te toca medirte|Próxima medición en/);assert.match(h,/Próximo pesaje en 7 días/);assert.match(h,/inputmode|Pésate cada semana y mide cada 2–4 semanas/);
  const hist=h.slice(h.indexOf('class="fm-hist"'));assert.ok(hist.indexOf('2026-11-22')<hist.indexOf('2026-10-21'),'newest first');assert.match(hist,/<em class="down">−0\.7<\/em>/);assert.match(hist,/data-fm="edit" data-id="b"/);assert.match(hist,/data-fm="del" data-id="b"/);
- const empty=env().M.tab({});assert.match(empty,/Tu punto de partida/);assert.match(empty,/Toca una parte del cuerpo/);assert.match(empty,/Registra tu primer peso/);});
+ const ee=env();ee.UI.fisicoMode='measure';const empty=ee.M.tab({});assert.match(empty,/Tu punto de partida/);assert.match(empty,/Toca una parte del cuerpo/);assert.match(empty,/Registra tu primer peso/);});
+
+test('Cuerpo › Recuperación (default): legend, quick «Entrené» chips, tap panel and recovery card',()=>{
+ const x=env();const now=Date.now(),at=new Date(now-3*3600000);
+ x.state.gymSessions=[{id:'g1',title:'Pecho',date:at.toISOString().slice(0,10),trained_at:at.toISOString(),completeness:'partial',exercises:[{name:'Pecho',primary_muscles:['chest'],secondary_muscles:[],sets:[]}],uncertainties:[]}];
+ const h=x.M.tab({presentation:'neutral'});assert.match(h,/data-mode="rec"/);assert.match(h,/MAPA DE RECUPERACIÓN/);
+ for(const s of ['red','yellow','green','idle'])assert.match(h,new RegExp('<li data-rec="'+s+'">'));
+ assert.match(h,/Menos de 24 h<\/span><b aria-label="1 grupos">1<\/b>/);assert.match(h,/data-m="chest" data-band="idle" data-rec="red"/);
+ assert.equal((h.match(/data-fm="qchip"/g)||[]).length,12);assert.match(h,/data-fm="qsave" disabled/);assert.match(h,/Toca un músculo/);
+ assert.match(h,/Descansando<\/small><p>Pecho/);assert.match(h,/data-fis="del-day" data-id="g1"/);assert.match(h,/data-fm="thour"/);
+ assert.equal((h.match(/class="fb-m"/g)||[]).length,16);
+ x.UI.fisicoRec='chest';const t=x.M.tab({});assert.match(t,/fm-rec-detail" data-rec="red"/);assert.match(t,/Último entrenamiento: hoy \(hace 3 h\)/);
+ assert.deepEqual([...x.M.expand(['chest','legs'])],['chest','quads','hamstrings','glutes','calves']);});

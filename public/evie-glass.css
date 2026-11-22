@@ -363,16 +363,4 @@ html[data-theme=light] .ag-hours time{color:#4b3fd6}html[data-theme=light] .ag-c
 .evie-draft dd{overflow-wrap:anywhere}
 
 /* ===== v2.4 M9 · Gimnasio general ===== */
-.gym-tabs{display:flex;flex-wrap:wrap;gap:.75rem 1.25rem;align-items:flex-end}
-.gym-tab-group{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;padding:.35rem;border-radius:16px;background:color-mix(in srgb,var(--surface,#fff) 55%,transparent);border:1px solid color-mix(in srgb,currentColor 10%,transparent)}
-.gym-tab-group>small{width:100%;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;opacity:.65;padding:0 .35rem}
-.gym-tab-hint{margin:.25rem 0 1rem;font-size:.85rem;opacity:.7}
-.gl-form .gl-list{display:grid;gap:.75rem}
-.gl-ex{position:relative;display:grid;grid-template-columns:2fr 1.4fr repeat(3,minmax(0,1fr));gap:.5rem;padding:.75rem;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 12%,transparent);background:color-mix(in srgb,var(--surface,#fff) 40%,transparent);min-width:0}
-.gl-ex legend{font-size:.75rem;font-weight:600;opacity:.75;padding:0 .3rem}
-.gl-ex label{display:grid;gap:.2rem;font-size:.78rem;min-width:0}
-.gl-ex input,.gl-ex select{width:100%;min-width:0}
-.gl-ex .gl-detail{grid-column:1/-1}
-.gl-remove{position:absolute;top:.2rem;right:.3rem;width:32px;height:32px;font-size:1.1rem}
-@media (max-width:640px){.gl-ex{grid-template-columns:repeat(3,minmax(0,1fr))}.gl-ex .gl-name{grid-column:1/-1}.gl-ex label:has(select){grid-column:1/-1}}
 .ev-pantry .cards-grid{margin-top:.75rem}

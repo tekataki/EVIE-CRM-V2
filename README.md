@@ -103,6 +103,24 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v10 · Fase 1: Físico = Cuerpo + recuperación (2026-11-22)
+- **Físico ya solo tiene «Cuerpo».** Se quitaron las pestañas «Entrenamientos» y «Comidas y calorías» (registro manual
+  de series, calculadora de calorías y su campo de perfil). Los datos guardados **no se borraron**: solo dejaron de
+  mostrarse. La despensa sigue en Compras.
+- **Mapa de recuperación muscular** sobre el cuerpo 3D: **rojo** = entrenado hace menos de 24 h, **amarillo** = 24–48 h,
+  **verde** = 48 h o más (listo otra vez), neutro = sin entrenar en 7 días. Leyenda con conteos, toca un músculo →
+  «Último entrenamiento: lunes (hace 2 días) · listo para entrenar», tarjeta «Recuperación» (listos / descansando,
+  últimos entrenamientos con corregir y borrar con deshacer) y botones rápidos «Entrené: Pecho · Espalda · … · Upper ·
+  Push…». Conmutador **Recuperación | Medidas** (medidas y peso siguen igual).
+- **Dile a Ivi qué entrenaste:** «el lunes entrené pecho y espalda», «hoy entrené upper en la mañana», «ayer pierna»,
+  «antier brazo», «hace 3 días hice push». Se guarda un registro ligero en `gymSessions` con la hora (`trained_at`); si
+  no dices la hora se usa tu hora habitual (ajustable). La herramienta `get_gym_summary` de Ivi ahora devuelve el mapa
+  de recuperación («¿qué puedo entrenar hoy?»).
+- **Tema claro de primera:** `public/evie-v8-light.css` lleva el mismo lenguaje v8 (profundidad, luz que sigue al
+  cursor, fondo iluminado, botones, campos, barra lateral, dock) al tema claro.
+- Pruebas: 390/391 unitarias (la única falla es la conocida de rutas protegidas de Windows), E2E `e2e-fisico` 24/24 a
+  390 y 1440 px, más `life`, `finance`, `memory`, `v31` y `workspace` en verde.
+
 ## Novedades v9 · rediseño (2026-11-22)
 - **Sistema de diseño v8** (`public/evie-v8.css` + `public/evie-v8.js`): fondo 3D con luces volumétricas, piso en
   perspectiva y grano; superficies con profundidad real (sombra ambiental + luz principal, brillo superior) y una luz
@@ -148,7 +166,7 @@ API `/api`: `runtime`, `auth/*`, `memory/*`, `map/config|search|route`, `data/pu
 **docs/SETUP.md** (Cloudflare, Supabase, cuentas, claves, costos, Google; §8 lista consolidada v3.2), **docs/MAP.md**, **docs/MEMORY.md** y `.dev.vars.example`.
 
 ## Pruebas
-Pruebas de Node en 26 archivos (`tests/*.test.cjs`; ejecútalas archivo por archivo en máquinas con poca RAM), e2e `tools/e2e-drafts.mjs`, `e2e-memory.mjs`, `e2e-map.mjs`, `e2e-login.mjs`, `e2e-v31.mjs`, `e2e-hud.mjs`, `e2e-workspace.mjs`, `e2e-kisha.mjs`, `e2e-gym.mjs`, `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs` y `tools/qa-sweep.mjs`, privacidad `tools/check-privacy.mjs`.
+Pruebas de Node en 26 archivos (`tests/*.test.cjs`; ejecútalas archivo por archivo en máquinas con poca RAM), e2e `tools/e2e-drafts.mjs`, `e2e-memory.mjs`, `e2e-map.mjs`, `e2e-login.mjs`, `e2e-v31.mjs`, `e2e-hud.mjs`, `e2e-workspace.mjs`, `e2e-kisha.mjs`, `tools/e2e-life.mjs`, aislamiento en vivo `tools/verify-isolation.mjs`, QA visual `tools/shot.mjs` y `tools/qa-sweep.mjs`, privacidad `tools/check-privacy.mjs`.
 
 ## Restaurar la versión anterior
 Tag `pre-v2.3-946d437` en GitHub, o *Cloudflare → Deployments → Rollback*.

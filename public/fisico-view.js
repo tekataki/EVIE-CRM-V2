@@ -1,7 +1,9 @@
 'use strict';
-/* Físico (reemplaza «Salud y gym»). Vista principal «Cuerpo» (v8) = escáner corporal frente/espalda + medidas y peso
-   (FisicoMeasures, colección existente `metrics`); las vistas existentes de entrenos (V2Views.gym) y de
-   comidas/calorías se conservan como pestañas secundarias. Registro por voz de entrenos: SOLO gymSessions.
+/* Físico = solo «Cuerpo» (v10): escáner corporal frente/espalda con el mapa de recuperación muscular
+   (rojo <24 h · amarillo 24–48 h · verde ≥48 h) + medidas y peso (FisicoMeasures, colección `metrics`).
+   Los entrenos y las comidas se llevan en otras apps: aquí solo se anota QUÉ día se entrenó qué grupo
+   («el lunes entrené pecho y espalda», chips «Entrené hoy»), como un registro ligero en la colección
+   existente `gymSessions` (con `trained_at`). Los datos antiguos se conservan; solo dejaron de mostrarse.
    Preferencia de silueta en preferences.fisicoPresentation (la elige el usuario; nunca se infiere). */
 window.EvieFisico=(()=>{
  const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -11,68 +13,70 @@ window.EvieFisico=(()=>{
  const live=()=>Store.list('gymSessions').filter(s=>!s.deleted_at);
  const PRES={neutral:'Neutra (predeterminada)',masc:'Hombros más anchos',fem:'Caderas más anchas'};
  const pres=()=>{const p=Store.get()?.preferences?.fisicoPresentation;return PRES[p]?p:'neutral';};
- const TABS=[['cuerpo','Cuerpo','person-standing'],['entrenos','Entrenamientos','dumbbell'],['comidas','Comidas y calorías','utensils']];
- const tab=()=>TABS.some(t=>t[0]===UI.fisicoTab)?UI.fisicoTab:'cuerpo';
+ const trainHour=()=>{const h=Number(Store.get()?.preferences?.fisicoTrainHour);return Number.isInteger(h)&&h>=0&&h<=23?h:10;};
  const groupList=keys=>{const L=keys.map(k=>C().GROUPS[k]?.label||k);return L.length<2?L.join(''):L.slice(0,-1).join(', ')+' y '+L.at(-1);};
+ /** Current recovery map (per muscle group) from the training-day records. */
+ const recovery=(now=Date.now())=>C().recovery(live(),now,{hour:trainHour()});
 
- function nav(cur){return `<nav class="tabs fis-tabs" aria-label="Secciones de Físico">${TABS.map(([k,l,ic])=>`<button type="button" class="button ${cur===k?'primary':''}" data-fis="tab" data-tab="${k}" aria-current="${cur===k?'page':'false'}">${i(ic)}${l}</button>`).join('')}</nav>`;}
- // On «Cuerpo» the primary action is «Registrar medidas» (inside the tab), so «Registrar sesión» stays secondary there.
- function heading(t){const body=t==='cuerpo';return Views.heading('Físico',body?'Tu cuerpo y tus medidas. Toca una parte para ver cuánto has progresado.':'Tu cuerpo, lo que entrenaste y cuándo. Sin presión: la recuperación es una referencia, no una regla.',`<button class="button ${body?'':'primary'}" data-evg="new">${i('plus')}Registrar sesión</button>`,'MOVIMIENTO CON CONTEXTO');}
+ function heading(){return Views.heading('Físico','Tu cuerpo, tu recuperación y tus medidas. Dile a Ivi qué entrenaste y el mapa se pone al día.','','CUERPO Y RECUPERACIÓN');}
+ function view(id){if(id){try{history.replaceState(null,'','#fisico');}catch{}UI.id=null;}return heading()+bodyView();}
 
- function view(id){
-  if(id)return relabel(V2Views.gym(id));
-  const t=tab();
-  if(t!=='cuerpo'){const food=['nutrition','pantry'].includes(UI.rcGymTab);const tt=food?'comidas':'entrenos';UI.fisicoTab=tt;return heading(tt)+nav(tt)+secondary(V2Views.gym(),tt);}
-  return heading(t)+nav(t)+bodyView();}
- // Delegated views keep their controls; only their big heading is demoted to a sub-heading.
- function secondary(html,tt){const tp=document.createElement('template');tp.innerHTML=html;const h=tp.content.querySelector('.page-heading');
-  if(h){h.classList.add('fis-subheading');const h1=h.querySelector('h1');if(h1){const h2=document.createElement('h2');h2.innerHTML=h1.innerHTML==='Gimnasio'?'Entrenamientos':h1.innerHTML;h1.replaceWith(h2);}h.querySelector('.eyebrow')?.remove();
-   h.querySelector('[data-evg="new"]')?.remove();}
-  // The legacy nav mixes training + food; keep only the part that belongs to this tab.
-  const gn=tp.content.querySelector('.gym-tabs');if(gn){if(tt==='comidas')gn.remove();else gn.querySelectorAll('.gym-tab-group').forEach((g,n)=>{if(n>0)g.remove();});}
-  tp.content.querySelectorAll('a[href="#gimnasio"]').forEach(a=>a.setAttribute('href','#fisico'));return tp.innerHTML;}
- function relabel(html){return String(html).replace(/href="#gimnasio"/g,'href="#fisico"').replace('GIMNASIO / SESIÓN','FÍSICO / SESIÓN');}
-
- /* «Cuerpo» (v8): only the volumetric body map + measurements/weight tracker (FisicoMeasures). The training-recovery
-    map, today strip and per-group list were removed from this tab; training stays under «Entrenamientos». */
  function bodyView(){const p=pres();
   const presControl=`<label class="fis-pres fm-pres">${i('person-standing')}<span class="sr-only">Silueta</span><select class="select" data-fis="pres" aria-label="Silueta del cuerpo">${Object.entries(PRES).map(([k,l])=>`<option value="${k}" ${p===k?'selected':''}>${e(l)}</option>`).join('')}</select></label>`;
   if(window.FisicoMeasures)return FisicoMeasures.tab({presentation:p,presControl});
   const sum=C().summary(live(),today());
   return `<section class="panel fis-body" aria-label="Mapa corporal"><div class="fis-body-head"><h2>Mapa corporal</h2>${presControl}</div><div class="fis-figures">${['front','back'].map(w=>`<figure class="fis-figure"><figcaption>${w==='front'?'Frente':'Espalda'}</figcaption>${B().view(w,{summary:sum,presentation:p})}</figure>`).join('')}</div></section>`;}
 
- /* Ajuste de mapeo: el usuario decide qué grupos cuenta una sesión (muscle_override). No toca ejercicios ni series. */
+ /* Corregir un día de entreno: el usuario decide qué grupos cuenta (muscle_override). */
  function mapDialog(id){const s=live().find(x=>x.id===id);if(!s)return;const cur=new Set(C().sessionGroups(s).primary);
-  App.openDialog('Ajustar músculos',`<p class="dialog-subtitle">${e(s.title)} · ${e(Views.date(s.date))}. Elige qué grupos cuenta esta sesión en el mapa. Tus ejercicios y series no cambian.</p><form id="fis-map-form" class="fis-map-form"><fieldset><legend>Grupos</legend>${Object.entries(C().GROUPS).map(([k,g])=>`<label><input type="checkbox" name="m" value="${k}" ${cur.has(k)?'checked':''}>${e(g.label)}</label>`).join('')}</fieldset><footer class="form-footer full">${Array.isArray(s.muscle_override)&&s.muscle_override.length?'<button type="button" class="button" data-fis="map-reset">Usar los músculos de los ejercicios</button>':''}<button class="button primary">Guardar</button></footer></form>`);
+  App.openDialog('Corregir entrenamiento',`<p class="dialog-subtitle">${e(Views.date(s.date))}. Marca los grupos que entrenaste ese día; el mapa de recuperación se actualiza.</p><form id="fis-map-form" class="fis-map-form"><fieldset><legend>Grupos</legend>${Object.entries(C().GROUPS).map(([k,g])=>`<label><input type="checkbox" name="m" value="${k}" ${cur.has(k)?'checked':''}>${e(g.label)}</label>`).join('')}</fieldset><footer class="form-footer full"><button class="button primary">Guardar</button></footer></form>`);
   const f=document.getElementById('fis-map-form');
-  f.onsubmit=ev=>{ev.preventDefault();const v=[...f.querySelectorAll('input:checked')].map(x=>x.value);const prev=s.muscle_override??null;Store.put('gymSessions',{muscle_override:v.length?v:null},id);App.closeDialog(true);App.render();App.toast('Mapeo actualizado.','success',()=>{Store.put('gymSessions',{muscle_override:prev},id);App.render();});};
-  f.querySelector('[data-fis="map-reset"]')?.addEventListener('click',()=>{const prev=s.muscle_override;Store.put('gymSessions',{muscle_override:null},id);App.closeDialog(true);App.render();App.toast('Mapeo restablecido.','success',()=>{Store.put('gymSessions',{muscle_override:prev},id);App.render();});});}
+  f.onsubmit=ev=>{ev.preventDefault();const v=[...f.querySelectorAll('input:checked')].map(x=>x.value);if(!v.length){App.toast('Marca al menos un grupo, o borra el entrenamiento.','error');return;}
+   const prev={muscle_override:s.muscle_override??null,title:s.title};Store.put('gymSessions',{muscle_override:v,title:groupList(v).slice(0,80)},id);App.closeDialog(true);App.render();App.toast('Entrenamiento corregido.','success',()=>{Store.put('gymSessions',prev,id);App.render();});};}
+ function removeDay(id){const s=live().find(x=>x.id===id);if(!s)return;const {id:_i,deleted_at:_d,created_at:_c,updated_at:_u,...copy}=s;Store.remove('gymSessions',id);App.render();
+  App.toast(`Entrenamiento del ${Views.date(s.date)} borrado.`,'success',()=>{Store.put('gymSessions',copy);App.render();});}
 
- /* Registro rápido «hoy entrené pecho y espalda»: crea UNA sesión parcial o completa la de voz del día; nunca duplica. */
+ /* Registro rápido «hoy entrené pecho y espalda»: crea UN día de entreno o completa el del mismo día; nunca duplica. */
  let lastOp=null;
- function logWorkout({groups,date,op_id,title}={}){const G=C();groups=(groups||[]).filter(k=>G.GROUPS[k]);date=date||today();
+ function logWorkout({groups,date,op_id,title,hint}={}){const G=C();groups=(groups||[]).filter(k=>G.GROUPS[k]);date=date||today();
   if(!groups.length)return {status:'needs',field:'muscles',question:'¿Qué músculos trabajaste? Por ejemplo: pecho y espalda, o pierna.'};
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date>today())return {status:'error',error:'Fecha no válida.'};
   const all=live();if(op_id&&all.some(s=>s.op_id===op_id))return {status:'duplicate',say:'Ya lo había registrado.'};
   const key=date+'|'+groups.slice().sort().join(',');if(lastOp&&lastOp.key===key&&Date.now()-lastOp.at<120000)return {status:'duplicate',say:'Ya lo había registrado.'};
-  const day=G.sessionOn(all,date),covered=new Set(day.flatMap(s=>G.sessionGroups(s).primary)),missing=groups.filter(k=>!covered.has(k)),label=date===today()?'hoy':'el '+Views.date(date);
+  const day=G.sessionOn(all,date),covered=new Set(day.flatMap(s=>G.sessionGroups(s).primary)),missing=groups.filter(k=>!covered.has(k)),back=Math.round((Date.parse(today()+'T12:00:00Z')-Date.parse(date+'T12:00:00Z'))/86400000),
+   label=back===0?'hoy':back===1?'ayer':back===2?'antier':back<7?'el '+['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][new Date(date+'T12:00:00Z').getUTCDay()]:'el '+Views.date(date);
   if(!missing.length)return {status:'duplicate',say:`Ya tenías ${groupList(groups)} registrado ${label}.`};
+  const at=G.stamp({date,today:today(),hint,hour:trainHour()});
   const voice=day.find(s=>(s.uncertainties||[]).some(u=>/registrado por voz/i.test(u))&&!(Array.isArray(s.muscle_override)&&s.muscle_override.length));
   let res;
-  if(voice){const prev={exercises:voice.exercises,title:voice.title},m=G.mergeGroups(voice,missing),groupsNow=[...G.sessionGroups(voice).primary,...m.add];
-   const patch={exercises:m.exercises,title:/^[A-ZÁÉÍÓÚ]/.test(voice.title)&&voice.title===groupList(G.sessionGroups(voice).primary)?groupList(groupsNow).slice(0,80):voice.title};
+  if(voice){const prev={exercises:voice.exercises,title:voice.title,trained_at:voice.trained_at??null},m=G.mergeGroups(voice,missing),groupsNow=[...G.sessionGroups(voice).primary,...m.add];
+   const patch={exercises:m.exercises,trained_at:voice.trained_at||at,title:/^[A-ZÁÉÍÓÚ]/.test(voice.title)&&voice.title===groupList(G.sessionGroups(voice).primary)?groupList(groupsNow).slice(0,80):voice.title};
    V2Domain.gym({...voice,...patch});Store.put('gymSessions',patch,voice.id);
    res={status:'updated',id:voice.id,undo:()=>{Store.put('gymSessions',prev,voice.id);App.render();}};}
-  else{const row=G.quickSession({groups:missing,date,title,op_id});V2Domain.gym(row);const saved=Store.put('gymSessions',row);res={status:'created',id:saved.id,undo:()=>{Store.remove('gymSessions',saved.id);App.render();}};}
+  else{const row=G.quickSession({groups:missing,date,title,op_id,trained_at:at});V2Domain.gym(row);const saved=Store.put('gymSessions',row);res={status:'created',id:saved.id,undo:()=>{Store.remove('gymSessions',saved.id);App.render();}};}
   lastOp={key,at:Date.now()};
   const also=missing.length<groups.length?` (${groupList(groups.filter(k=>covered.has(k)))} ya estaba)`:'';
-  res.say=`Anotado: ${groupList(missing)} ${label}${also}. Si quieres, agrega ejercicios y series en Físico.`;res.groups=missing;return res;}
+  res.say=`Anotado: ${groupList(missing)} ${label}${also}. Tu mapa de recuperación ya lo marca.`;res.groups=missing;res.date=date;return res;}
 
- const DO=/^(?:(hoy|ayer|antier|anteayer)\s+)?(?:(?:registra|anota|apunta)\s+que\s+)?(?:(hoy|ayer)\s+)?(?:entrene|entreno|trabaje|hice|ejercite|me toco|fui al gym a hacer|fui al gimnasio a hacer)\s+(?:de\s+|el\s+|la\s+|los\s+|las\s+)?(.+?)(?:\s+(hoy|ayer))?$/;
+ const FILLER=/\b(?:yo|ya|tambien|pues|bueno|si|y|e|de|del|el|la|los|las|con|a|al|tocaba|toco|me toco|dia|hice)\b/g;
+ let tokens=null;
+ /** Every word that can name a muscle group (to accept «ayer pierna» without a verb, and nothing else). */
+ const TOKENS=()=>tokens||(tokens=new Set([...Object.values(C().GROUPS).flatMap(g=>g.aliases),...Object.keys(C().COMBOS)].flatMap(w=>C().norm(w).split(' '))));
+ const VERB=/^(?:(.+?)\s+)?(?:entrene|entreno|trabaje|hice|ejercite|me toco|fui al gym a hacer|fui al gimnasio a hacer)\s+(.+)$/;
+ /** «el lunes entrené pecho y espalda», «ayer pierna», «hoy entrené upper en la mañana» → {groups,date,hint} or null. */
+ function parse(text){const G=C();let q=G.norm(String(text||'')).replace(/^(?:oye |hey |hola |ok )?(?:evie|evi|ivi|ivy|ibi|libi|eby|evy)\s+/,'').replace(/\b(?:registra|anota|apunta) que\b/,' ').replace(/\s+/g,' ').trim();
+  const m=q.match(VERB);
+  if(!m){const w=G.parseWhen(q);if(w.back==null&&w.dow==null)return null;const left=w.rest.replace(FILLER,' ').trim();
+   if(!left||!left.split(' ').every(t=>TOKENS().has(t)))return null;const groups=G.groupsFrom(left);if(!groups.length)return null;
+   const r=G.resolveWhen(w,today());return {groups,date:r.date,hint:r.hint};}
+  const pre=G.parseWhen(m[1]||''),tail=G.parseWhen(m[2]);pre.rest=pre.rest.replace(FILLER,' ').trim();
+  if(pre.rest||/\bmanana\b/.test(tail.rest))return null;
+  const groups=G.groupsFrom(tail.rest);if(!groups.length)return null;
+  const w=G.resolveWhen({back:pre.back??tail.back,dow:pre.back==null?(pre.dow??(tail.back==null?tail.dow:null)):null,hint:pre.hint||tail.hint},today());
+  return {groups,date:w.date,hint:w.hint};}
  /** Local intent; returns a spoken string or null (not a workout phrase). */
- function intent(text){const q=C().norm(String(text||'')).replace(/^(?:oye |hey |hola |ok )?(?:evie|evi|ivi|ivy|ibi|libi|eby|evy)\s+/,'').trim();const m=q.match(DO);if(!m)return null;
-  const groups=C().groupsFrom(m[3]);if(!groups.length)return null;const w=m[1]||m[2]||m[4]||'hoy',date=w==='hoy'?today():V2Domain.addDays(today(),w==='ayer'?-1:-2);
-  try{const r=logWorkout({groups,date});if(r.undo){App.render();App.toast(r.say,'success',r.undo);window.EvieSounds?.play?.('confirm');window.EvieFinance?.setLastUndo?.(r.undo);}return r.say||r.question||r.error;}catch(err){return 'No pude registrarlo: '+err.message;}}
+ function intent(text){const p=parse(text);if(!p)return null;
+  try{const r=logWorkout(p);if(r.undo){App.render();App.toast(r.say,'success',r.undo);window.EvieSounds?.play?.('confirm');window.EvieFinance?.setLastUndo?.(r.undo);}return r.say||r.question||r.error;}catch(err){return 'No pude registrarlo: '+err.message;}}
 
  function migratePrefs(){const p=Store.get()?.preferences;if(!p)return;const keys=['hiddenSections','sectionOrder','favoriteSections','mobileShortcuts'];
   if(!keys.some(k=>Array.isArray(p[k])&&p[k].includes('gimnasio')))return;
@@ -80,14 +84,13 @@ window.EvieFisico=(()=>{
  let migrated=false;
  function afterRender(){if(!migrated){migrated=true;try{migratePrefs();}catch{}}
   try{window.FisicoMeasures?.afterRender?.();}catch{}
-  if(UI.section!=='fisico'||UI.id)return;const main=document.getElementById('main-content');
+  if(UI.section!=='fisico')return;const main=document.getElementById('main-content');
   main.querySelectorAll('.fb-m').forEach(p=>p.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();p.dispatchEvent(new MouseEvent('click',{bubbles:true}));}}));}
  document.addEventListener('click',ev=>{const m=ev.target.closest?.('.fb-m');if(m&&UI.section==='fisico'){
    if(window.FisicoMeasures&&m.closest('.fm-stage')){FisicoMeasures.pickFromEvent(m,ev);return;}
    UI.fisicoSel=UI.fisicoSel===m.dataset.m?null:m.dataset.m;App.render();document.querySelector(`.fb-m[data-m="${UI.fisicoSel}"]`)?.focus();return;}
   const b=ev.target.closest?.('[data-fis]');if(!b)return;const a=b.dataset.fis;
-  if(a==='tab'){UI.fisicoTab=b.dataset.tab;if(b.dataset.tab==='entrenos')UI.rcGymTab='training';else if(b.dataset.tab==='comidas')UI.rcGymTab='nutrition';App.render();}
-  else if(a==='map')mapDialog(b.dataset.id);});
+  if(a==='map')mapDialog(b.dataset.id);else if(a==='del-day')removeDay(b.dataset.id);});
  document.addEventListener('change',ev=>{const s=ev.target.closest?.('[data-fis="pres"]');if(!s)return;Store.save(st=>{st.preferences.fisicoPresentation=PRES[s.value]?s.value:'neutral';});App.render();});
- return Object.freeze({view,logWorkout,intent,afterRender,migratePrefs,mapDialog,PRES});
+ return Object.freeze({view,logWorkout,intent,parse,recovery,trainHour,afterRender,migratePrefs,mapDialog,removeDay,PRES});
 })();

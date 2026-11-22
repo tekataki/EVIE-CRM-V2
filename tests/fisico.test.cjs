@@ -66,3 +66,41 @@ test('presentation preference only changes the silhouette and defaults to neutra
 test('legacy «gimnasio» preferences migrate to «fisico» without losing order',()=>{const x=env();
  x.state.preferences={hiddenSections:['gimnasio'],sectionOrder:['inicio','gimnasio','agenda'],mobileShortcuts:['inicio','gimnasio','a','b','c']};x.V.migratePrefs();
  assert.deepEqual([...x.state.preferences.sectionOrder],['inicio','fisico','agenda']);assert.deepEqual([...x.state.preferences.hiddenSections],['fisico']);assert.equal(x.state.preferences.mobileShortcuts[1],'fisico');});
+
+// v10 · recovery map: red <24 h, yellow 24–48 h, green ≥48 h, idle >7 days (by hours, from trained_at or date+usual hour).
+const H=3600000,NOW=Date.parse('2026-10-15T20:00:00Z');
+const day=(id,at,prim,sec=[])=>({...sess(id,new Date(at).toISOString().slice(0,10),prim,sec),trained_at:new Date(at).toISOString()});
+test('recovery(): hours since training → red / yellow / green / idle; secondary work is one level lighter',()=>{const x=env();
+ const r=x.C.recovery([day('a',NOW-3*H,['chest'],['triceps']),day('b',NOW-30*H,['back']),day('c',NOW-60*H,['quads']),day('d',NOW-8*24*H,['calves'])],NOW);
+ assert.equal(r.chest.state,'red');assert.equal(r.triceps.state,'yellow');assert.equal(r.triceps.partial,true);assert.equal(r.back.state,'yellow');
+ assert.equal(r.quads.state,'green');assert.equal(r.calves.state,'idle');assert.equal(r.glutes.state,'idle');assert.equal(r.glutes.last_at,null);
+ assert.equal(Math.round(r.back.hours),30);assert.equal(r.chest.sessions_7d,1);
+ const c=x.C.recoveryCounts(r);assert.equal(c.red,1);assert.equal(c.yellow,2);assert.equal(c.green,1);assert.equal(c.red+c.yellow+c.green+c.idle,12);
+ assert.match(x.C.recoveryText(r.quads,NOW),/^Último entrenamiento: .+ \(hace 2 días\) · listo para entrenar$/);
+ assert.match(x.C.recoveryText(r.chest,NOW),/hace 3 h\) · recién entrenado/);assert.equal(x.C.recoveryText(r.glutes,NOW),'Sin entrenamientos registrados');
+ const future=x.C.recovery([day('f',NOW+5*H,['chest'])],NOW);assert.equal(future.chest.state,'idle','future records are ignored');});
+
+test('records without trained_at use their date at the usual training hour (preference)',()=>{const x=env();
+ const s=sess('old','2026-10-14',['back']);assert.equal(x.C.trainedAt(s,{hour:10}),new Date(2026,9,14,10).getTime());
+ assert.equal(new Date(x.C.trainedAt(s,{hour:18})).getHours(),18);
+ assert.equal(x.C.recState(23.9),'red');assert.equal(x.C.recState(24),'yellow');assert.equal(x.C.recState(47.9),'yellow');assert.equal(x.C.recState(48),'green');assert.equal(x.C.recState(24*7),'idle');});
+
+test('voice dates: «el lunes», «ayer pierna» (no verb), «hace 3 días», «upper en la mañana»; future/unrelated → null',()=>{const x=env();// 2026-10-15 is a Thursday
+ const p=t=>{const r=x.V.parse(t);return r&&{g:[...r.groups],date:r.date,hint:r.hint};};
+ assert.deepEqual(p('Ivi, el lunes entrené pecho y espalda'),{g:['chest','back'],date:'2026-10-12',hint:null});
+ assert.deepEqual(p('ayer pierna'),{g:['quads','hamstrings','glutes','calves'],date:'2026-10-14',hint:null});
+ assert.deepEqual(p('antier brazo'),{g:['biceps','triceps','forearms'],date:'2026-10-13',hint:null});
+ assert.equal(p('hace 3 días hice push').date,'2026-10-12');assert.deepEqual(p('hace 3 días hice push').g,['chest','shoulders','triceps']);
+ const up=p('hoy entrené upper en la mañana');assert.equal(up.date,'2026-10-15');assert.equal(up.hint,'morning');assert.deepEqual(up.g,['chest','back','shoulders','biceps','triceps']);
+ assert.equal(p('el jueves entrené pull').date,'2026-10-08','same weekday = last week');assert.equal(p('anoche entrené pierna').hint,'night');
+ for(const no of ['mañana entreno pierna','hoy fui al cine','ayer me sentí mal del pecho','hoy gasté 200 en el gym','el lunes'])assert.equal(p(no),null,no);});
+
+test('logged days store trained_at (never in the future) and the hour hint',()=>{const x=env();
+ x.V.intent('el lunes entrené pecho');const s=x.state.gymSessions[0];assert.equal(s.date,'2026-10-12');assert.ok(Date.parse(s.trained_at)<=Date.now());assert.equal(new Date(s.trained_at).getHours(),10);
+ x.state.preferences.fisicoTrainHour=7;x.V.intent('ayer entrené espalda en la tarde');const t=x.state.gymSessions.find(r=>r.date==='2026-10-14');assert.equal(new Date(t.trained_at).getHours(),17);
+ x.V.intent('antier entrené pierna');const u=x.state.gymSessions.find(r=>r.date==='2026-10-13');assert.equal(new Date(u.trained_at).getHours(),7,'usual hour preference');});
+
+test('recovery body map: data-rec per muscle + state in words; recSel marks the tapped muscle',()=>{const x=env();
+ const r=x.C.recovery([day('a',NOW-3*H,['chest']),day('b',NOW-60*H,['back'])],NOW);const f=x.B.view('front',{measure:{},recovery:r,recSel:'chest'}),b=x.B.view('back',{measure:{},recovery:r});
+ assert.match(f,/data-m="chest" data-band="idle" data-rec="red"[^>]*data-selected="1"/);assert.match(b,/data-m="back" data-band="idle" data-rec="green"/);assert.match(b,/data-m="glutes" data-band="idle" data-rec="idle"/);
+ assert.match(f,/aria-label="Pecho: Menos de 24 h\. Último entrenamiento: /);assert.equal((f.match(/class="fb-m"/g)||[]).length,8);});

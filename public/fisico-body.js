@@ -6,6 +6,7 @@
    Presentation (presentation prop): 'neutral' (default), 'masc', 'fem' only nudges shoulder/hip width; the user
    chooses it — it is never inferred from an account field. */
 window.FisicoBody=(()=>{
+ const root=window;
  const mirror=d=>d.replace(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g,(m,x,y)=>`${(200-Number(x)).toFixed(1)},${y}`);
  const both=d=>d+' '+mirror(d);
  // Shared silhouette (outline) — drawn as a soft mesh behind the muscles.
@@ -35,10 +36,14 @@ window.FisicoBody=(()=>{
  /* Decorative anatomy contours (left half, mirrored) used by the v8 «escáner» look. Purely visual, aria-hidden. */
  const LINES={front:['M100,86 L100,124','M100,124 C110,128 124,127 135,119','M100,80 C108,77 120,77 131,82','M100,132 L100,214','M101,148 C110,149 120,148 129,145','M101,168 C110,169 120,168 130,165','M101,188 C110,189 118,188 126,185','M116,318 C122,325 132,325 139,318','M146,128 C150,138 151,148 150,156'],
   back:['M100,70 L100,204','M106,96 C116,93 127,100 129,113 C125,125 114,129 106,124','M100,208 L100,246','M114,316 C122,321 132,321 139,316','M108,150 C116,156 124,166 128,180']};
- /* measure: {regionKey:{has,label,on}} switches the map to «medidas» mode (no recovery bands; volumetric fills). */
- function measureView(which,{presentation='neutral',title,measure}){const R=which==='front'?FRONT:BACK,sil=silhouette(presentation);
-  const parts=Object.entries(R).map(([k,d])=>{const m=measure[k]||{},label=m.label||k;
-   return `<path class="fb-m" data-m="${k}" data-band="idle" ${m.has?'data-has="1"':''} ${m.on?'data-selected="1"':''} d="${both(d)}" fill="url(#fb-${m.has?'meas':'skin'}-${which})" tabindex="0" role="button" aria-pressed="${!!m.on}" aria-label="${esc(label)}"><title>${esc(label)}</title></path>`;}).join('');
+ /* measure: {regionKey:{has,label,on}} switches the map to the volumetric «escáner» look.
+    recovery (optional, FisicoCore.recovery()): colours each muscle red/yellow/green/idle (data-rec) and the
+    accessible label says the state in words; recSel = selected muscle key in that mode. */
+ function measureView(which,{presentation='neutral',title,measure,recovery=null,recSel=null}){const R=which==='front'?FRONT:BACK,sil=silhouette(presentation);
+  const parts=Object.entries(R).map(([k,d])=>{const m=measure[k]||{},r=recovery&&recovery[k],on=recovery?recSel===k:!!m.on;
+   const label=r?`${r.label}: ${root.FisicoCore.REC_LABEL[r.state]}. ${root.FisicoCore.recoveryText(r)}`:(m.label||k);
+   const attrs=[r?`data-rec="${r.state}"`:'',!r&&m.has?'data-has="1"':'',on?'data-selected="1"':''].filter(Boolean).map(a=>' '+a).join('');
+   return `<path class="fb-m" data-m="${k}" data-band="idle"${attrs} d="${both(d)}" fill="url(#fb-${!r&&m.has?'meas':'skin'}-${which})" tabindex="0" role="button" aria-pressed="${on}" aria-label="${esc(label)}"><title>${esc(label)}</title></path>`;}).join('');
   const stop=(o,c,a)=>`<stop offset="${o}" style="stop-color:${c};stop-opacity:${a}"/>`;
   return `<svg class="fb-svg fb-3d" viewBox="0 0 200 440" role="group" aria-label="${esc(title||(which==='front'?'Vista frontal':'Vista posterior'))}"><defs>
    <radialGradient id="fb-vol-${which}" cx=".4" cy=".2" r=".9">${stop(0,'#9fd0ff',.34)}${stop(.45,'#5a7dff',.14)}${stop(1,'#0a1030',.04)}</radialGradient>
@@ -58,7 +63,7 @@ window.FisicoBody=(()=>{
    <g class="fb-lines" aria-hidden="true">${LINES[which].map(d=>`<path d="${both(d)}"/>`).join('')}</g>
    ${parts}
    <g class="fb-scan-g" clip-path="url(#fb-clip-${which})" aria-hidden="true"><rect class="fb-scan" x="0" y="0" width="200" height="44" fill="url(#fb-scan-${which})"/></g></svg>`;}
- function view(which,{summary={},presentation='neutral',selected=null,title,measure=null}={}){if(measure)return measureView(which,{presentation,title,measure});const R=which==='front'?FRONT:BACK;
+ function view(which,{summary={},presentation='neutral',selected=null,title,measure=null,recovery=null,recSel=null}={}){if(measure)return measureView(which,{presentation,title,measure,recovery,recSel});const R=which==='front'?FRONT:BACK;
   const parts=Object.entries(R).map(([k,d])=>{const s=summary[k]||{},b=s.band||'idle',label=`${s.label||k}: ${bandText(s)}`;
    return `<path class="fb-m" data-m="${k}" data-band="${b}" ${selected===k?'data-selected="1"':''} d="${both(d)}" fill="${BAND_FILL[b].replace('WHICH',which)}" tabindex="0" role="button" aria-pressed="${selected===k}" aria-label="${esc(label)}"><title>${esc(label)}</title></path>`;}).join('');
   return `<svg class="fb-svg" viewBox="0 0 200 440" role="group" aria-label="${esc(title||(which==='front'?'Vista frontal':'Vista posterior'))}"><defs>

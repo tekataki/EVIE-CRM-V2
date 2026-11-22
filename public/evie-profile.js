@@ -29,7 +29,6 @@ window.EvieProfile=(()=>{
    ['activity','Actividad física','select',['','sedentaria','ligera','moderada','alta','muy alta'],''],
    ['height_cm','Estatura (cm)','number',3,''],
    ['weight_kg','Peso (kg)','number',4,''],
-   ['sex_for_calculations','Sexo para fórmulas de calorías','select',['','hombre','mujer','prefiero no usarlo'],'La fórmula de gasto energético (Mifflin–St Jeor) usa un valor fisiológico. Puedes omitirlo.'],
    ['health_goals','Metas de salud','textarea',300,'Ej.: dormir 8 h, ganar fuerza.']]}
  ];
  const ZONES=['America/Mexico_City','America/Cancun','America/Chihuahua','America/Hermosillo','America/Mazatlan','America/Tijuana','America/Monterrey','America/Matamoros','America/Bogota','America/Lima','America/Santiago','America/Argentina/Buenos_Aires','America/New_York','America/Chicago','America/Denver','America/Los_Angeles','Europe/Madrid','UTC'];

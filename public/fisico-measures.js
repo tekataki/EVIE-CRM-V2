@@ -134,16 +134,68 @@
  const current=()=>{const s=UIx().fisicoPart;return s&&PARTS[s.part]?s:null;};
  const allSeries=all=>Object.fromEntries(FIELDS.map(f=>[f.key,series(all,f.key)]));
 
+ /* ---- Modo «Recuperación» (predeterminado) vs «Medidas» ---- */
+ const mode=()=>UIx().fisicoMode==='measure'?'measure':'rec';
+ const FC=()=>root.FisicoCore;
+ const recNow=()=>root.EvieFisico?.recovery?root.EvieFisico.recovery():FC().recovery(root.Store.list('gymSessions'),Date.now());
+ const recSel=()=>{const k=UIx().fisicoRec;return k&&FC().GROUPS[k]?k:null;};
+ const QUICK=[['chest','Pecho'],['back','Espalda'],['shoulders','Hombro'],['biceps','Bíceps'],['triceps','Tríceps'],['forearms','Antebrazo'],['core','Abdomen'],['legs','Pierna'],['glutes','Glúteo'],['quads','Cuádriceps'],['hamstrings','Isquios'],['calves','Pantorrilla']];
+ const PRESETS=[['upper','Upper'],['lower','Lower'],['push','Push'],['pull','Pull'],['full body','Full body']];
+ const qset=()=>{const U=UIx();if(!Array.isArray(U.fisicoQuick))U.fisicoQuick=[];return U.fisicoQuick;};
+ const expand=keys=>[...new Set(keys.flatMap(k=>k==='legs'?FC().COMBOS.pierna:[k]))];
+ function legend(rec){const c=FC().recoveryCounts(rec),L=FC().REC_LABEL;
+  return `<ul class="fm-legend" aria-label="Leyenda de recuperación">${['red','yellow','green','idle'].map(s=>`<li data-rec="${s}"><span class="fm-sw" aria-hidden="true"></span><span>${esc(L[s])}</span><b aria-label="${c[s]} grupos">${c[s]}</b></li>`).join('')}</ul>`;}
+ function quick(){const sel=new Set(qset()),day=UIx().fisicoQuickDay||'0';
+  return `<div class="fm-quick" aria-label="Anotar un entrenamiento"><div class="fm-quick-head"><span class="fm-eyebrow">ENTRENÉ</span><label class="fm-qday"><span class="sr-only">Cuándo</span><select class="select" data-fm="qday" aria-label="Cuándo entrenaste">${[['0','hoy'],['1','ayer'],['2','antier']].map(([v,l])=>`<option value="${v}" ${v===day?'selected':''}>${l}</option>`).join('')}</select></label></div>
+   <div class="fm-qchips" role="group" aria-label="Grupos que entrenaste">${QUICK.map(([k,l])=>`<button type="button" class="fm-qchip" data-fm="qchip" data-key="${k}" aria-pressed="${sel.has(k)}">${esc(l)}</button>`).join('')}</div>
+   <div class="fm-qfoot"><div class="fm-qpresets" role="group" aria-label="Rutinas">${PRESETS.map(([k,l])=>`<button type="button" class="fm-qpreset" data-fm="qpreset" data-key="${k}">${esc(l)}</button>`).join('')}</div>
+    <button type="button" class="button primary fm-cta fm-qsave" data-fm="qsave" ${sel.size?'':'disabled'}>${ic('check')}Anotar</button></div></div>`;}
+ function recPanel(rec,key){if(!key||!rec[key])return `<div class="fm-part-empty"><span class="fm-orb" aria-hidden="true">${ic('activity')}</span><div><strong>Toca un músculo</strong><p>Verás cuándo lo entrenaste por última vez y si ya está listo otra vez.</p></div></div>`;
+  const r=rec[key];
+  return `<div class="fm-part-head"><span class="fm-eyebrow">${esc(r.label.toUpperCase())}</span><button type="button" class="fm-x" data-fm="clear" aria-label="Cerrar detalle">${ic('x')}</button></div>
+   <div class="fm-rec-detail" data-rec="${r.state}"><span class="fm-rec-dot" aria-hidden="true"></span><div><strong>${esc(FC().REC_LABEL[r.state])}</strong><p>${esc(FC().recoveryText(r))}</p>${r.sessions_7d?`<small>${r.sessions_7d} ${r.sessions_7d===1?'vez':'veces'} en los últimos 7 días</small>`:''}</div></div>
+   <div class="fm-part-foot">${r.last_session?`<button type="button" class="button small" data-fis="map" data-id="${esc(r.last_session)}">${ic('pencil')}Corregir ese día</button>`:''}<button type="button" class="button small primary" data-fm="log-one" data-key="${key}">${ic('plus')}Entrené ${esc(r.label.toLowerCase())} hoy</button></div>`;}
+ function recSide(rec){const C=FC(),now=Date.now(),hour=root.EvieFisico?.trainHour?.()??10;
+  const by=s=>Object.values(rec).filter(r=>r.state===s).map(r=>r.label);const ready=by('green'),resting=[...by('red'),...by('yellow')];
+  const rows=root.Store.list('gymSessions').filter(s=>!s.deleted_at).map(s=>({s,at:C.trainedAt(s,{hour}),g:C.sessionGroups(s).primary})).filter(x=>Number.isFinite(x.at)&&x.at<=now&&now-x.at<14*DAY&&x.g.length).sort((a,b)=>b.at-a.at).slice(0,8);
+  const list=rows.length?`<ol class="fm-days">${rows.map(x=>{const st=C.recState((now-x.at)/3600000,false),dw=C.dayWord(x.at,now),lbl=x.g.map(k=>C.GROUPS[k].label).join(' · ');
+    return `<li class="fm-day" data-rec="${st}"><span class="fm-rec-dot" aria-hidden="true"></span><div class="fm-day-txt"><strong>${esc(dw.replace(/^./,c=>c.toUpperCase()))}</strong><small>${esc(C.agoText((now-x.at)/3600000))}</small><span>${esc(lbl)}</span></div><div class="fm-hist-actions"><button type="button" class="fm-icon" data-fis="map" data-id="${esc(x.s.id)}" aria-label="Corregir entrenamiento de ${esc(dw)}">${ic('pencil')}</button><button type="button" class="fm-icon" data-fis="del-day" data-id="${esc(x.s.id)}" aria-label="Borrar entrenamiento de ${esc(dw)}">${ic('trash-2')}</button></div></li>`;}).join('')}</ol>`
+   :`<div class="fm-empty-line">${ic('mic')}<span>Dile a Ivi: <b>«hoy entrené pecho y espalda»</b> o <b>«el lunes pierna»</b>, o usa los botones de «Entrené».</span></div>`;
+  return `<section class="fm-card v8-card fm-rec-card" aria-label="Recuperación muscular"><header class="fm-card-head"><h2>Recuperación</h2><small>${ready.length} listos · ${resting.length} descansando</small></header>
+   <div class="fm-rec-sum"><div data-rec="green"><small>${ic('circle-check')}Listos para entrenar</small><p>${ready.length?esc(ready.join(' · ')):'—'}</p></div><div data-rec="red"><small>${ic('battery-charging')}Descansando</small><p>${resting.length?esc(resting.join(' · ')):'Nada: todo recuperado'}</p></div></div>
+   <h3 class="fm-sub">Últimos entrenamientos</h3>${list}
+   <div class="fm-foot"><p class="fm-tip">${ic('info')}<span>Referencia práctica: casi todos los grupos se recuperan en 48–72 h. Escucha a tu cuerpo; no es consejo médico.</span></p>
+    <label class="fm-every"><span>Si no digo la hora, entreno a las</span><select class="select" data-fm="thour" aria-label="Hora habitual de entrenamiento">${Array.from({length:18},(_,n)=>n+5).map(h=>`<option value="${h}" ${h===hour?'selected':''}>${String(h).padStart(2,'0')}:00</option>`).join('')}</select></label></div></section>`;}
+
  function tab({presentation='neutral',presControl=''}={}){const all=recs(),t=today(),S=allSeries(all),cad=cadence(all,t,{measureEvery:prefEvery()}),sel=current(),info=regionInfo(all,sel);
-  const face=UIx().fisicoFace==='back'?'back':'front';
-  const fig=w=>`<figure class="fis-figure fm-face" data-view="${w}"><figcaption>${w==='front'?'Frente':'Espalda'}</figcaption>${root.FisicoBody.view(w,{presentation,measure:info})}</figure>`;
-  return `<div class="fm" data-fm-root><div class="fm-grid">
-   <section class="fm-hero" aria-label="Mapa corporal"><header class="fm-hero-head"><div><span class="fm-eyebrow">ESCÁNER CORPORAL</span><h2>Tu cuerpo</h2></div>${presControl}</header>
-    <div class="fm-stage v8-tilt" data-tilt="4" data-face="${face}"><div class="fis-figures fm-figures">${fig('front')}${fig('back')}</div><div class="fm-floor" aria-hidden="true"></div></div>
+  const face=UIx().fisicoFace==='back'?'back':'front',md=mode(),rec=md==='rec'?recNow():null,rs=recSel();
+  const fig=w=>`<figure class="fis-figure fm-face" data-view="${w}"><figcaption>${w==='front'?'Frente':'Espalda'}</figcaption>${root.FisicoBody.view(w,{presentation,measure:info,recovery:rec,recSel:rs})}</figure>`;
+  const modes=`<div class="fm-mode" role="group" aria-label="Qué ver en el cuerpo">${[['rec','Recuperación','activity'],['measure','Medidas','ruler']].map(([k,l,icn])=>`<button type="button" data-fm="mode" data-mode="${k}" aria-pressed="${md===k}">${ic(icn)}<span>${l}</span></button>`).join('')}</div>`;
+  return `<div class="fm" data-fm-root data-mode="${md}"><div class="fm-grid">
+   <section class="fm-hero" aria-label="Mapa corporal"><header class="fm-hero-head"><div><span class="fm-eyebrow">${md==='rec'?'MAPA DE RECUPERACIÓN':'ESCÁNER CORPORAL'}</span><h2>Tu cuerpo</h2></div>${presControl}</header>
+    ${modes}
+    <div class="fm-stage v8-tilt" data-tilt="4" data-face="${face}" data-mode="${md}"><div class="fis-figures fm-figures">${fig('front')}${fig('back')}</div><div class="fm-floor" aria-hidden="true"></div></div>
     <div class="fm-face-toggle" role="group" aria-label="Vista del cuerpo">${[['front','Frente'],['back','Espalda']].map(([k,l])=>`<button type="button" data-fm="face" data-face="${k}" aria-pressed="${face===k}">${l}</button>`).join('')}<button type="button" class="fm-turn" data-fm="face" data-face="${face==='front'?'back':'front'}" aria-label="Girar el cuerpo">${ic('rotate-3d')}</button></div>
-    <div class="fm-actions fm-hero-actions">${actions()}</div>
-    <div class="fm-part" id="fm-part" aria-live="polite">${partPanel(S,sel,t)}</div></section>
-   <div class="fm-side">${status(S,cad,t)}${progress(S)}${history(all,S,t)}</div></div></div>`;}
+    ${md==='rec'?legend(rec):''}
+    <div class="fm-part" id="fm-part" aria-live="polite">${md==='rec'?recPanel(rec,rs):partPanel(S,sel,t)}</div>
+    ${md==='rec'?quick():`<div class="fm-actions fm-hero-actions">${actions()}</div>`}</section>
+   <div class="fm-side">${md==='rec'?recSide(rec):''}${status(S,cad,t)}${progress(S)}${history(all,S,t)}</div></div></div>`;}
+ function setMode(m){UIx().fisicoMode=m==='measure'?'measure':'rec';root.App.render();}
+ function refreshRec(){const box=document.getElementById('fm-part');if(!box){root.App.render();return;}const rec=recNow(),k=recSel();box.innerHTML=recPanel(rec,k);
+  document.querySelectorAll('.fm-stage .fb-m').forEach(p=>{const on=!!k&&p.dataset.m===k;p.toggleAttribute('data-selected',on);p.setAttribute('aria-pressed',String(on));});
+  if(root.lucide)try{root.lucide.createIcons({root:box});}catch{}
+  anim(box.children,{opacity:[0,1],y:[8,0]},{stiffness:320,damping:28,delay:stagger(.03)});}
+ function pickRec(el){const k=el.dataset.m,U=UIx();U.fisicoRec=U.fisicoRec===k?null:k;const B=root.FisicoBody||{FRONT:{},BACK:{}},face=U.fisicoFace==='back'?'back':'front';
+  if(U.fisicoRec&&!(U.fisicoRec in (face==='front'?B.FRONT:B.BACK)))setFace(face==='front'?'back':'front');refreshRec();}
+ function quickToggle(b){const s=qset(),k=b.dataset.key,n=s.indexOf(k);if(n>=0)s.splice(n,1);else s.push(k);b.setAttribute('aria-pressed',String(n<0));syncQuick();}
+ function syncQuick(){const s=new Set(qset());document.querySelectorAll('[data-fm="qchip"]').forEach(c=>c.setAttribute('aria-pressed',String(s.has(c.dataset.key))));const sv=document.querySelector('[data-fm="qsave"]');if(sv)sv.disabled=!s.size;}
+ function quickPreset(key){const groups=FC().COMBOS[key]||[],legs=FC().COMBOS.pierna,U=UIx();let keys=groups.filter(k=>!legs.includes(k));if(legs.every(k=>groups.includes(k)))keys.push('legs');else keys.push(...groups.filter(k=>legs.includes(k)));
+  U.fisicoQuick=[...new Set([...qset(),...keys])];syncQuick();}
+ function logGroups(groups,back=0){if(!root.EvieFisico)return;const date=back?new Date(Date.parse(today()+'T12:00:00Z')-back*DAY).toISOString().slice(0,10):today();
+  const r=root.EvieFisico.logWorkout({groups,date});if(r.status==='needs'||r.status==='error'){root.App.toast(r.question||r.error,'error');return;}
+  UIx().fisicoQuick=[];root.App.render();root.App.toast(r.say,r.status==='duplicate'?'success':'success',r.undo);if(r.undo){root.EvieSounds?.play?.('confirm');root.EvieFinance?.setLastUndo?.(r.undo);}
+  pulseRec=r.groups||null;}
+ let pulseRec=null;
 
  // Rendered twice (inside the hero for single-column/phone layouts, in the status card on wide screens); CSS shows one.
  const actions=()=>`<button type="button" class="button primary fm-cta" data-fm="measure">${ic('ruler')}Registrar medidas</button><button type="button" class="button fm-ghost" data-fm="weight">${ic('scale')}Registrar peso</button>`;
@@ -227,7 +279,7 @@
  function sideFrom(el,ev){if(!ev||(!ev.clientX&&!ev.clientY))return null;const svg=el.ownerSVGElement,view=el.closest('[data-view]')?.dataset.view;
   try{const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const x=pt.matrixTransform(svg.getScreenCTM().inverse()).x,viewerLeft=x<100;return view==='back'?(viewerLeft?'l':'r'):(viewerLeft?'r':'l');}catch{return null;}}
  /** Tap a region: selects its measurement; tapping the same part again (same side, or no side info) closes it. */
- function pickFromEvent(el,ev){const part=REGION_PART[el.dataset.m];if(!part)return;const paired=PARTS[part].keys.length>1,side=paired?sideFrom(el,ev):null,cur=current();
+ function pickFromEvent(el,ev){if(mode()==='rec')return pickRec(el);const part=REGION_PART[el.dataset.m];if(!part)return;const paired=PARTS[part].keys.length>1,side=paired?sideFrom(el,ev):null,cur=current();
   const same=!!cur&&cur.part===part&&(!paired||!side||cur.side===side);setPart(same?null:part,side||(cur&&cur.part===part?cur.side:null));}
  function setPart(part,side,{scroll=false}={}){const U=UIx();U.fisicoPart=part&&PARTS[part]?{part,side:side||null}:null;
   const faces=part?FACE_OF(part):null,face=U.fisicoFace==='back'?'back':'front';if(faces&&!faces[face])setFace(face==='front'?'back':'front');refreshPart();
@@ -242,21 +294,32 @@
   document.querySelectorAll('[data-fm="face"]').forEach(b=>{if(b.classList.contains('fm-turn'))b.dataset.face=U.fisicoFace==='front'?'back':'front';else b.setAttribute('aria-pressed',String(b.dataset.face===U.fisicoFace));});}
 
  let entered=false;
- function afterRender(){const box=document.querySelector('[data-fm-root]');if(!box){entered=false;return;}
+ function afterRender(){const box=document.querySelector('[data-fm-root]');if(!box){entered=false;shownMode=null;return;}
   if(!entered){entered=true;anim(box.querySelectorAll('.fm-face'),{opacity:[0,1],scale:[.94,1],y:[18,0]},{stiffness:170,damping:22,delay:stagger(.08)});
    anim(box.querySelectorAll('.fm-tile,.fm-hist-row,.fm-stat'),{opacity:[0,1],y:[10,0]},{delay:stagger(.025,{startDelay:.12})});}
   if(pulseKeys&&pulseKeys.length){const parts=new Set(pulseKeys.map(k=>F[k]?.part).filter(Boolean));pulseKeys=null;
    const els=[...box.querySelectorAll('.fb-m')].filter(p=>parts.has(REGION_PART[p.dataset.m])),tiles=[...box.querySelectorAll('.fm-tile')].filter(b=>parts.has(b.dataset.part));
-   [...els,...tiles].forEach(x=>x.classList.add('is-pulse'));setTimeout(()=>[...els,...tiles].forEach(x=>x.classList.remove('is-pulse')),1700);}}
+   [...els,...tiles].forEach(x=>x.classList.add('is-pulse'));setTimeout(()=>[...els,...tiles].forEach(x=>x.classList.remove('is-pulse')),1700);}
+  if(pulseRec&&pulseRec.length){const ks=new Set(pulseRec);pulseRec=null;const els=[...box.querySelectorAll('.fb-m')].filter(p=>ks.has(p.dataset.m));
+   els.forEach(x=>x.classList.add('is-pulse'));setTimeout(()=>els.forEach(x=>x.classList.remove('is-pulse')),1700);}
+  const md=mode();if(md!==shownMode){shownMode=md;anim(box.querySelectorAll('.fm-legend li,.fm-qchip,.fm-day,.fm-rec-sum>div'),{opacity:[0,1],y:[8,0]},{delay:stagger(.02,{startDelay:.15})});}}
+ let shownMode=null;
 
  if(typeof document!=='undefined'&&document.addEventListener){
   document.addEventListener('click',ev=>{const b=ev.target.closest?.('[data-fm]');if(!b||b.tagName==='SELECT')return;const a=b.dataset.fm;
    if(a==='measure')open(null,b.dataset.focus||null);else if(a==='weight')openWeight();else if(a==='edit')open(b.dataset.id);else if(a==='del')del(b.dataset.id);
    else if(a==='part')setPart(b.dataset.part,b.dataset.side||null,{scroll:true});else if(a==='clear')setPart(null);else if(a==='face')setFace(b.dataset.face);
-   else if(a==='more'){UIx().fisicoHistAll=!UIx().fisicoHistAll;root.App.render();}});
-  document.addEventListener('change',ev=>{const s=ev.target.closest?.('[data-fm="every"]');if(!s)return;const v=Number(s.value);root.Store.save(st=>{st.preferences.fisicoMeasureEvery=EVERY.includes(v)?v:MEASURE_EVERY;});root.App.render();});}
+   else if(a==='more'){UIx().fisicoHistAll=!UIx().fisicoHistAll;root.App.render();}
+   else if(a==='mode')setMode(b.dataset.mode);
+   else if(a==='qchip')quickToggle(b);
+   else if(a==='qpreset')quickPreset(b.dataset.key);
+   else if(a==='qsave'){const g=expand(qset());if(g.length)logGroups(g,Number(UIx().fisicoQuickDay||0));}
+   else if(a==='log-one')logGroups([b.dataset.key],0);});
+  document.addEventListener('change',ev=>{const q=ev.target.closest?.('[data-fm="qday"]');if(q){UIx().fisicoQuickDay=['0','1','2'].includes(q.value)?q.value:'0';return;}
+   const h=ev.target.closest?.('[data-fm="thour"]');if(h){const v=Number(h.value);root.Store.save(st=>{st.preferences.fisicoTrainHour=Number.isInteger(v)&&v>=0&&v<=23?v:10;});root.App.render();return;}
+   const s=ev.target.closest?.('[data-fm="every"]');if(!s)return;const v=Number(s.value);root.Store.save(st=>{st.preferences.fisicoMeasureEvery=EVERY.includes(v)?v:MEASURE_EVERY;});root.App.render();});}
 
  root.FisicoMeasures=Object.freeze({FIELDS,PARTS,REGION_PART,RANGE,EVERY,WEIGH_EVERY,MEASURE_EVERY,CM_KEYS,
   valueOf,series,parseNum,check,fromForm,delta,vsLabel,deltaText,tone,fmt,signed,relDay,cadence,cadenceText,weekAvg,spark,regionInfo,daysBetween,
-  tab,open,openWeight,saveCheckin,del,pickFromEvent,setPart,setFace,afterRender});
+  tab,open,openWeight,saveCheckin,del,pickFromEvent,setPart,setFace,afterRender,setMode,logGroups,expand});
 })(typeof window!=='undefined'?window:globalThis);

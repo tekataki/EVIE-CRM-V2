@@ -1,9 +1,6 @@
 /* Físico v4 — body map. Highlights use pattern + text + swatch (never colour alone). */
 :root{--fb-line:#8f8cff;--fb-fresh:#ff9b6a;--fb-mid:#ffd36e;--fb-ready:#6fd8b4;--fb-idle:transparent;--fb-sil:rgba(143,140,255,.08)}
 [data-theme="dark"]{--fb-line:#a9a6ff;--fb-sil:rgba(169,166,255,.10)}
-.fis-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin:.25rem 0 1rem}
-.fis-tabs .button{display:inline-flex;align-items:center;gap:.4rem}
-.fis-subheading h2{margin:0;font-size:1.15rem}
 .fis-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,1fr);gap:1rem;align-items:start}
 @media (max-width:900px){.fis-layout{grid-template-columns:1fr}}
 .fis-body{padding:1rem}
