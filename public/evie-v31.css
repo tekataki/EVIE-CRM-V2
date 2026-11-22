@@ -204,6 +204,7 @@ body[data-module=finanzas] .evm-acc-grid{align-items:start}
 .auth-guest-tab[open] summary{border-bottom:1px solid rgba(168,189,255,.14)}
 #account-gate .auth-guest-tab form{padding:12px 14px 14px}
 .auth-guest-tab small,.auth-bridge small{color:#a9b5cf;line-height:1.5}
+.auth-legal{margin:0;text-align:center;font-size:12px}.auth-legal a{color:#a9b5cf;text-underline-offset:3px}.auth-legal a:hover,.auth-legal a:focus-visible{color:#e8ecff}
 /* Correo + contraseña */
 .auth-or{display:flex;align-items:center;gap:12px;color:#8f9bb8;font-size:12px;letter-spacing:.04em}
 .auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:rgba(168,189,255,.16)}

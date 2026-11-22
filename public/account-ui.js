@@ -45,7 +45,7 @@ window.AccountUI=(()=>{
   ${inv}${enabled?gBtn:''}${enabled&&!google?`<p class="auth-note" id="account-google-off">El acceso con Google aún no está activo en este servidor. ${pw?'Usa tu correo y contraseña.':'Vuelve a intentarlo más tarde.'}</p>`:''}
   ${mail}<p class="auth-ok" id="account-info" role="status">${e(info)}</p><p class="account-error" id="account-error" role="alert">${e(message)}</p>${message?'<button type="button" class="button auth-retry" id="auth-retry">Reintentar</button>':''}${recover}
   ${enabled?`<p class="auth-scope">${Views.icon('shield-check')}<span>Con Google solo recibimos tu nombre y correo para identificarte. EVIE no lee tu Gmail ni tu Calendar.</span></p>`:''}
-  ${guestTab}${!enabled?'<div class="account-secondary"><button class="button" id="account-local">Volver a mi espacio local</button></div>':''}</div></div>`);
+  ${guestTab}<p class="auth-legal"><a href="/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a></p>${!enabled?'<div class="account-secondary"><button class="button" id="account-local">Volver a mi espacio local</button></div>':''}</div></div>`);
   window.lucide?.createIcons?.({root:gate});
   const form=gate.querySelector('#account-form');
   gate.querySelectorAll('[data-auth-tab]').forEach(b=>b.onclick=()=>{authForm(b.dataset.authTab==='new');setTimeout(()=>gate.querySelector('[aria-selected=true]')?.focus(),0);});
