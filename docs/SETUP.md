@@ -16,7 +16,8 @@
 
 ## 2. Supabase
 **Supabase → tu proyecto**
-1. *SQL Editor*: si es un proyecto nuevo, ejecuta en orden `migrations/supabase/202609250001_accounts.sql`, `…0002_media.sql`, `…0003_validation_guards.sql`. Si ya existían, **no hay migraciones nuevas de Supabase en v2.3** (Hábitos, Logros, Compras viven en el estado de cada cuenta `user_preferences.payload.evieData`, protegido por la misma RLS).
+0. **Producción (2026-11-21): proyecto `EVIE CRM V2` (`mehhbdnxskfbortgglnd`, org dali-os), con las 5 migraciones aplicadas. Ver `docs/SUPABASE-SETUP.md`.**
+1. *SQL Editor*: si es un proyecto nuevo, ejecuta en orden `migrations/supabase/202609250001_accounts.sql`, `…0002_media.sql`, `…0003_validation_guards.sql`, `202610130001_automations.sql`, `202611210001_hardening.sql`. Si ya existían, **no hay migraciones nuevas de Supabase en v2.3** (Hábitos, Logros, Compras viven en el estado de cada cuenta `user_preferences.payload.evieData`, protegido por la misma RLS).
 2. *Project Settings → API*: copia `SUPABASE_URL` y la *publishable key* → secretos en Cloudflare.
 3. *Authentication → Providers → Email*: desactiva **Confirm email**, o define `SUPABASE_SERVICE_ROLE_KEY` (solo en Cloudflare).
 4. Antes de cambios: *Database → Backups* (o `pg_dump`).

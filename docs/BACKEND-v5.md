@@ -1,6 +1,6 @@
 # EVIE CRM V2 — Backend v5
 
-Estado: implementado y probado en el sandbox (unitarias + build + E2E de regresión). **No desplegado.**
+Estado: implementado y probado en el sandbox (unitarias + build + E2E de regresión). **Desplegado** (verificado 2026-11-21; ver `docs/SUPABASE-SETUP.md`).
 Cualquier cifra de latencia real del proveedor necesita claves de staging; aquí solo se mide el código.
 
 ## 0. Arquitectura base (sin cambios estructurales)

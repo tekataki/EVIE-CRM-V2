@@ -1,6 +1,6 @@
 # EVIE CRM V2 — Informe de entrega v5
 
-Fecha: 2026-10-25 · Rama `main` · **No desplegado** · **No subido a GitHub** (la autenticación de GitHub no está configurada).
+Fecha: 2026-10-25 · Rama `main` · Actualización 2026-11-21: **desplegado y en GitHub `main`** (commit 4cec587); D1 0008 aplicada en remoto (tablas v5 presentes).
 La parte visual es mínima a propósito: el rediseño es de Sonnet (`docs/HANDOFF-SONNET-v5.md`).
 
 ## Verificación

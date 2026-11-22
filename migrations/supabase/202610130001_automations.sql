@@ -1,4 +1,4 @@
--- EVIE v3.1 · Automatizaciones (website shortcuts) — PREPARED, NOT YET APPLIED TO PRODUCTION.
+-- EVIE v3.1 · Automatizaciones (website shortcuts) — APLICADA en producción (EVIE CRM V2) el 2026-11-21.
 -- Adds 'automations' to the allowed crm_records collections and guards its payload shape.
 -- Rows stay per-owner under the existing RLS (owner_id = auth.uid()). Nothing else changes.
 -- Apply once in Supabase → SQL Editor. Rollback: rollback/202610130001_automations_down.sql
