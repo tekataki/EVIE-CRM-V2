@@ -109,7 +109,11 @@ npm run build
 powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1   # o: npm run make:win
 # → out/make/squirrel.windows/x64/EVIE-CRM-V2-Setup.exe  y  out/make/zip/win32/x64/*.zip
 ```
-Variable necesaria para cuentas/Google en escritorio: `EVIE_ACCOUNT_API_ORIGIN=https://evie-crm-v2.pages.dev`. El instalador registra el protocolo `evie-crm://` (vuelta de Google al escritorio).
+Cuentas/Google en escritorio (desde 2.3.1): la app **instalada** se conecta sola a `https://evie-crm-v2.pages.dev`
+(`electron/main/origin.cjs`); no hace falta ninguna variable de Windows. `EVIE_ACCOUNT_API_ORIGIN` sigue sirviendo para
+apuntar a otro despliegue (`https://…`) o para forzar el modo local (`EVIE_ACCOUNT_API_ORIGIN=off`); ejecutada desde el
+código (`npm run dev:desktop`) la app es local salvo que definas la variable. La app registra el protocolo `evie-crm://`
+(vuelta de Google al escritorio): «Entrar con Google» abre tu navegador y al terminar regresa a EVIE.
 Contactos para «mándale un mensaje a…»: Configuración → Contactos de EVIE. EVIE solo abre WhatsApp con el mensaje prellenado; **nunca envía ni confirma entrega**.
 
 ## 8. v3.2 · Lista consolidada (borradores seguros, Mapa, Memoria, Configuración personalizada)

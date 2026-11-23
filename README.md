@@ -147,6 +147,8 @@ Configuración v3: ver `docs/SETUP.md §7`.
   respaldos de historial, código del servidor y migraciones quedan fuera (`forge.config.cjs`). Para pruebas
   automáticas, `EVIE_DESKTOP_PROFILE=<carpeta absoluta>` aísla el perfil (en Windows `%APPDATA%` no basta);
   `npm run test:electron` ya lo usa.
+- **2.3.1 · la app instalada se conecta sola a la nube** (`electron/main/origin.cjs`): cuentas, «Continuar con Google»,
+  sincronización e IA funcionan sin configurar variables en Windows. `EVIE_ACCOUNT_API_ORIGIN=off` fuerza el modo local.
 
 ## Novedades v10 · Fase 6: escritorio, tema claro y Android (2026-11-22)
 - **App de escritorio (Electron)**: el proxy de cuenta ahora permite todas las rutas v10 (chat, memorias, Cabina,

@@ -5,7 +5,7 @@ const {createDesktopActions,validateDesktop}=require('../tools/desktop-actions.c
 const {validate,object,text,enumeration,tool,rateLimit}=require('../security/contracts.cjs');
 const {createRegistry}=require('../tools/registry.cjs');const {windowsTools,executable,grantKey}=require('../tools/windows.cjs');const {createCatalog}=require('../tools/catalog.cjs');const {createConfirmation}=require('../security/confirmation.cjs');
 const {OllamaProvider,createConversation}=require('../ai/ollama.cjs');const {createVoice,validateWav}=require('../voice/local-voice.cjs');const processes=require('../voice/process.cjs');
-const {createAccountHost,serveAccountStream}=require('./account-host.cjs');const {createShortcuts}=require('./shortcuts.cjs');
+const {createAccountHost,serveAccountStream}=require('./account-host.cjs');const {createShortcuts}=require('./shortcuts.cjs');const {resolveAccountOrigin}=require('./origin.cjs');
 const ROOT=path.resolve(__dirname,'../..'),PUBLIC=path.join(ROOT,'public'),ORIGIN='evie://app';
 // EVIE_DESKTOP_PROFILE (QA only): an absolute folder for the whole profile. On Windows Electron resolves appData from the
 // shell's known folder, not from %APPDATA%, so automated tests need this to stay out of the person's real profile.
@@ -44,7 +44,7 @@ function createWindow(){let bounds={x:0,y:0,width:1440,height:940};try{const b=J
 // evie-crm://auth?code=... finishes Google sign-in started by THIS app instance (nonce kept in memory only).
 async function handleDeepLink(raw){let u;try{u=new URL(raw);}catch{return;}if(u.protocol!=='evie-crm:'||u.hostname!=='auth')return;const code=u.searchParams.get('code')||'';if(!/^[A-Za-z0-9_-]{43}$/.test(code)||!googleNonce||!accountRef){send({type:'notice',text:'Enlace de acceso no válido o expirado. Vuelve a tocar «Entrar con Google».'});return;}const nonce=googleNonce;googleNonce=null;try{const r=await accountRef.request({path:'auth/google/redeem',method:'POST',body:{code,nonce}});send({type:'google-auth',ok:true,user:r.user});}catch(e){send({type:'google-auth',ok:false,error:e.message});}}
 async function install(){fs.mkdirSync(app.getPath('userData'),{recursive:true});
- const accountOrigin=process.env.EVIE_ACCOUNT_API_ORIGIN||'';
+ const accountOrigin=resolveAccountOrigin(process.env,app.isPackaged);
  settings=require('./scoped-settings.cjs')(app.getPath('userData'),{enabled:!!accountOrigin});
  shortcuts=createShortcuts({globalShortcut,settings:()=>settings.get(),reveal,send});
  const accountSession=session.fromPartition('persist:evie-accounts');
@@ -66,7 +66,7 @@ async function install(){fs.mkdirSync(app.getPath('userData'),{recursive:true});
  const limit=rateLimit(90),voiceLimit=rateLimit(60),requests={
   account:args=>account.request(args),
   desktop:async args=>{validateDesktop(args);return desktopActions.run(args);},
-  'google.signin':async()=>{if(!process.env.EVIE_ACCOUNT_API_ORIGIN)throw Error('Configura EVIE_ACCOUNT_API_ORIGIN para entrar con Google.');googleNonce=randomBytes(32).toString('base64url');const hash=createHash('sha256').update(googleNonce).digest('base64url');const r=await account.request({path:'auth/google/start',method:'POST',body:{mode:'signin',desktop_nonce_hash:hash}});if(!/^https:\/\//.test(r?.url||''))throw Error('El servidor no devolvió la URL de Google.');await shell.openExternal(r.url);return {opened:true};},
+  'google.signin':async()=>{if(!accountOrigin)throw Error('Esta app está en modo local (EVIE_ACCOUNT_API_ORIGIN=off). Quita esa variable para entrar con Google.');googleNonce=randomBytes(32).toString('base64url');const hash=createHash('sha256').update(googleNonce).digest('base64url');const r=await account.request({path:'auth/google/start',method:'POST',body:{mode:'signin',desktop_nonce_hash:hash}});if(!/^https:\/\//.test(r?.url||''))throw Error('El servidor no devolvió la URL de Google.');await shell.openExternal(r.url);return {opened:true};},
   'settings.get':async()=>settings.get(),'settings.patch':async args=>{validate(require('./settings.cjs').schema,args);const previous=settings.get();for(const key of ['model','fastModel','preciseModel'])if(args[key]&&args[key]!==previous[key]){if(!(await provider.models()).includes(args[key])||!await provider.supportsTools(args[key]))throw Error('Selecciona un modelo instalado compatible. No se descargó ni cambió el modelo.');}if(args.appearance&&args.appearance!==previous.appearance){const r=await dialog.showMessageBox(win,{message:'El modo de ventana requiere reiniciar EVIE. Guarda tus formularios antes de continuar.',buttons:['Cancelar','Guardar modo y reiniciar'],defaultId:0,cancelId:0});if(!r.response)return previous;const s=settings.patch(args);app.relaunch();app.quit();return s;}const s=settings.patch(args);registerShortcut();return s;},
   models:async()=>provider.compatibleModels(),
   'apps.list':async()=>catalog.list(),'apps.discover':async()=>catalog.discover(),
