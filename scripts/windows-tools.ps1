@@ -1,4 +1,4 @@
-param([ValidateSet('focus','minimize','maximize','restore','close','volume','media')][string]$Action,[string]$Value)
+param([ValidateSet('focus','minimize','maximize','restore','close','volume','media')][string]$Action,[string]$Value,[ValidateRange(1,10)][int]$Count=1)
 $ErrorActionPreference='Stop'
 if($Action -in @('focus','minimize','maximize','restore','close')){
  if(-not [IO.Path]::IsPathRooted($Value) -or $Value.StartsWith('\\\\') -or [IO.Path]::GetExtension($Value) -ine '.exe'){throw 'Invalid application target'}
@@ -23,8 +23,9 @@ Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 public static class EvieWindows {
- [DllImport("user32.dll", CharSet=CharSet.Unicode, SetLastError=true)] static extern IntPtr SendMessageTimeout(IntPtr hwnd,uint msg,IntPtr w,IntPtr l,uint flags,uint timeout,out IntPtr result);
- public static bool Media(int code){IntPtr result;return SendMessageTimeout((IntPtr)0xffff,0x319,IntPtr.Zero,(IntPtr)(code<<16),2,1000,out result)!=IntPtr.Zero;}
+ // One real media/volume key press (as the keyboard key would send it), handled once by Windows.
+ [DllImport("user32.dll")] static extern void keybd_event(byte vk,byte scan,uint flags,UIntPtr extra);
+ public static bool Media(int vk){keybd_event((byte)vk,0,1,UIntPtr.Zero);keybd_event((byte)vk,0,3,UIntPtr.Zero);return true;}
  public static float Volume(float value){var enumerator=(IDeviceEnumerator)new DeviceEnumerator();IDevice device;Marshal.ThrowExceptionForHR(enumerator.GetDefaultAudioEndpoint(0,1,out device));object obj;Guid iid=typeof(IAudioEndpointVolume).GUID;Marshal.ThrowExceptionForHR(device.Activate(ref iid,23,IntPtr.Zero,out obj));var endpoint=(IAudioEndpointVolume)obj;Guid g=Guid.Empty;Marshal.ThrowExceptionForHR(endpoint.SetMasterVolumeLevelScalar(value,ref g));float actual;Marshal.ThrowExceptionForHR(endpoint.GetMasterVolumeLevelScalar(out actual));Marshal.ReleaseComObject(endpoint);Marshal.ReleaseComObject(device);Marshal.ReleaseComObject(enumerator);return actual;}
 }
 [ComImport,Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")] class DeviceEnumerator {}
@@ -39,8 +40,9 @@ if($Action -eq 'volume'){
  $actual=[EvieWindows]::Volume($n/100.0)
  @{volume=[math]::Round($actual*100)}|ConvertTo-Json -Compress
 }else{
- $codes=@{play=46;pause=47;next=11;previous=12;mute=8}
+ # Virtual-key codes: play/pause 0xB3, next 0xB0, previous 0xB1, mute 0xAD, volume down 0xAE, volume up 0xAF.
+ $codes=@{play=0xB3;pause=0xB3;playpause=0xB3;next=0xB0;previous=0xB1;mute=0xAD;volumedown=0xAE;volumeup=0xAF}
  if(-not $codes.ContainsKey($Value)){throw 'Invalid media action'}
- if(-not [EvieWindows]::Media($codes[$Value])){throw 'Windows did not acknowledge the media message'}
+ for($i=0;$i -lt $Count;$i++){[void][EvieWindows]::Media($codes[$Value]);if($Count -gt 1){Start-Sleep -Milliseconds 40}}
  '{"submitted":true,"note":"Control enviado; el reproductor decide si lo admite."}'
 }

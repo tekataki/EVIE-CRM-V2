@@ -81,7 +81,7 @@ export const TOOLS = [
   { name: 'recall_conversation', description: 'Recupera lo que el usuario preguntó en una conversación pasada guardada («¿recuerdas lo que te pregunté ayer?»). Devuelve fecha y preguntas reales o indica que no hay registro. Nunca inventes.', parameters: S({ question: { type: 'string', maxLength: 300 } }) },
   // Mapa (P2): routes ONLY come from the configured routing provider; never invent roads, turns, distances or ETAs.
   { name: 'map_action', description: 'Mapa de Ciudad Guzmán: abrir el mapa, calcular ruta a un destino, decir cuánto falta, recalcular, silenciar/reactivar o repetir indicaciones, o terminar la navegación. Distancias, tiempos y giros vienen SOLO del proveedor de rutas; si la herramienta no los da, dilo.', parameters: S({ action: { type: 'string', enum: ['open', 'route', 'remaining', 'reroute', 'mute', 'unmute', 'repeat', 'stop'] }, destination: nstr('destino en lenguaje natural o null') }) },
-  { name: 'desktop_action', description: 'Acciones de EVIE para Windows (solo app de escritorio): abrir Spotify o WhatsApp, controlar la música del sistema, preparar un mensaje a un contacto configurado. En navegador devuelve unavailable. Un mensaje NUNCA se da por enviado: se prepara, se lee y se confirma.', parameters: S({ action: { type: 'string', enum: ['open_spotify', 'open_whatsapp', 'media_next', 'media_previous', 'media_play_pause', 'compose_message'] }, contact: nstr('nombre del contacto para compose_message o null'), message: nstr('texto exacto del mensaje o null') }) }
+  { name: 'desktop_action', description: 'Acciones de EVIE para Windows (solo app de escritorio): abrir una aplicación por su nombre (open_app; la primera vez Windows le pregunta al usuario si permite abrirla), abrir Spotify o WhatsApp, buscar música en Spotify (spotify_search), controlar la música (media_play_pause, media_next, media_previous) y el volumen del sistema (volume_up, volume_down, volume_mute, set_volume con level 0–100), abrir un sitio web público (open_url) o buscar en Google (search_web), y preparar un mensaje a un contacto configurado. En navegador devuelve unavailable. Un mensaje NUNCA se da por enviado: se prepara, se lee y se confirma. No hay acciones para borrar archivos, comprar ni ejecutar comandos.', parameters: S({ action: { type: 'string', enum: ['open_app', 'open_spotify', 'open_whatsapp', 'spotify_search', 'media_play_pause', 'media_next', 'media_previous', 'volume_up', 'volume_down', 'volume_mute', 'set_volume', 'open_url', 'search_web', 'compose_message'] }, app: nstr('nombre de la aplicación para open_app, como lo diría el usuario ("Bloc de notas", "Calculadora", "Discord") o null'), query: nstr('texto a buscar para spotify_search o search_web, o null'), url: nstr('dirección https:// completa para open_url, o null'), level: { type: ['integer', 'null'], description: 'volumen 0–100 para set_volume, o null' }, contact: nstr('nombre del contacto para compose_message o null'), message: nstr('texto exacto del mensaje o null') }) }
 ].map((t) => ({ type: 'function', strict: true, ...t }))
 // Tools executed on the SERVER (trusted clock). The browser never answers these.
 export const SERVER_TOOLS = [
@@ -241,6 +241,10 @@ export async function toClaudeMessages(items, { unseal, secret, owner }) {
   return msgs
 }
 
+// One context line when the person talks from EVIE para Windows (a client hint: it only matters for the narrow,
+// validated desktop actions, which the app itself enforces).
+const desktopContext = (ctx) => ctx?.app === 'windows' ? 'Canal: EVIE para Windows (app de escritorio). Aquí sí puedes usar desktop_action: abrir aplicaciones por nombre, Spotify, música, volumen, sitios web y búsquedas. Hazlo cuando el usuario lo pida y confirma solo lo que la herramienta devolvió.' : ''
+
 export function createAssistant({ fetcher = fetch, authenticate, unseal = null, seal = null, memorySource = null }) {
   const api = new Hono()
   // ---------- Claude branch of /chat (same response contract the browser already speaks) ----------
@@ -258,7 +262,7 @@ export function createAssistant({ fetcher = fetch, authenticate, unseal = null, 
         if (list.length) { mem = memoryBlock(list); used = { facts: list.map((m) => ({ id: m.id, text: m.text, updated_day: String(m.updated_at || '').slice(0, 10), source: m.kind, source_session: m.source_conversation })), sessions: memoryUsed.sessions } }
       } catch (e) { console.error('MEMORY_SUPABASE', String(e?.message || e).slice(0, 60)) }
     }
-    const system = iviSystem({ userBlock: iviUserBlock({ profile: profileBlock(profile, lastUser), memoryProfile }), context: [iviContext({ name, today: day(timezone), timezone, currency, channel: o.channel, mode: cleanMode(ctx.mode), dials: personaDials(ctx.persona), tier: cfg.id, web, guest, privateMode, memory: mem }), iviSituation(ctx.situation)].filter(Boolean).join('\n') })
+    const system = iviSystem({ userBlock: iviUserBlock({ profile: profileBlock(profile, lastUser), memoryProfile }), context: [iviContext({ name, today: day(timezone), timezone, currency, channel: o.channel, mode: cleanMode(ctx.mode), dials: personaDials(ctx.persona), tier: cfg.id, web, guest, privateMode, memory: mem }), iviSituation(ctx.situation), desktopContext(ctx)].filter(Boolean).join('\n') })
     const tools = [...claudeTools(TOOLS), ...claudeTools(SERVER_TOOLS), ...(web ? [webSearchTool({ timezone, city: profile?.city })] : [])]
     const client = claudeClient(env, fetcher), base = messages.length, ms = []
     let msg = null, cost = 0, searches = 0, serverResults = [], fellBack = false
@@ -392,7 +396,7 @@ export function createAssistant({ fetcher = fetch, authenticate, unseal = null, 
     if (!privateMode && unseal && env.AUTH_DB && env.EVIE_SESSION_KEY) { try { await ensureMemorySchema(env.AUTH_DB); const st = await settingsOf(env, s.user.id, unseal); memoryUsed = await retrieve(env, s.user.id, unseal, lastUser, { ...st, timezone }); memory = contextBlock(memoryUsed) } catch (e) { console.error('MEMORY_RETRIEVE', String(e?.message || e).slice(0, 80)) } }
     const retrievalMs = Date.now() - tr
     if (provider === 'claude') return claudeChat(c, { s, env, input, ctx, requestId, cfg, web, timezone, currency, name, profile, guest, privateMode, memory, memoryUsed, lastUser, lim, stored, tierSource, tier, tierChanged, fallback, retrievalMs, t0, channel: 'voz' })
-    const sys = [instructions({ name, today: day(timezone), timezone, currency, profile: profileBlock(profile, lastUser), web, memory, privateMode, tier: cfg.id, guest }), iviSituation(ctx.situation)].filter(Boolean).join('\n\n')
+    const sys = [instructions({ name, today: day(timezone), timezone, currency, profile: profileBlock(profile, lastUser), web, memory, privateMode, tier: cfg.id, guest }), iviSituation(ctx.situation), desktopContext(ctx)].filter(Boolean).join('\n\n')
     let convo = [...input], data = null, usedWeb = false, webUnsupported = false, costTotal = 0
     const openaiMs = []
     // Server tools (trusted clock) are resolved here in a bounded loop; client tools go back to the browser.

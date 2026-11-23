@@ -11,9 +11,10 @@ test('the desktop lock lets google.signin through before a session exists',()=>{
  const m=/settings\.locked\(\)&&!\[([^\]]*)\]\.includes\(message\.method\)/.exec(main);
  assert.ok(m,'the locked() guard is still in evie:request');
  const allowed=m[1].split(',').map(s=>s.trim().replace(/^'|'$/g,''));
- for(const method of ['account','window','cancel','google.signin'])assert.ok(allowed.includes(method),method+' allowed while locked');
- // Nothing else that needs a signed-in account slipped into the list.
- assert.deepEqual(allowed.filter(x=>!['account','window','cancel','google.signin'].includes(x)),[]);
+ const expected=['account','window','cancel','google.signin','update.status','update.install'];
+ for(const method of expected)assert.ok(allowed.includes(method),method+' allowed while locked');
+ // Nothing else that needs a signed-in account slipped into the list (updates may install from the sign-in screen).
+ assert.deepEqual(allowed.filter(x=>!expected.includes(x)),[]);
 });
 
 test('google.signin needs the cloud origin and only opens an https URL',()=>{

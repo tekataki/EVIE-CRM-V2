@@ -116,6 +116,23 @@ código (`npm run dev:desktop`) la app es local salvo que definas la variable. L
 (vuelta de Google al escritorio): «Entrar con Google» abre tu navegador y al terminar regresa a EVIE.
 Contactos para «mándale un mensaje a…»: Configuración → Contactos de EVIE. EVIE solo abre WhatsApp con el mensaje prellenado; **nunca envía ni confirma entrega**.
 
+**Actualizaciones automáticas (desde 2.4):**
+- Cada push a `main` que cambia `public/`, `electron/`, `scripts/`, `package*.json` o `forge.config.cjs` corre
+  *Desktop release (Windows)* (GitHub Actions, `windows-latest`, solo con `GITHUB_TOKEN`).
+- Ese flujo compila el instalador y publica el release `vX.Y.Z` con `RELEASES`, el `.nupkg` completo y
+  `EVIE-CRM-V2-Setup.exe`.
+- La versión es la de `package.json` o, si ya existe ese release, el siguiente parche libre. No se hace commit de vuelta.
+- Las apps instaladas buscan la actualización en `https://github.com/tekataki/EVIE-CRM-V2/releases/latest/download` y
+  la aplican al reiniciar.
+- Para subir de versión menor, sube `package.json` por encima del último release.
+- `[skip desktop]` en el commit evita el release. Desde la pestaña *Actions* también se puede lanzar a mano
+  (*workflow_dispatch*).
+
+**Ivi en la app de escritorio:**
+- Con sesión iniciada usa la IA, la voz y las herramientas de la nube, igual que la web.
+- Para que Ivi abra una app que no está en la lista fija, la primera vez Windows te pregunta «¿Permitir que Ivi abra…?».
+  Para revocarlo: Configuración → Equipo → Catálogo de aplicaciones.
+
 ## 8. v3.2 · Lista consolidada (borradores seguros, Mapa, Memoria, Configuración personalizada)
 > No hay que tocar el proyecto de Supabase en vivo: esta versión **no trae migraciones de Supabase**.
 

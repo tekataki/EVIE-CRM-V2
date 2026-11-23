@@ -103,6 +103,34 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades 2.4 · EVIE para Windows igual que la web, y se actualiza sola (2026-11-23)
+- **Ivi en la nube también en la app de escritorio.** Con tu sesión iniciada, el núcleo, Ctrl+Espacio y «Escuchar» de
+  la bandeja usan la misma Ivi que la web: tu voz → `ai/stt` → `ai/chat` (OpenAI hoy; Claude cuando exista la llave) →
+  voz de `ai/tts`. El modo local (Ollama + Whisper) solo queda para `EVIE_ACCOUNT_API_ORIGIN=off`.
+- **Todas las rutas de la web pasan por el proxy de escritorio** (`electron/main/account-host.cjs`, 110 rutas con método
+  y formato exactos), y las peticiones en bytes de la web (`fetch('/api/…')`: voz hablada, fotos, imágenes del chat,
+  SSE) llegan por `evie://app/api/*` a un *pass-through* con la misma lista, la misma identidad y los mismos límites. La
+  página nunca ve cookies ni la URL del servidor. `tests/desktop-cloud.test.cjs` revisa que **cada ruta que llama la web
+  esté permitida en escritorio**, para que no vuelva a aparecer «Solicitud de cuenta no permitida».
+- **Ivi controla Windows** (`desktop_action`, solo en la app de escritorio). Puede:
+  - abrir aplicaciones por nombre («abre el bloc de notas», «abre Discord»);
+  - buscar en Spotify;
+  - controlar la música y el volumen (sube, baja, silencio o un nivel exacto);
+  - abrir sitios web y buscar en Google.
+
+  El modelo solo manda un **nombre**: se resuelve con una lista fija de apps de Windows, con las apps que ya autorizaste
+  o con una ventana nativa «¿Permitir que Ivi abra X?» (`electron/tools/app-names.cjs`). Nunca usa rutas ni comandos.
+  «Abre X» para las apps conocidas no gasta IA. Las teclas multimedia ahora son pulsaciones reales (`keybd_event`).
+- **Actualizaciones automáticas.**
+  - Cada push a `main` que toca la app publica un release de Windows en GitHub (`.github/workflows/desktop-release.yml`).
+  - La versión la elige `scripts/release-version.mjs`: siguiente parche libre ≥ `package.json`.
+  - La app instalada revisa `releases/latest/download` 30 s después de abrir y cada 4 h (`electron/main/updater.cjs`).
+  - Descarga en segundo plano y avisa con «Reiniciar ahora» (también en la bandeja). Si no reinicias, la versión nueva
+    abre la próxima vez.
+  - Pon `[skip desktop]` en el mensaje del commit para no publicar.
+- Corregido: preparar un mensaje de WhatsApp perdía el token de confirmación (la respuesta de Windows llegaba con una
+  envoltura de más).
+
 ## Novedades v11 · Onyx: rediseño completo (2026-11-23)
 - **Nuevo sistema de diseño** (`public/evie-onyx.css`, cargado al final): superficies grafito, botones principales en
   píldora blanca, tipografía **Geist / Geist Mono** (SIL OFL, en `public/fonts/`, precargada y en caché offline) y el

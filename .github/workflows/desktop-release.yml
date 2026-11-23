@@ -1,0 +1,79 @@
+# Publishes the Windows desktop app as a GitHub release on every push to main that touches app files.
+# Installed apps update themselves from https://github.com/tekataki/EVIE-CRM-V2/releases/latest/download
+# (electron/main/updater.cjs), so every release carries RELEASES, the full .nupkg and the Setup.exe.
+# The version bump only lives in the release (scripts/release-version.mjs); nothing is committed back.
+# Put [skip desktop] in the commit message to skip a release.
+name: Desktop release (Windows)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'electron/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'forge.config.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: ${{ !contains(github.event.head_commit.message, '[skip desktop]') }}
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Pick the version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-version.mjs | tee -a "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply the version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: node scripts/release-version.mjs --apply "$VERSION"
+
+      - name: Build the Windows installer
+        run: npm run make:win
+
+      - name: Check the Squirrel files
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          dir=out/make/squirrel.windows/x64
+          for file in RELEASES "evie_crm_v2-$VERSION-full.nupkg" EVIE-CRM-V2-Setup.exe; do
+            if [ ! -f "$dir/$file" ]; then echo "::error::Missing $dir/$file"; ls -la "$dir" || true; exit 1; fi
+          done
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          dir=out/make/squirrel.windows/x64
+          notes="$RUNNER_TEMP/release-notes.md"
+          git log -1 --format=%s "$GITHUB_SHA" > "$notes"
+          printf '\n%s\n' 'La app de escritorio instalada se actualiza sola la próxima vez que se abra.' >> "$notes"
+          gh release create "v$VERSION" "$dir/RELEASES" "$dir/evie_crm_v2-$VERSION-full.nupkg" "$dir/EVIE-CRM-V2-Setup.exe" \
+            --target "$GITHUB_SHA" --title "EVIE $VERSION" --notes-file "$notes" --latest
