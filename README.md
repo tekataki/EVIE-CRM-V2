@@ -103,6 +103,46 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades v11 · Onyx: rediseño completo (2026-11-23)
+- **Nuevo sistema de diseño** (`public/evie-onyx.css`, cargado al final): superficies grafito, botones principales en
+  píldora blanca, tipografía **Geist / Geist Mono** (SIL OFL, en `public/fonts/`, precargada y en caché offline) y el
+  brillo de fondo animado de v8 intacto. Todas las paletas anteriores (`--v8-*`, `--g-*`, `--surface`…, y las de cada
+  módulo) se remapean al grafito; los colores con significado (verde/rojo/ámbar) se conservan. Tema claro a la par.
+- **Sin barra superior**: un botón flotante de menú arriba a la izquierda (más buscar y avisos en las secciones). Tema,
+  avisos, configuración, sincronización, pausar animaciones e «Instalar app» viven en el menú lateral, que trae buscador
+  y una tarjeta para hablar con Ivi.
+- **Inicio tipo Jarvis**: el núcleo neuronal más grande y al centro; a la izquierda las lecturas (Hoy, Seguimientos,
+  Recuperación, Escuela, Misión) y a la derecha lo que Ivi puede hacer ahora, unidas al núcleo con líneas HUD. En el
+  teléfono las lecturas son una franja bajo la hora y los atajos se abren con ✦ junto al cuadro de texto.
+- **Tarjetas que se adaptan al contenido** (`sm`/`md`/`lg`): una investigación larga abre una tarjeta grande que ocupa
+  todo un costado del núcleo; las cortas quedan compactas; en el teléfono se apilan debajo del núcleo.
+- **Cada sección tiene vida**: héroe con una ilustración animada propia (`public/evie-scenes.js`: flujos y barras en
+  Finanzas, pulso en Físico, radar en SOMA, cristal 3D en Escuela, terreno en Granja, tela en ALVENTO…), un consejo
+  concreto para empezar (se puede ocultar) y animaciones GSAP: títulos que suben palabra por palabra, números que
+  cuentan, tarjetas que aparecen al desplazarte, botones magnéticos (`public/evie-onyx.js`).
+- **Más intuitiva**: recorrido de bienvenida de 3 pasos la primera vez; barra inferior del teléfono = Inicio · Chat ·
+  orbe · Finanzas · **Menú**; el menú lateral se abre con el pulgar.
+- **Chat fijo**: la página del chat ya no se desliza; solo se desplazan la lista de conversaciones y los mensajes, y se
+  ajusta al teclado del teléfono (`interactive-widget=resizes-content`). Al tocar «Enviar» el teclado sigue abierto.
+- **Imágenes en el chat**: adjunta hasta 4 por mensaje (botón, pegar o arrastrar); se comprimen a WebP en el teléfono,
+  se guardan en Supabase Storage (bucket privado `user-media`, objeto `<tu id>/chat-<uuid>.webp`, con tu propio token y
+  la RLS existente; sin migración) e Ivi las analiza. Toca una imagen para verla grande. Rutas:
+  `POST/GET/DELETE /api/chat/attachments`.
+- **El chat actúa en tus módulos**: «hoy me gasté 250 en comida, ¿lo puedes poner en finanzas?» registra el gasto y
+  muestra el comprobante «✓ Gasto registrado · $250 · Comida · Efectivo» con **Deshacer**. También traspasos entre
+  cuentas, entrenamientos, pendientes y recordatorios en la Agenda, y consultas («¿cómo voy este mes?»). Las acciones
+  corren en tu dispositivo con las mismas funciones que la voz; el servidor continúa con un paso sellado
+  (`POST /api/chat/conversations/:id/continue`, máx. 3 rondas). «Regenerar» no duplica registros.
+- **Biblioteca de prompts** en Automatizaciones (pestaña «Prompts», `#automatizaciones/prompts`): guarda un prompt con
+  nombre y etiqueta, búscalo y tócale **Copiar** para llevarte el texto completo. Se guarda en tus preferencias (Supabase)
+  y se sincroniza entre dispositivos; «Ivi, abre mis prompts» lo abre.
+- **Rendimiento**: sin desenfoque de fondo en tarjetas, rejilla animada por GPU, escenas a ~30 fps solo cuando se ven,
+  JSZip se carga solo al usar respaldos ZIP (−100 KB al abrir), una sola capa de luces en el tema oscuro.
+- **Instalable**: manifiesto con atajos (Hablar con Ivi, Chat, Agenda, Finanzas), colores del tema y modo
+  `standalone`; en iPhone, «Instalar app» explica Compartir → Agregar a inicio. Medidas de referencia del Galaxy S25
+  Ultra: 412 × 891 px CSS (DPR 3.5); las pruebas visuales corren a 412, 390 y 1440 px.
+- Pruebas: `tools/e2e-onyx.mjs` (W=1440/412/390, THEME=light).
+
 ## Novedades v10 · Fase 6: escritorio, tema claro y Android (2026-11-22)
 - **App de escritorio (Electron)**: el proxy de cuenta ahora permite todas las rutas v10 (chat, memorias, Cabina,
   Escuela, Revisión, Dojo, Radar, `data/stamp`) con métodos y rutas exactas, y **transmite en vivo** las respuestas del

@@ -3,8 +3,8 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'..','public');
 const html=await fs.readFile(path.join(root,'index.html'),'utf8');
-const files=new Set(['/','/manifest.webmanifest','/icon.svg','/icons/ivy-192.png','/icons/ivy-512.png','/pcm-recorder.js','/vendor/three.module.min.js','/vendor/three.core.min.js']);
-for(const [,file] of html.matchAll(/(?:src|href)="([^"#]+)"/g))if(!file.includes(':')&&!file.startsWith('/')&&/\.(js|css|png|svg|webmanifest)$/.test(file))files.add('/'+file);
+const files=new Set(['/','/manifest.webmanifest','/icon.svg','/icons/ivy-192.png','/icons/ivy-512.png','/pcm-recorder.js','/vendor/three.module.min.js','/vendor/three.core.min.js','/vendor/jszip.min.js','/fonts/geist-latin.woff2','/fonts/geist-latin-ext.woff2','/fonts/geist-mono-latin.woff2']);
+for(const [,file] of html.matchAll(/(?:src|href)="([^"#]+)"/g))if(!file.includes(':')&&!file.startsWith('/')&&/\.(js|css|png|svg|webmanifest|woff2)$/.test(file))files.add('/'+file);
 const list=[...files].sort(),hash=createHash('sha256');
 // Pages redirects /index.html to /. Cache the canonical URL, not a redirect.
 for(const file of list){hash.update(file);hash.update(await fs.readFile(path.join(root,file==='/'?'index.html':file.slice(1))));}

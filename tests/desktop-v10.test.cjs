@@ -9,7 +9,8 @@ const createSettings=require('../electron/main/settings.cjs');const scopedSettin
 const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222222222';
 const C='33333333-3333-4333-8333-333333333333',D='44444444-4444-4444-8444-444444444444',E='55555555-5555-4555-8555-555555555555';
 const ORIGIN='https://evie.example',enc=new TextEncoder();
-const messages=id=>`chat/conversations/${id}/messages`;
+const messages=id=>`chat/conversations/${id}/messages`,cont=id=>`chat/conversations/${id}/continue`;
+const IMGN=C+'.webp';
 // Stream tests must fail, never hang: per-test timeout, short idle limit, and every port/body is closed afterwards.
 const T={timeout:15000},open={ports:new Set(),bodies:new Set()};
 afterEach(()=>{for(const p of open.ports){try{p.close();}catch{}}open.ports.clear();for(const s of open.bodies){try{s.end();}catch{}}open.bodies.clear();});
@@ -35,8 +36,8 @@ function loadPreload(onPost=()=>{}){
 function fakeGlobalShortcut(taken=[]){const map=new Map();return {map,register(accelerator,fn){if(taken.includes(accelerator))return false;map.set(accelerator,fn);return true;},unregisterAll(){map.clear();},unregister(accelerator){map.delete(accelerator);}};}
 
 test('v10 Worker routes are in the allowlist with their exact methods; pre-v10 routes and size limits are kept',()=>{
- for(const route of ['GET chat/conversations','POST chat/conversations','PATCH chat/conversations/:id','DELETE chat/conversations/:id','GET chat/conversations/:id/messages','POST chat/conversations/:id/messages','GET chat/memories','POST chat/memories','PATCH chat/memories/:id','DELETE chat/memories/:id','POST chat/memories/:id/restore','GET chat/memories/:id/history','GET chat/stamp','POST soma/dossier','POST soma/followup','POST school/summary','POST school/cards','POST weekly/review','POST dojo/turn','POST dojo/score','POST radar/news','POST radar/plans','POST ai/stt','POST data/stamp','GET runtime','GET auth/session','POST auth/signin','POST auth/signup','POST auth/signout','POST auth/google/start','POST auth/google/redeem','POST data/pull','POST data/push','POST info/research','POST info/weather','POST info/learn'])assert.ok(ROUTES.includes(route),route);
- assert.equal(ROUTES.length,36);assert.equal(new Set(ROUTES).size,ROUTES.length);
+ for(const route of ['GET chat/conversations','POST chat/conversations','PATCH chat/conversations/:id','DELETE chat/conversations/:id','GET chat/conversations/:id/messages','POST chat/conversations/:id/messages','POST chat/conversations/:id/continue','POST chat/attachments','GET chat/attachments/:img','DELETE chat/attachments/:img','GET chat/memories','POST chat/memories','PATCH chat/memories/:id','DELETE chat/memories/:id','POST chat/memories/:id/restore','GET chat/memories/:id/history','GET chat/stamp','POST soma/dossier','POST soma/followup','POST school/summary','POST school/cards','POST weekly/review','POST dojo/turn','POST dojo/score','POST radar/news','POST radar/plans','POST ai/stt','POST data/stamp','GET runtime','GET auth/session','POST auth/signin','POST auth/signup','POST auth/signout','POST auth/google/start','POST auth/google/redeem','POST data/pull','POST data/push','POST info/research','POST info/weather','POST info/learn'])assert.ok(ROUTES.includes(route),route);
+ assert.equal(ROUTES.length,40);assert.equal(new Set(ROUTES).size,ROUTES.length);
  assert.equal(LIMITS.json,16000000);assert.equal(LIMITS.audio,4*1024*1024);assert.equal(LIMITS.timeout,30000);assert.ok(LIMITS.ai>=120000);
 });
 
@@ -51,6 +52,10 @@ test('v10 routes reach the Worker with the exact URL, method, JSON body and the 
   [{path:`chat/conversations/${C.toUpperCase()}`,method:'DELETE'},`/api/chat/conversations/${C.toUpperCase()}`,undefined],
   [{path:messages(C),method:'GET'},'/api/'+messages(C),undefined],
   [{path:messages(C),method:'POST',body:{text:'Hola',tier:'chispa'}},'/api/'+messages(C),'{"text":"Hola","tier":"chispa"}'],
+  [{path:cont(C),method:'POST',body:{continuation:'s3ll4d0',outputs:[{call_id:'call_1',output:'{}'}]}},'/api/'+cont(C),'{"continuation":"s3ll4d0","outputs":[{"call_id":"call_1","output":"{}"}]}'],
+  [{path:'chat/attachments',method:'POST',body:{mime:'image/webp',data:'UklGRg=='}},'/api/chat/attachments','{"mime":"image/webp","data":"UklGRg=="}'],
+  [{path:'chat/attachments/'+IMGN,method:'GET'},'/api/chat/attachments/'+IMGN,undefined],
+  [{path:'chat/attachments/'+C+'.jpg',method:'DELETE'},'/api/chat/attachments/'+C+'.jpg',undefined],
   [{path:'chat/memories?forgotten=1',method:'GET'},'/api/chat/memories?forgotten=1',undefined],
   [{path:'chat/memories',method:'POST',body:{text:'Prefiere café',kind:'preference',importance:3}},'/api/chat/memories','{"text":"Prefiere café","kind":"preference","importance":3}'],
   [{path:`chat/memories/${D}`,method:'PATCH',body:{importance:5}},`/api/chat/memories/${D}`,'{"importance":5}'],
@@ -72,7 +77,8 @@ test('v10 routes reject other methods, malformed ids, traversal and unknown quer
  const {host,calls}=await signedIn(async()=>Response.json({ok:true}));
  const bad=[['GET','soma/dossier'],['post','soma/dossier'],['PUT','chat/conversations'],['GET',`chat/conversations/${C}`],['POST',`chat/conversations/${C}`],['PUT',`chat/conversations/${C}`],['PATCH','chat/conversations'],['DELETE','chat/conversations'],['DELETE',messages(C)],['PATCH',messages(C)],['POST','chat/stamp'],['GET','data/stamp'],['GET',`chat/memories/${D}/restore`],['POST',`chat/memories/${D}/history`],['DELETE','chat/memories'],['GET','ai/stt'],['GET','ai/tts'],['POST','ai/chat'],
   ['GET','chat/conversations/123/messages'],['GET',`chat/conversations/${C}x/messages`],['GET',messages(C.slice(0,-1))],['GET',messages(C.replace(/-/g,''))],['GET','chat/conversations/../../auth/session'],['GET','chat/conversations/%2e%2e/messages'],['GET','chat//conversations'],['GET','chat/conversations/'],['GET','Chat/Conversations'],['GET','/chat/conversations'],['GET','chat/conversations#x'],['DELETE',`chat/memories/${D}/../${D}`],['POST','soma/dossier/'],['POST','soma'],['POST','chat'],
-  ['POST','radar/news?force=1'],['GET','chat/conversations?archived=0'],['GET','chat/conversations?archived=1&archived=1'],['GET','chat/conversations?owner='+B],['GET','chat/conversations?q='],['GET','chat/conversations?q='+'x'.repeat(201)],['GET','chat/conversations?q=%0Aadmin'],['GET','chat/memories?archived=1'],['GET',messages(C)+'?x=1'],['GET','chat/stamp?forgotten=1']];
+  ['POST','radar/news?force=1'],['GET','chat/conversations?archived=0'],['GET','chat/conversations?archived=1&archived=1'],['GET','chat/conversations?owner='+B],['GET','chat/conversations?q='],['GET','chat/conversations?q='+'x'.repeat(201)],['GET','chat/conversations?q=%0Aadmin'],['GET','chat/memories?archived=1'],['GET',messages(C)+'?x=1'],['GET','chat/stamp?forgotten=1'],
+  ['GET',cont(C)],['PUT',cont(C)],['POST',cont('123')],['POST',cont(C)+'?r=1'],['GET','chat/attachments'],['PUT','chat/attachments'],['POST','chat/attachments/'+IMGN],['PATCH','chat/attachments/'+IMGN],['GET','chat/attachments/'+C],['GET','chat/attachments/'+C+'.gif'],['GET','chat/attachments/'+C+'.svg'],['GET','chat/attachments/ABCDEF01-2345-4678-9ABC-DEF012345678.png'],['GET','chat/attachments/'+C+'.png.png'],['GET','chat/attachments/../auth/session'],['GET','chat/attachments/%2e%2e%2f'+IMGN],['DELETE','chat/attachments/'+C],['GET','chat/attachments/'+IMGN+'?w=1']];
  for(const [method,p] of bad)await assert.rejects(host.request({path:p,method,userId:A}),/no permitida/,method+' '+p);
  for(const args of [{path:'chat/stamp',method:'GET',userId:A,headers:{}},{path:'chat/stamp',method:'GET',userId:A,extra:1},{path:'soma/dossier',method:'POST',userId:A,body:{},headers:{'X-Evie-Lang':'en'}},{path:'chat/stamp',method:'GET',userId:'not-a-uuid'},{path:'chat/stamp',method:'GET',userId:A,url:'https://evil.example'},{path:['chat/stamp'],method:'GET',userId:A},{path:'chat/stamp',userId:A}])await assert.rejects(host.request(args),/no permitida/,JSON.stringify(args));
  const small=createAccountHost({origin:ORIGIN,fetcher:async()=>Response.json({}),limits:{json:200}});
@@ -155,6 +161,16 @@ test('chat SSE is piped chunk by chunk: chunks arrive before the Worker ends the
  assert.deepEqual(await pending,{streamed:true,status:200});
  const text=events.slice(1).map(e=>e[1]).join('');
  assert.equal(text,meta+'event: delta\ndata: {"t":"¡Hola, ñandú!"}\n\n'+done);assert.ok(!text.includes('�'));
+});
+
+test('the /continue round after Ivi\'s app tools streams through the same pipe; uploads are JSON, never streams',T,async()=>{
+ const up=upstream();let opts,url;
+ const {host}=await signedIn(async(u,o)=>{url=u;opts=o;return up.response();});
+ const chunks=[];const pending=host.stream({path:cont(C),method:'POST',userId:A,body:{continuation:'c',outputs:[]}},{chunk:t=>chunks.push(t)});
+ await until(()=>opts);assert.equal(url,ORIGIN+'/api/'+cont(C));assert.equal(opts.headers.Accept,'text/event-stream');assert.equal(opts.body,'{"continuation":"c","outputs":[]}');
+ up.push('event: done\ndata: {"text":"Listo"}\n\n');up.end();
+ assert.deepEqual(await pending,{streamed:true,status:200});assert.equal(chunks.join(''),'event: done\ndata: {"text":"Listo"}\n\n');
+ await assert.rejects(host.stream({path:'chat/attachments',method:'POST',userId:A,body:{mime:'image/png',data:'iVBORw=='}},{}),/no permitida/);
 });
 
 test('a renderer abort cancels the upstream chat request mid-stream',T,async()=>{

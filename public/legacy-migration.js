@@ -23,7 +23,7 @@ window.LegacyMigration=(()=>{
   running=true;
   try{return await perform(prepared,download);}finally{running=false;}
  }
- async function perform(prepared,download){
+ async function perform(prepared,download){await window.EvieLoadZip?.().catch(()=>{});
   const targetKey=DALI_CONFIG.storageKey;
   const check=()=>{if(allowed()!==prepared.owner||DALI_CONFIG.storageKey!==targetKey||localStorage.getItem(sourceKey)!==prepared.raw)throw Error('La cuenta o los datos originales cambiaron. Abre una nueva vista previa.');};check();
   if(targetKey!==EvieAccounts.scope(prepared.owner))throw Error('El destino no es el espacio de la cuenta autorizada.');

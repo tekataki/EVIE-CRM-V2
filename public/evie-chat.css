@@ -215,3 +215,73 @@ html[data-chat-open="1"] #evie-mic-fab{display:none!important}
 html[data-motion="reduced"] :is(.ch-orb,.ch-orb i,.ch-caret,.ch-thinking i){animation:none!important}
 /* v10: the inline error line stays hidden until there is an error (display:flex was overriding [hidden]). */
 .ch-error[hidden]{display:none!important}
+
+/* ---------- Imágenes en el chat ---------- */
+/* Composer: attach button + tray of thumbnails (compressing / uploading / ready / error) */
+.ch-attach{position:relative;width:40px;padding:0;justify-content:center}
+.ch-attach::before{content:'';position:absolute;inset:-4px}
+/* No scroll container (4 thumbs fit a 360 px phone): the remove buttons' touch area is never clipped. */
+.ch-tray{display:flex;flex-wrap:wrap;gap:10px;padding:8px 8px 6px 0}
+.ch-tray[hidden]{display:none!important}
+.ch-thumb{position:relative;flex:none;width:60px;height:60px;border-radius:14px;background:var(--ch-surface-2);border:1px solid var(--ch-stroke)}
+.ch-thumb img{display:block;width:100%;height:100%;object-fit:cover;border-radius:13px}
+.ch-thumb.is-compressing img,.ch-thumb.is-uploading img{opacity:.5}
+.ch-thumb-busy{position:absolute;inset:0;margin:auto;width:22px;height:22px;border-radius:50%;border:2px solid color-mix(in srgb,var(--ch-text) 22%,transparent);border-top-color:var(--ch-text);animation:ch-spin .8s linear infinite}
+.ch-thumb.is-error{border-color:color-mix(in srgb,var(--ch-bad) 60%,transparent)}
+.ch-thumb.is-error img{opacity:.4}
+.ch-thumb-err{position:absolute;left:6px;bottom:6px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ch-bad);color:#fff}
+.ch-thumb-err svg{width:12px;height:12px}
+/* 26 px visual, 44 px touch target (::before; the thumb does not clip it) */
+.ch-thumb-x{position:absolute;top:-6px;right:-6px;width:26px;height:26px;min-height:0;padding:0;display:grid;place-items:center;border-radius:50%;border:2px solid var(--ch-surface);background:rgba(0,0,0,.72);color:#fff;cursor:pointer}
+.ch-thumb-x::before{content:'';position:absolute;inset:-9px}
+.ch-thumb-x svg{width:13px;height:13px}
+.ch .ch-send:disabled{opacity:.45;cursor:not-allowed;filter:none;transform:none}
+/* Drag & drop over the conversation */
+.ch-main[data-drop="1"]::after{content:'Suelta la imagen para adjuntarla';position:absolute;inset:10px;z-index:6;display:grid;place-items:center;padding:16px;text-align:center;border-radius:20px;border:2px dashed var(--ch-accent);background:color-mix(in srgb,var(--ch-surface) 88%,transparent);color:var(--ch-text);font-size:15px;font-weight:650;pointer-events:none}
+/* Images in the user's message (fixed boxes: no layout jump while they load) */
+.ch-imgs{display:grid;gap:4px;width:min(260px,72vw)}
+.ch-imgs:not([data-n="1"]){grid-template-columns:1fr 1fr}
+.ch-img{position:relative;display:block;width:100%;min-height:44px;padding:0;border:0;border-radius:14px;overflow:hidden;aspect-ratio:1;background:var(--ch-surface-2);cursor:zoom-in}
+.ch-imgs[data-n="1"] .ch-img{aspect-ratio:4/3;border-radius:18px 18px 6px 18px}
+.ch-imgs[data-n="3"] .ch-img:first-child{grid-column:1/3;aspect-ratio:2/1}
+.ch-img img{display:block;width:100%;height:100%;object-fit:cover;transition:opacity .25s}
+.ch-img.is-loading{background:linear-gradient(90deg,var(--ch-surface-2),rgba(255,255,255,.08),var(--ch-surface-2));background-size:200% 100%;animation:ch-shimmer 1.4s linear infinite;cursor:progress}
+.ch-img.is-loading img{opacity:0}
+.ch-img.is-missing{cursor:default}
+.ch-img.is-missing img{display:none}
+.ch-img.is-missing::after{content:'Imagen no disponible';position:absolute;inset:0;display:grid;place-items:center;padding:8px;text-align:center;font-size:12px;color:var(--ch-muted)}
+/* Lightbox (lives on <body>, outside .ch: fixed colors, a photo reads best on dark in both themes) */
+.ch-lightbox{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:16px;background:rgba(4,6,12,.9);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);cursor:zoom-out}
+.ch-lightbox img{max-width:min(96vw,1400px);max-height:88dvh;object-fit:contain;border-radius:12px;box-shadow:0 30px 80px -20px rgba(0,0,0,.8);cursor:default}
+.ch-lightbox-x{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.12);color:#fff;cursor:pointer}
+.ch-lightbox-x svg{width:20px;height:20px}
+.ch-lightbox-x:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+/* ---------- Comprobantes: lo que Ivi hizo en tu app ---------- */
+.ch-receipts{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.ch-receipt{display:inline-flex;align-items:center;gap:7px;max-width:100%;min-height:34px;padding:5px 10px;border-radius:999px;font-size:13px;line-height:1.3;color:var(--ch-text);background:color-mix(in srgb,var(--ch-good) 11%,transparent);border:1px solid color-mix(in srgb,var(--ch-good) 32%,transparent)}
+.ch-receipt>svg{flex:none;width:15px;height:15px;color:var(--ch-good)}
+.ch-receipt>span{min-width:0;overflow-wrap:anywhere}
+.ch-receipt.is-bad{color:var(--ch-muted);background:color-mix(in srgb,var(--ch-bad) 7%,transparent);border-color:color-mix(in srgb,var(--ch-bad) 24%,transparent)}
+.ch-receipt.is-bad>svg{color:var(--ch-bad)}
+.ch-receipt.is-undone{color:var(--ch-muted);background:var(--ch-surface-2);border-color:var(--ch-stroke)}
+.ch-receipt.is-undone>svg{color:var(--ch-muted)}
+/* 26 px visual, ≥ 44 px touch target (::before) */
+.ch-receipt-undo{position:relative;flex:none;min-height:26px;margin:-2px -5px -2px 2px;padding:0 10px;border-radius:999px;border:1px solid var(--ch-stroke-hi);background:var(--ch-surface);color:var(--ch-text);font:inherit;font-size:12.5px;font-weight:650;cursor:pointer;transition:border-color .2s,color .2s}
+.ch-receipt-undo::before{content:'';position:absolute;inset:-10px -4px}
+.ch-receipt-undo:hover{border-color:var(--ch-accent);color:var(--ch-accent)}
+.ch-live-extra{display:grid;gap:6px;justify-items:start}
+.ch-live-extra:empty{display:none}
+.ch-working{display:inline-flex;align-items:center;gap:8px;margin:0;font-size:13px;color:var(--ch-muted)}
+.ch-working svg{width:15px;height:15px;color:var(--ch-cyan);animation:ch-spin 1s linear infinite}
+@keyframes ch-spin{to{transform:rotate(360deg)}}
+
+@media (max-width:699px){.ch-thumb{width:56px;height:56px}.ch-receipt{font-size:12.5px}}
+html[data-theme="light"] .ch-thumb-x{background:rgba(12,20,38,.72)}
+html[data-theme="light"] .ch-img.is-loading{background:linear-gradient(90deg,var(--ch-surface-2),rgba(16,28,56,.07),var(--ch-surface-2));background-size:200% 100%}
+html[data-theme="light"] .ch-receipt{background:color-mix(in srgb,var(--ch-good) 9%,#fff)}
+html[data-theme="light"] .ch-receipt.is-bad{background:color-mix(in srgb,var(--ch-bad) 6%,#fff)}
+html[data-theme="light"] .ch-receipt.is-undone{background:var(--ch-surface-2)}
+html[data-theme="light"] .ch-main[data-drop="1"]::after{background:rgba(255,255,255,.9)}
+@media (prefers-reduced-motion:reduce){.ch-thumb-busy,.ch-working svg,.ch-img.is-loading{animation:none!important}}
+html[data-motion="reduced"] :is(.ch-thumb-busy,.ch-working svg,.ch-img.is-loading){animation:none!important}

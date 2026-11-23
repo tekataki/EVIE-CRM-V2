@@ -3,10 +3,12 @@
 // Every route is an exact method + strict path pattern (UUID segments where the Worker expects an id); query strings
 // and extra headers are allow-listed per route. JSON in, JSON out, except:
 //  · ai/stt sends the raw audio bytes (audio/*, ≤ 4 MB, the Worker's limit) with a few validated X-Evie-* headers;
-//  · chat message POSTs may stream: when the Worker answers text/event-stream the body is piped to the renderer chunk
-//    by chunk (never buffered) and a renderer abort cancels the upstream request.
+//  · chat message POSTs (and the /continue after Ivi's app tools) may stream: when the Worker answers text/event-stream
+//    the body is piped to the renderer chunk by chunk (never buffered) and a renderer abort cancels the upstream request;
+//  · chat images travel as JSON too: upload {mime,data(base64)}, download answers {name,mime,data} (Accept: JSON).
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ID='[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
+const IMG='[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(?:webp|png|jpg)';
 // timeout: auth/data/chat CRUD · ai: Worker routes that wait on Claude/OpenAI · stream*: idle gap, whole stream, bytes.
 const LIMITS=Object.freeze({json:16000000,audio:4*1024*1024,timeout:30000,ai:180000,stt:60000,streamIdle:120000,streamTotal:600000,streamBytes:16*1024*1024,streams:3});
 const flag=v=>v==='1',search=v=>v.length>0&&v.length<=200&&!/[\u0000-\u001f\u007f]/.test(v);
@@ -19,12 +21,13 @@ const table=[
  ['POST','info/research',{timeout:'ai'}],['POST','info/weather'],['POST','info/learn',{timeout:'ai'}],
  // v10 · chat with Ivi and «Lo que Ivi sabe de ti»
  ['GET','chat/conversations',{query:{archived:flag,q:search}}],['POST','chat/conversations'],['PATCH','chat/conversations/:id'],['DELETE','chat/conversations/:id'],
- ['GET','chat/conversations/:id/messages'],['POST','chat/conversations/:id/messages',{timeout:'ai',stream:true}],
+ ['GET','chat/conversations/:id/messages'],['POST','chat/conversations/:id/messages',{timeout:'ai',stream:true}],['POST','chat/conversations/:id/continue',{timeout:'ai',stream:true}],
+ ['POST','chat/attachments',{timeout:'ai'}],['GET','chat/attachments/:img'],['DELETE','chat/attachments/:img'],
  ['GET','chat/memories',{query:{forgotten:flag}}],['POST','chat/memories'],['PATCH','chat/memories/:id'],['DELETE','chat/memories/:id'],['POST','chat/memories/:id/restore'],['GET','chat/memories/:id/history'],['GET','chat/stamp'],
  // v10 · modules whose Worker routes call the AI
  ...['soma/dossier','soma/followup','school/summary','school/cards','weekly/review','dojo/turn','dojo/score','radar/news','radar/plans'].map(name=>['POST',name,{timeout:'ai'}]),
  ['POST','ai/stt',{timeout:'stt',audio:true,headers:STT_HEADERS}]];
-const ROUTES=Object.freeze(table.map(([method,name,options={}])=>Object.freeze({method,name,pattern:new RegExp('^'+name.replaceAll(':id',ID)+'$'),timeout:'timeout',...options})));
+const ROUTES=Object.freeze(table.map(([method,name,options={}])=>Object.freeze({method,name,pattern:new RegExp('^'+name.replaceAll(':id',ID).replaceAll(':img',IMG)+'$'),timeout:'timeout',...options})));
 const AUTH_ACTIONS=new Set(['auth/signin','auth/signup','auth/signout','auth/session','auth/google/redeem']);
 const RESETS=new Set(['auth/signin','auth/signup','auth/signout','auth/google/redeem']);
 const IDENTITY=new Set(['auth/session','auth/signin','auth/signup','auth/google/redeem']);

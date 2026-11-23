@@ -91,6 +91,11 @@ window.EvieAssistant=(()=>{
   draft_goal({title}){return makeDraft('goal.create',{title,date:today()});}
  };
  function makeDraft(intent,params){try{const cmd=IvyCommandBus.envelope(intent,params,'voice','write');const p=IvyCommandBus.prepare(cmd);draft={token:p.token,fields:p.fields,route:p.route};renderDraft();return {status:'draft_shown',needs_user_confirmation:true,fields:p.fields};}catch(err){return {status:'invalid',error:err.message};}}
+ /** One tool for another surface (the Chat): the same executors, idempotency (call.call_id → op_id) and undo as the
+     voice loop. Returns {output, undo}; undo is the function that reverts what THIS call saved (null otherwise). */
+ async function runTool(name,args={},call=null){const fn=Object.hasOwn(tools,name)?tools[name]:window.EvieMemory?.tools?.[name]||window.EvieMap?.tools?.[name];if(typeof fn!=='function')return {output:{status:'error',error:'Herramienta no disponible.'},undo:null};
+  const prev=lastUndo;lastUndo=null;let output;try{output=await fn(args&&typeof args==='object'&&!Array.isArray(args)?args:{},call);}catch(err){output={status:'error',error:err?.message||'No se pudo completar.'};}
+  const undo=typeof lastUndo==='function'?lastUndo:null;if(!undo)lastUndo=prev;return {output:output??{},undo};}
  /* ---------- local fast-path (free, no network) ---------- */
  function tryLocal(text){const speakLater=t=>{if(t){append('evie',t);if(!pref().muted)Voice.speak(t,Voice.begin());}};if(window.EvieMemory){const mm=EvieMemory.intent(text,{say:speakLater});if(mm!==null)return mm;}if(window.EvieMap){const mp=EvieMap.intent(text,{say:speakLater});if(mp!==null)return mp;}if(/^(?:(?:oye |hey )?(?:ivi|ivy|evie|evi|ibi|libi)[, ]+)?(?:deshaz|deshacer|desase) (?:lo ultimo|el ultimo (?:movimiento|registro|gasto|ingreso)|eso)$/.test(IvyTools.norm(text).replace(/[¿?¡!.,]/g,''))){const u=lastUndo||window.EvieFinance?.lastUndo?.();if(!u)return 'No tengo un registro reciente que deshacer.';u();lastUndo=null;window.EvieFinance?.setLastUndo?.(null);return 'Listo, lo deshice.';}if(window.EvieTimers){const tw=EvieTimers.intent(text);if(tw!==null)return tw;}if(window.IviCore){const iv=IviCore.intent(text);if(iv!==null)return iv;}if(window.EvieFisico){const fw=EvieFisico.intent(text);if(fw!==null)return fw;}if(window.EvieFinance){const fi=EvieFinance.intent(text);if(fi!==null)return fi;}const q=IvyTools.norm(text).replace(/[¿?¡!.,]/g,'').replace(/^(oye |hey |hola |ok )?(?:evie|evi|ivi|ivy|ibi|libi|eby|evy)[, ]+/,'').trim();
   let m=q.match(/^(?:activa|activar|pon|entra en|cambia a)(?: el)? modo (\w+)/);if(m){const r=window.EvieModes.set(m[1]);return r.ok?r.say:'No conozco el modo '+m[1]+'. Tengo asistente, ventas, gym, estudio, noche, enfoque y cierre.';}
@@ -317,7 +322,7 @@ window.EvieAssistant=(()=>{
  function fromUrl(){const q=new URLSearchParams(location.search);if(q.get('evie')==='listen'||q.get('evie')==='1'){history.replaceState(null,'',location.pathname+location.hash);setTimeout(()=>open(true),400);}}
  setPhase('idle');
  async function say(text){if(!text)return;append('evie',text);if(!pref().muted&&pref().conversation!==false){const t=Voice.begin();await Voice.speak(text,t);if(Voice.alive(t.id)&&Voice.state!=='blocked')Voice.set('idle');}}
- return Object.freeze({open,close,ask,listen,say,wakeWord,research:()=>lastResearch,syncInline,tools,tryLocal,Wake,fromUrl,pref,stopSpeaking,replay:()=>Voice.replay(),reset(){Voice.stop();window.EvieWake?.stop();history=[];inlineLast={you:'',evie:''};draft=null;habitDraft=null;if(panel){panel.remove();panel=null;}},stats:()=>({panel:!!panel,busy,history:history.length,draft:!!draft,wake:!!clapOff,voice:Voice.stats()})});
+ return Object.freeze({open,close,ask,listen,say,wakeWord,research:()=>lastResearch,syncInline,tools,runTool,tryLocal,Wake,fromUrl,pref,stopSpeaking,replay:()=>Voice.replay(),reset(){Voice.stop();window.EvieWake?.stop();history=[];inlineLast={you:'',evie:''};draft=null;habitDraft=null;if(panel){panel.remove();panel=null;}},stats:()=>({panel:!!panel,busy,history:history.length,draft:!!draft,wake:!!clapOff,voice:Voice.stats()})});
 })();
 
 /* ---------- Modes: "activa el modo X" ---------- */

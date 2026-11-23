@@ -72,7 +72,9 @@ window.EvieFX=(()=>{
  function enterRoute(route){
   const main=document.getElementById('main-content');if(!main)return;const changed=route!==lastRoute;lastRoute=route;
   if(!changed||reduced()||!g())return;const G=g();
-  const items=[...main.querySelectorAll(':scope>*:not(script), .page-heading, .panel, .stat-card, .detail-card, .evm-card, .bank-card')].filter((n,i,a)=>a.indexOf(n)===i).slice(0,24);
+  // v11: the hero (.page-heading) is animated by EvieOnyx and cards below the fold reveal while scrolling,
+  // so the spring entrance only takes what is visible when the page opens.
+  const vh=innerHeight;const items=[...main.querySelectorAll(':scope>*:not(script):not(.page-heading), .panel, .stat-card, .detail-card, .evm-card, .bank-card')].filter((n,i,a)=>a.indexOf(n)===i&&!n.closest('.page-heading')&&n.getBoundingClientRect().top<vh*.92).slice(0,24);
   if(window.EvieV8?.enter?.(items)){countUp(main);return;}
   G.fromTo(items,{y:18,opacity:0},{y:0,opacity:1,duration:.55,stagger:.035,ease:'power3.out',clearProps:'transform,opacity'});
   countUp(main);

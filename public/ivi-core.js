@@ -44,14 +44,26 @@ window.IviCore=(()=>{
   gym:[['dumbbell','¿Qué puedo entrenar hoy?','ask:¿Qué puedo entrenar hoy según mi recuperación?'],['activity','Ver recuperación','route:fisico'],['timer','Descanso 90 s','ask:Pon un temporizador de 90 segundos']],
   estudio:[['graduation-cap','¿Qué tareas tengo?','ask:¿Qué tareas o exámenes tengo esta semana?'],['headphones','Explícame un tema','route:chat'],['languages','Frase en inglés','ask:Dame una frase útil en inglés nivel B2 con su traducción y un ejemplo.']],
   noche:[['moon-star','Protocolo de cierre','protocol:debrief'],['dog','Hablar con Kisha','route:bitacora'],['calendar-clock','¿Qué hay mañana?','ask:¿Qué tengo mañana?']]};
- function bar(){const m=personaMode(),s=systems(),def=MAIN.find(x=>x[0]===evieMode())||[evieMode(),window.EvieModes?.current?.()==='normal'?'Asistente':evieMode(),'sparkles'];
-  return `<section class="ivi-systems" id="ivi-systems" aria-label="Sistemas de Ivi" data-mode="${e(m)}">
-  <div class="ivi-sys-grid">${(ORDER[m]||ORDER.asistente).map((k,n)=>{const x=s[k];return `<a class="ivi-sys ${n===0?'is-lead':''}" href="${x.href}" data-tone="${x.tone}" title="${e(x.label+': '+x.value+' · '+x.hint)}"><span class="ivi-sys-ic" aria-hidden="true">${ic(x.icon)}</span><span class="ivi-sys-txt"><small>${x.label}</small><strong>${e(x.value)}</strong><em>${e(x.hint)}</em></span></a>`;}).join('')}</div>
-  <div class="ivi-sys-row"><span class="ivi-sys-online"><i aria-hidden="true"></i>Sistemas en línea</span><button type="button" class="ivi-mode-btn" data-ivi="modes" aria-label="Cambiar modo (ahora ${e(def[1])})">${ic(def[2]||'sparkles')}<span>Modo ${e(def[1])}</span>${ic('chevron-down')}</button><button type="button" class="ivi-gear" data-ivi="settings" aria-label="Ajustes de Ivi">${ic('sliders-horizontal')}</button>
-   <span class="ivi-suggest" role="group" aria-label="Sugerencias">${(SUGGEST[m]||SUGGEST.asistente).map(([i,l,a])=>`<button type="button" class="ivi-chip" data-ivi="go" data-go="${e(a)}">${ic(i)}<span>${e(l)}</span></button>`).join('')}</span></div></section>`;}
+ /* v11 · Onyx: two HUD rails around the core. Left = live read-outs (5 systems, ordered by mode), right = what Ivi
+    can do now (mode, suggestions, settings; on phones also the links, shown as the «Atajos» sheet). Both live in
+    #ivi-systems (display:contents) so they become cells of the home grid. Thin «wires» point at the core. */
+ function bar(){const m=personaMode(),s=systems(),def=MAIN.find(x=>x[0]===evieMode())||[evieMode(),window.EvieModes?.current?.()==='normal'?'Asistente':evieMode(),'sparkles'];const W='<i class="ivi-wire" aria-hidden="true"></i>';
+  const left=(ORDER[m]||ORDER.asistente).map((k,n)=>{const x=s[k];return `<a class="ivi-sys ${n===0?'is-lead':''}" href="${x.href}" data-tone="${x.tone}" title="${e(x.label+': '+x.value+' · '+x.hint)}"><span class="ivi-sys-txt"><small><span class="ivi-sys-ic" aria-hidden="true">${ic(x.icon)}</span>${x.label}</small><em>${e(x.hint)}</em></span><strong class="ivi-sys-val">${e(x.value)}</strong>${W}</a>`;}).join('');
+  const right=[`<p class="ivi-online">${W}<b aria-hidden="true"></b>Sistemas en línea</p>`,
+   `<button type="button" class="ivi-act is-mode" data-ivi="modes" aria-label="Cambiar modo (ahora ${e(def[1])})">${W}${ic(def[2]||'sparkles')}<span>Modo ${e(def[1])}<small>Toca para cambiar</small></span></button>`,
+   ...(SUGGEST[m]||SUGGEST.asistente).map(([i,l,a])=>`<button type="button" class="ivi-act ivi-chip" data-ivi="go" data-go="${e(a)}">${W}${ic(i)}<span>${e(l)}</span></button>`),
+   `<button type="button" class="ivi-act ivi-gear" data-ivi="settings" aria-label="Ajustes de Ivi">${W}${ic('sliders-horizontal')}<span>Ajustes de Ivi</span></button>`,
+   `<button type="button" class="ivi-act is-link" data-evie="open">${W}${ic('messages-square')}<span>Conversación completa</span></button>`,
+   `<button type="button" class="ivi-act is-link" data-hud-open="capabilities">${W}${ic('circle-help')}<span>¿Qué puedo hacer?</span></button>`,
+   `<button type="button" class="ivi-act is-link" data-hud-open="pendientes">${W}${ic('bell-ring')}<span>Pendientes</span></button>`].join('');
+  return `<section class="ivi-systems" id="ivi-systems" aria-label="Sistemas de Ivi" data-mode="${e(m)}"><nav class="ivi-rail ivi-rail-l" id="ivi-rail-l" aria-label="Estado de tus sistemas">${left}</nav><div class="ivi-rail ivi-rail-r" id="ivi-rail-r" role="group" aria-label="Atajos de Ivi">${right}</div></section>`;}
  function mount(){if(UI.section!=='inicio')return;const host=document.getElementById('evie-hud');if(!host)return;const old=document.getElementById('ivi-systems'),html=bar();
-  if(old){old.outerHTML=html;}else{const dock=host.querySelector('.hud-dock');if(!dock)return;dock.insertAdjacentHTML('afterbegin',html);const box=document.getElementById('ivi-systems');
-   if(!(matchMedia('(prefers-reduced-motion: reduce)').matches)&&window.Motion?.animate){try{Motion.animate(box.querySelectorAll('.ivi-sys,.ivi-chip,.ivi-sys-head'),{opacity:[0,1],y:[10,0]},{type:'spring',stiffness:280,damping:26,delay:Motion.stagger?.(.035)||0});}catch{}}}
+  if(old){old.outerHTML=html;}else{const stage=host.querySelector('.hud-stage')||host.querySelector('.hud-dock');if(!stage)return;stage.insertAdjacentHTML('afterbegin',html);
+   const G=window.gsap,reduced=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.dataset.motion==='reduced';
+   if(G&&!reduced&&innerWidth>=1024){const L=[...document.querySelectorAll('#ivi-rail-l>*')],R=[...document.querySelectorAll('#ivi-rail-r>*')].filter(n=>getComputedStyle(n).display!=='none');
+    G.timeline({delay:.35}).from(L,{opacity:0,x:-26,duration:.7,stagger:.07,ease:'expo.out',clearProps:'opacity,transform'},0).from(R,{opacity:0,x:26,duration:.7,stagger:.06,ease:'expo.out',clearProps:'opacity,transform'},.05)
+     .from(document.querySelectorAll('#ivi-systems .ivi-wire'),{scaleX:0,transformOrigin:(i,n)=>n.closest('#ivi-rail-l')?'0% 50%':'100% 50%',duration:.9,stagger:.05,ease:'power3.inOut',clearProps:'transform'},.25);
+    window.EvieOnyx?.countUp?.(document.getElementById('ivi-rail-l'));}}
   try{window.lucide?.createIcons?.({root:document.getElementById('ivi-systems')});}catch{}}
 
  /* ---------------- dialogs ---------------- */
@@ -80,7 +92,7 @@ window.IviCore=(()=>{
  /** Local voice intent: «Ivi, protocolo matutino», «buenos días Ivi», «debrief», «prepara la visita a X». */
  function intent(text){const q=(window.IvyTools?.norm?IvyTools.norm(text):String(text).toLowerCase()).replace(/[¿?¡!.,]/g,'').replace(/^(?:oye |hey )?(?:ivi|ivy|evie|evi|ibi)[, ]*/,'').trim();
   // v10 · Fase 4 modules answer from real local data (no AI): misión, revisión semanal, escuela.
-  for(const mod of [window.EvieMission,window.EvieWeekly,window.EvieSchool,window.EvieDojo,window.EvieRadar,window.IviProactive]){const r=mod?.intent?.(text);if(typeof r==='string'&&r)return r;}
+  for(const mod of [window.EvieMission,window.EvieWeekly,window.EvieSchool,window.EvieDojo,window.EvieRadar,window.IviProactive,window.EviePrompts]){const r=mod?.intent?.(text);if(typeof r==='string'&&r)return r;}
   if(/^(protocolo matutino|briefing|briefing (del dia|de hoy)|buenos dias|dame mi briefing)$/.test(q))return protocol('briefing').say;
   if(/^(protocolo de cierre|debrief|cierre del dia|cierra el dia)$/.test(q))return protocol('debrief').say;
   const m=q.match(/^(?:prepara(?:me)? (?:la |mi )?visita|protocolo de visita)(?: (?:a|con|para) (.+))?$/);if(m){const r=protocol('visita',{client:m[1]||null});return r.say||(r.status==='choose'?'Elige el prospecto en pantalla.':'No encontré ese prospecto.');}

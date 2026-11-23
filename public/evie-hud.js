@@ -45,13 +45,37 @@ window.EvieHUD=(()=>{
   if(c.state==='empty'){const t=typeof d.emptyText==='function'?d.emptyText(c.data):d.emptyText;return `<p class="hud-empty">${e(t||'Sin datos todavía.')}</p>`;}
   try{return d.render(c.data,c);}catch(err){return `<p class="hud-error">No se pudo mostrar: ${e(err.message)}</p>`;}}
  function host(){return document.getElementById('hud-cards');}
- function visibleCards(){const max=visibleMax(),list=ws.cards;if(list.length<=max)return list;const act=list.find(c=>c.id===ws.active);const tail=list.slice(-max);if(act&&!tail.includes(act))return [...list.slice(-(max-1)),act].sort((a,b)=>list.indexOf(a)-list.indexOf(b));return tail;}
+ /* v11 · cards size themselves by content (sm/md/lg). On wide screens a large card takes a whole side next to the
+    core (2 slot units) so long research reads comfortably; extra cards wait in the tray, never closed for space. */
+ const wide=()=>innerWidth>=1280;
+ const unit=c=>wide()&&c.size==='lg'?2:1;
+ function visibleCards(){const list=ws.cards,cap=wide()?4:visibleMax();let used=0;const out=[];const act=list.find(c=>c.id===ws.active);
+  if(act){out.push(act);used+=unit(act);}
+  for(let k=list.length-1;k>=0;k--){const c=list[k];if(c===act)continue;const u=unit(c);if(used+u>cap)continue;out.push(c);used+=u;}
+  return out.sort((a,b)=>list.indexOf(a)-list.indexOf(b));}
+ function measure(c,n){if(c.state!=='ready'&&c.state!=='empty'&&c.state!=='error')return c.size||'md';const b=n?.querySelector('.hud-card-body');if(!b)return 'md';
+  const len=(b.textContent||'').replace(/\s+/g,' ').trim().length,items=b.querySelectorAll('li').length,imgs=b.querySelectorAll('img').length;
+  if(len>620||items>9||imgs>2||(LONG.has(c.type)&&len>360))return 'lg';if(len<190&&items<=4&&!imgs)return 'sm';return 'md';}
+ const LONG=new Set(['research','learning','briefing','weekly','message']);
+ // Cards fill the LEFT side first (it hides the read-outs) so Ivi's actions on the right stay reachable; when the right
+ // side is needed too, its actions move to the ✦ «Atajos» button by the composer.
+ function slotsFor(vis){const m=new Map();if(!wide())return m;const free={l:[1,2],r:[1,2]},order=[...vis].sort((a,b)=>ws.cards.indexOf(b)-ws.cards.indexOf(a));
+  for(const c of order){if(c.size==='lg'){const side=free.l.length===2?'l':free.r.length===2?'r':null;if(side){free[side]=[];m.set(c.id,side+'full');continue;}}
+   const side=free.l.length?'l':free.r.length?'r':null;if(!side){m.set(c.id,'');continue;}m.set(c.id,side+free[side].shift());}
+  // A side holding a single card gives it the whole height.
+  for(const side of ['l','r'])if(free[side].length===1){const id=[...m].find(([,s])=>s===side+'1')?.[0];if(id)m.set(id,side+'full');}
+  return m;}
+ function applySlots(){const h=host();if(!h)return;const vis=visibleCards(),slots=slotsFor(vis);let lg='';const used=new Set();
+  for(const c of vis){const n=document.getElementById(c.id);if(!n)continue;n.dataset.size=c.size||'md';const s=slots.get(c.id);if(s){n.dataset.slot=s;used.add(s[0]);}else delete n.dataset.slot;if(s&&s.endsWith('full')&&c.size==='lg')lg+=s[0];}
+  if(lg)document.body.dataset.hudLg=lg.split('').sort().reverse().join('')==='rl'?'lr':lg;else delete document.body.dataset.hudLg;
+  document.body.dataset.hudSides=[...used].sort().join('');if(wide()&&!used.has('r')&&document.body.classList.contains('hud-quick-open'))quick(false);}
  /* Reconcile DOM with the model: keep existing nodes (scroll/focus preserved), add missing, remove stale. */
  function reconcile({animateNew=null}={}){const h=host();if(!h)return;const vis=visibleCards(),ids=new Set(vis.map(c=>c.id));
   for(const n of [...h.querySelectorAll(':scope>.hud-card')])if(!ids.has(n.id)&&!n.dataset.leaving){n._dispose?.();n.remove();}
   let prev=null;for(const c of vis){let n=document.getElementById(c.id);if(!n){const tmp=document.createElement('div');tmp.innerHTML=cardHTML(c);n=tmp.firstElementChild;if(prev)prev.after(n);else h.prepend(n);window.lucide?.createIcons({root:n});R()[c.type].mounted?.(n,c);if(animateNew===c.id)enter(n);}else if(prev&&prev.nextElementSibling!==n)prev.after(n);else if(!prev&&h.firstElementChild!==n)h.prepend(n);prev=n;n.classList.toggle('is-active',c.id===ws.active);}
-  tray();layout();announce();}
- function paint(c){const n=document.getElementById(c.id);if(!n)return;const sc=n.querySelector('.hud-card-body')?.scrollTop||n.scrollTop,focusSel=document.activeElement&&n.contains(document.activeElement)?document.activeElement.dataset&&Object.keys(document.activeElement.dataset)[0]:null;n._dispose?.();n.outerHTML=cardHTML(c);const m=document.getElementById(c.id);m.classList.toggle('is-active',c.id===ws.active);window.lucide?.createIcons({root:m});R()[c.type].mounted?.(m,c);m.scrollTop=sc;if(focusSel){const f=m.querySelector(`[data-${focusSel.replace(/[A-Z]/g,x=>'-'+x.toLowerCase())}]`);f?.focus?.({preventScroll:true});}const g=gs();if(g&&c.state!=='loading')g.fromTo(m.querySelector('.hud-card-body'),{opacity:0,y:6},{opacity:1,y:0,duration:.28,ease:'power2.out'});layout();}
+  applySlots();tray();layout();announce();}
+ function paint(c){const n=document.getElementById(c.id);if(!n)return;const sc=n.querySelector('.hud-card-body')?.scrollTop||n.scrollTop,focusSel=document.activeElement&&n.contains(document.activeElement)?document.activeElement.dataset&&Object.keys(document.activeElement.dataset)[0]:null;n._dispose?.();n.outerHTML=cardHTML(c);const m=document.getElementById(c.id);m.classList.toggle('is-active',c.id===ws.active);window.lucide?.createIcons({root:m});R()[c.type].mounted?.(m,c);m.scrollTop=sc;if(focusSel){const f=m.querySelector(`[data-${focusSel.replace(/[A-Z]/g,x=>'-'+x.toLowerCase())}]`);f?.focus?.({preventScroll:true});}const g=gs();if(g&&c.state!=='loading')g.fromTo(m.querySelector('.hud-card-body'),{opacity:0,y:6},{opacity:1,y:0,duration:.28,ease:'power2.out'});
+  const sz=measure(c,m);if(sz!==(c.size||'md')){c.size=sz;reconcile();return;}c.size=sz;applySlots();layout();}
  function tray(){const t=document.getElementById('hud-tray');if(!t)return;const vis=new Set(visibleCards().map(c=>c.id)),hidden=ws.cards.filter(c=>!vis.has(c.id));t.hidden=!hidden.length;t.innerHTML=hidden.length?`<p class="hud-tray-label">${hidden.length} tarjeta${hidden.length>1?'s':''} más abierta${hidden.length>1?'s':''} · ${ws.cards.length} en total</p><ul>${hidden.map(c=>`<li><button type="button" class="hud-chip" data-hud-front="${c.id}" title="Traer al frente">${i(R()[c.type].icon)}<span>${e(title(c))}</span></button><button type="button" class="hud-chip-x" data-hud-close="${c.id}" aria-label="Cerrar tarjeta ${e(title(c))}">${i('x')}</button></li>`).join('')}</ul>`:'';window.lucide?.createIcons({root:t});}
  /* ---------- motion ---------- */
  function enter(n){const g=gs();if(!g)return;const tl=g.timeline({defaults:{overwrite:'auto'}});n._tl=tl;
@@ -59,7 +83,9 @@ window.EvieHUD=(()=>{
     .to(n,{scale:1,y:0,duration:.42,ease:'elastic.out(1,.55)',clearProps:'filter,transform'});}
  function leave(n,done){const g=gs();if(!g||!n){done();return;}n.dataset.leaving='1';n._tl?.kill();g.timeline({onComplete:done}).to(n,{scale:1.03,duration:.1,ease:'power1.out'}).to(n,{opacity:0,scale:.86,y:14,filter:'blur(6px)',duration:.26,ease:'power2.in'});}
  /* Layout: count of visible cards drives CSS grid zones; the core gently shrinks (no restart). */
- function layout(){cancelAnimationFrame(layoutRaf);layoutRaf=requestAnimationFrame(()=>{const n=visibleCards().length;document.body.dataset.hudCards=String(n);document.body.dataset.hudTotal=String(ws.cards.length);const g=gs();const core=document.getElementById('hud-core');if(!core)return;if(g)g.to(core,{scale:n?(n>2?.86:.93):1,duration:.55,ease:'power3.out',overwrite:'auto'});});}
+ function layout(){cancelAnimationFrame(layoutRaf);layoutRaf=requestAnimationFrame(()=>{const n=visibleCards().length;document.body.dataset.hudCards=String(n);document.body.dataset.hudTotal=String(ws.cards.length);if(!n)delete document.body.dataset.hudLg;
+  // v11: the core's size comes from CSS (--core-w per card count/size), animated with a width transition.
+  const core=document.getElementById('hud-core');if(core&&window.gsap)gsap.set(core,{clearProps:'scale'});});}
  /* ---------- loading with generation guard ---------- */
  async function load(c,{silent=false}={}){const d=R()[c.type],need=d.needs?.();const gen=++c.gen,owner=ws.owner;
   if(need){c.state='blocked';c.error=need;paint(c);persist();return;}
@@ -102,6 +128,9 @@ window.EvieHUD=(()=>{
   if(n&&g)g.timeline({onComplete:go}).to(n,{scale:1.04,opacity:0,duration:.26,ease:'power2.in'});else go();}
  function announce(){const s=document.getElementById('hud-open-list');if(s)s.textContent=ws.cards.length?'Tarjetas abiertas: '+ws.cards.map(title).join(', '):'Sin tarjetas abiertas';}
  function tick(){const f=EvieCards.fmt,now=new Date();document.querySelectorAll('[data-hud-clock]').forEach(n=>n.textContent=f(now,{hour:'numeric',minute:'2-digit',hour12:true}));const g=document.getElementById('hud-time');if(g)g.textContent=f(now,{weekday:'long',day:'numeric',month:'long'})+' · '+f(now,{hour:'numeric',minute:'2-digit',hour12:true});}
+ /* v11 · Onyx: Jarvis layout. The core sits in the middle; IviCore mounts #ivi-systems (left read-outs + right
+    actions, display:contents) at the start of .hud-stage. Phones get the read-outs as one strip and the actions in
+    an «Atajos» sheet opened from the composer. Clock top-right, privacy/mic status bottom-left (desktop). */
  function home(){const p=EvieAssistant.pref();
   return `<section class="hud" id="evie-hud" aria-label="Inicio · EVIE">
   <div class="hud-top"><p class="hud-time" id="hud-time"></p><div class="hud-status"><span class="hud-privacy" title="Tus datos se guardan en tu cuenta. El audio solo sale de tu dispositivo cuando le hablas a EVIE.">${i(cloud()?'shield-check':'hard-drive')}<span>${cloud()?'Datos privados de tu cuenta':'Datos solo en este navegador'}</span></span><button type="button" class="hud-mic-state" data-hud-wake data-wake-state title="Palabra clave y micrófono">${e(p.wakeWord?(window.EvieWake?.label()||''):'Micrófono solo al tocar')}</button></div></div>
@@ -111,11 +140,14 @@ window.EvieHUD=(()=>{
    <div class="hud-cards" id="hud-cards" aria-label="Tarjetas de EVIE"></div>
    <nav class="hud-tray" id="hud-tray" aria-label="Más tarjetas abiertas" hidden></nav></div>
   <div class="hud-dock"><div class="evie-subs" id="evie-subs" aria-live="polite"></div><div class="evie-draft" id="evie-stage-draft" hidden></div>
-   <form class="evie-composer hud-composer" id="evie-stage-form"><label class="sr-only" for="evie-stage-input">Escríbele a EVIE</label><input id="evie-stage-input" autocomplete="off" enterkeyhint="send" maxlength="600" placeholder="Habla o escribe: «Ivi, abre finanzas»"><button type="button" class="icon-button evie-mic" data-evie="listen" aria-label="Hablar con EVIE">${i('mic')}</button><button class="icon-button evie-send" aria-label="Enviar">${i('arrow-up')}</button></form>
+   <form class="evie-composer hud-composer" id="evie-stage-form"><button type="button" class="icon-button hud-quick" data-hud-quick aria-expanded="false" aria-controls="ivi-rail-r" aria-label="Atajos de Ivi" title="Atajos de Ivi">${i('sparkles')}</button><label class="sr-only" for="evie-stage-input">Escríbele a EVIE</label><input id="evie-stage-input" autocomplete="off" enterkeyhint="send" maxlength="600" placeholder="Habla o escribe: «Ivi, abre finanzas»"><button type="button" class="icon-button evie-mic" data-evie="listen" aria-label="Hablar con EVIE">${i('mic')}</button><button class="icon-button evie-send" aria-label="Enviar">${i('arrow-up')}</button></form>
    <div class="evie-stage-links"><button type="button" data-evie="open">Conversación completa</button><button type="button" data-hud-open="capabilities">¿Qué puedo hacer?</button><button type="button" data-hud-open="pendientes">Pendientes</button><button type="button" data-hud-close-all ${ws.cards.length?'':'hidden'}>Cerrar tarjetas</button><button type="button" data-evie="stop">Detener</button></div>
-   <p class="sr-only" id="hud-open-list" aria-live="polite"></p></div></section>`;}
+   <p class="sr-only" id="hud-open-list" aria-live="polite"></p></div>
+  <button type="button" class="hud-quick-scrim" data-hud-quick-close tabindex="-1" aria-label="Cerrar atajos"></button></section>`;}
+ function quick(open,keyboard=false){const on=open===undefined?!document.body.classList.contains('hud-quick-open'):!!open;document.body.classList.toggle('hud-quick-open',on&&onHome());document.querySelector('[data-hud-quick]')?.setAttribute('aria-expanded',String(on));
+  const sheet=document.getElementById('ivi-rail-r'),g=gs();if(on&&sheet&&g)g.fromTo(sheet.children,{opacity:0,y:14},{opacity:1,y:0,duration:.38,stagger:.03,ease:'power3.out',clearProps:'transform,opacity'});if(on&&keyboard)sheet?.querySelector('button,a')?.focus({preventScroll:true});}
  /* Leaving Home: tear down DOM-bound resources only. The workspace model stays for this account. */
- function detach(){document.querySelectorAll('#hud-cards .hud-card').forEach(n=>{n._tl?.kill();n._dispose?.();});document.body.dataset.hudCards='0';clearInterval(clockTimer);clockTimer=null;ro?.disconnect();ro=null;window.gsap?.killTweensOf?.('#hud-core');window.EvieCaps?.detach?.();persist();}
+ function detach(){document.querySelectorAll('#hud-cards .hud-card').forEach(n=>{n._tl?.kill();n._dispose?.();});document.body.dataset.hudCards='0';document.body.classList.remove('hud-quick-open');delete document.body.dataset.hudLg;delete document.body.dataset.hudSides;clearInterval(clockTimer);clockTimer=null;ro?.disconnect();ro=null;window.gsap?.killTweensOf?.('#hud-core');window.EvieCaps?.detach?.();persist();}
  /* Sign-out / account switch: wipe the previous account's workspace everywhere. */
  function reset(){const o=ws.owner;ws.cards.forEach(c=>{c.gen++;});detach();ws={owner:null,cards:[],active:null,seq:0,caps:false};if(o)clearOwnerStorage(o);try{for(const k of Object.keys(sessionStorage))if(k.startsWith('evie-hud-'))sessionStorage.removeItem(k);}catch{}}
  function afterRender(){const home=UI.section==='inicio'&&!UI.id&&!!document.getElementById('evie-hud');document.body.classList.toggle('hud-home',home);
@@ -133,7 +165,11 @@ window.EvieHUD=(()=>{
   if(sessionStorage.getItem('evie-hud-caps')){sessionStorage.removeItem('evie-hud-caps');setTimeout(()=>window.EvieCaps?.show(),120);}
   window.EvieCaps?.afterRender?.();syncLinks();announce();}
  function syncLinks(){const b=document.querySelector('[data-hud-close-all]');if(b)b.hidden=!ws.cards.length;}
- document.addEventListener('click',ev=>{const t=ev.target.closest('[data-hud-open],[data-hud-close],[data-hud-close-all],[data-hud-expand],[data-hud-primary],[data-hud-retry],[data-hud-learn],[data-hud-wake],[data-hud-front]');if(!t)return;
+ document.addEventListener('click',ev=>{
+  if(ev.target.closest('[data-hud-quick]')){quick(undefined,ev.detail===0);return;}
+  if(ev.target.closest('[data-hud-quick-close]')){quick(false);return;}
+  if(document.body.classList.contains('hud-quick-open')&&ev.target.closest('#ivi-rail-r :is(button,a)'))setTimeout(()=>quick(false),0);
+  const t=ev.target.closest('[data-hud-open],[data-hud-close],[data-hud-close-all],[data-hud-expand],[data-hud-primary],[data-hud-retry],[data-hud-learn],[data-hud-wake],[data-hud-front]');if(!t)return;
   if(t.dataset.hudOpen!==undefined){window.EvieSounds?.unlock();open(t.dataset.hudOpen,{},{focus:true});}
   else if(t.dataset.hudCloseAll!==undefined)close('all');
   else if(t.dataset.hudClose)close(t.dataset.hudClose);
@@ -147,7 +183,7 @@ window.EvieHUD=(()=>{
  // Track the card the user is actually interacting with ("cierra esta tarjeta").
  document.addEventListener('focusin',ev=>{const c=ev.target.closest?.('.hud-card');if(c&&ws.active!==c.id){ws.active=c.id;document.querySelectorAll('.hud-card.is-active').forEach(n=>n.classList.toggle('is-active',n.id===c.id));c.classList.add('is-active');}});
  document.addEventListener('pointerdown',ev=>{const c=ev.target.closest?.('.hud-card');if(c){ws.active=c.id;document.querySelectorAll('.hud-card').forEach(n=>n.classList.toggle('is-active',n===c));}},{passive:true});
- document.addEventListener('keydown',ev=>{if(ev.key!=='Escape'||!onHome()||document.querySelector('dialog[open]'))return;const panel=document.getElementById('evie-panel');if(panel&&!panel.hidden)return;if(window.EvieCaps?.visible()){EvieCaps.hide();return;}const inCard=ev.target.closest?.('.hud-card');if(inCard)close(inCard.id);});
+ document.addEventListener('keydown',ev=>{if(ev.key!=='Escape'||!onHome()||document.querySelector('dialog[open]'))return;if(document.body.classList.contains('hud-quick-open')){quick(false);document.querySelector('[data-hud-quick]')?.focus();return;}const panel=document.getElementById('evie-panel');if(panel&&!panel.hidden)return;if(window.EvieCaps?.visible()){EvieCaps.hide();return;}const inCard=ev.target.closest?.('.hud-card');if(inCard)close(inCard.id);});
  return Object.freeze({home,afterRender,open,close,expand,front,update,reset,dispose:reset,detach,resolve:r=>{const x=resolve(r);return x?.card?{id:x.card.id,type:x.card.type,title:title(x.card)}:x?.ambiguous?{ambiguous:x.ambiguous.map(title)}:null;},
   cards:()=>ws.cards.map(c=>({id:c.id,type:c.type,state:c.state,title:title(c)})),visible:()=>visibleCards().map(c=>c.id),active:()=>ws.active,owner:()=>ws.owner,
   get REGISTRY(){return EvieCards.R;},capabilities:()=>EvieCards.capabilities(),findSkill:t=>EvieCards.findSkill(t),greeting});

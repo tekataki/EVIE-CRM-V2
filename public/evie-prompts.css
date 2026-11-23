@@ -1,0 +1,121 @@
+/* =====================================================================================================
+   EVIE · Automatizaciones → «Prompts» (biblioteca de prompts) + the tab bar shared with «Atajos web».
+   Mobile-first (≈384 px CSS wide), 44 px touch targets, no horizontal scroll. Colours come from the --v8-*
+   tokens (re-mapped to graphite by evie-onyx.css); cards reuse .v8-card and buttons .button/.icon-button, so
+   the design layers style them and the rules below only add layout and the prompt-specific pieces.
+   Light theme: html[data-theme="light"]. Motion: CSS + GSAP from evie-automations-ui.js, off with reduced motion.
+   ID-prefixed selectors (#main-content / #prompt-form) are used where a design layer's rule must be outranked.
+   ===================================================================================================== */
+
+/* ---------- tab bar (#automatizaciones/atajos · #automatizaciones/prompts) ---------- */
+#main-content .pl-tabs{display:flex;flex-wrap:nowrap;gap:4px;width:100%;max-width:100%;box-sizing:border-box;margin:0 0 16px;padding:4px;overflow:visible;border-radius:999px;border:1px solid var(--v8-stroke,rgba(127,127,127,.18));background:rgba(127,127,127,.06)}
+#main-content .pl-tabs>.pl-tab{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 12px;border-radius:999px;color:var(--v8-muted,#a1a1aa);font-size:14px;font-weight:600;line-height:1;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .25s,color .25s}
+#main-content .pl-tabs>.pl-tab[aria-selected="true"]{background:var(--v8-surface-3,rgba(127,127,127,.18));color:var(--v8-text,inherit)}
+#main-content .pl-tab svg{width:17px;height:17px;flex:none}
+#main-content .pl-tab>span:not(.pl-tab-n){min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pl-tab-n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 7px;box-sizing:border-box;border-radius:999px;background:rgba(127,127,127,.18);color:inherit;font-size:11.5px;font-weight:650;font-variant-numeric:tabular-nums}
+@media (min-width:640px){#main-content .pl-tabs{display:inline-flex;width:auto}#main-content .pl-tabs>.pl-tab{flex:0 0 auto;padding:0 18px}}
+
+/* ---------- page ---------- */
+.pl-page{--pl-tint:rgba(255,255,255,.045);--pl-tint-2:rgba(255,255,255,.085);--pl-code:rgba(0,0,0,.28);--pl-ring:rgba(255,255,255,.55);
+ display:grid;gap:16px;margin-top:4px;min-width:0}
+html[data-theme="light"] .pl-page{--pl-tint:rgba(9,9,11,.035);--pl-tint-2:rgba(9,9,11,.065);--pl-code:rgba(9,9,11,.035);--pl-ring:rgba(9,9,11,.45)}
+.pl-page>*{min-width:0}
+
+/* search + tag filters */
+.pl-tools{display:grid;gap:10px;min-width:0}
+#main-content .pl-search{width:100%;max-width:none;box-sizing:border-box;min-width:0}
+#main-content .pl-search input{min-width:0}
+.pl-filters{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.pl-chip{display:inline-flex;align-items:center;gap:7px;min-height:40px;max-width:100%;box-sizing:border-box;padding:0 14px;border-radius:999px;border:1px solid var(--v8-stroke,rgba(127,127,127,.2));background:var(--pl-tint,rgba(127,127,127,.06));color:var(--v8-muted,#a1a1aa);font:inherit;font-size:13.5px;font-weight:600;line-height:1.2;cursor:pointer;transition:background .2s,color .2s,border-color .2s,transform .2s}
+.pl-chip b{font-weight:inherit;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-chip span{opacity:.7;font-size:12px;font-variant-numeric:tabular-nums}
+.pl-chip:hover{color:var(--v8-text,inherit);border-color:var(--v8-stroke-hi,rgba(127,127,127,.32))}
+.pl-chip:active{transform:scale(.97)}
+.pl-chip[aria-pressed="true"]{background:var(--v8-text,#f4f4f5);color:var(--v8-bg,#09090b);border-color:transparent}
+.pl-chip[aria-pressed="true"] span{opacity:.62}
+@media (pointer:coarse){.pl-chip{min-height:44px}}
+
+/* ---------- cards ---------- */
+.pl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px;align-items:start;min-width:0}
+.pl-card{position:relative;display:grid;gap:12px;min-width:0;padding:16px;border-radius:var(--v8-r-lg,20px);border:1px solid var(--v8-stroke,rgba(127,127,127,.18));background:var(--v8-surface,rgba(19,19,22,.8));box-shadow:var(--v8-shadow-1,none);color:var(--v8-text,inherit);
+ content-visibility:auto;contain-intrinsic-size:auto 280px;scroll-margin:84px 0 calc(var(--nav-h,68px) + 28px)}/* clear of the floating top buttons and the mobile nav */
+@media (min-width:768px){.pl-card{padding:18px 18px 16px}}
+.pl-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start}
+.pl-title{display:grid;gap:5px;min-width:0}
+#main-content .pl-title h3{margin:0;font-size:16px;line-height:1.3;font-weight:640;letter-spacing:-.015em;overflow-wrap:anywhere;color:var(--v8-text,inherit)}
+.pl-badges{margin:0 0 1px;display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.pl-badge{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-height:24px;box-sizing:border-box;padding:3px 10px;border-radius:999px;background:var(--pl-tint-2,rgba(127,127,127,.12));color:var(--v8-text,inherit);font-size:12px;font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+#main-content .pl-badge svg{width:12px;height:12px;flex:none;opacity:.75}
+.pl-badge-pin{color:var(--v8-warn,#fbbf24);background:rgba(251,191,36,.12)}
+.pl-meta{margin:0;color:var(--v8-muted,#a1a1aa);font-size:12.5px;line-height:1.45;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+
+/* «Copiar»: both labels share one grid cell, so the button never changes width when it turns into «¡Copiado!». */
+#main-content .pl-copy{position:relative;display:inline-grid;place-items:center;min-height:44px;min-width:7.4em;padding:0 16px;gap:0;font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden}
+#main-content .pl-copy>span{grid-area:1/1;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:opacity .2s var(--v8-ease,ease),transform .32s var(--v8-ease,ease)}
+#main-content .pl-copy svg{width:16px;height:16px}
+#main-content .pl-copy .pl-copy-done{opacity:0;transform:translateY(80%)}
+#main-content .pl-copy.is-copied .pl-copy-idle{opacity:0;transform:translateY(-80%)}
+#main-content .pl-copy.is-copied .pl-copy-done{opacity:1;transform:none}
+#main-content .pl-copy.is-copied{background:var(--v8-good,#4ade80)!important;color:#052e16!important;border-color:transparent!important;box-shadow:0 10px 26px -12px rgba(74,222,128,.55)!important}
+
+/* preview: monospace block, collapsed to ~7 lines with a fade; «Ver completo» opens a scrollable full view */
+.pl-body{position:relative;min-width:0;border-radius:14px;border:1px solid var(--v8-stroke,rgba(127,127,127,.18));background:var(--pl-code,rgba(0,0,0,.28));overflow:hidden}
+.pl-pre{margin:0;padding:12px 14px;font-family:var(--v8-mono,ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace);font-size:12.5px;line-height:1.6;color:var(--v8-text,inherit);white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;tab-size:2;-moz-tab-size:2;-webkit-user-select:text;user-select:text}
+.pl-body.is-collapsed .pl-pre{max-height:calc(1.6em * 7 + 24px);overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 48%,transparent 100%);mask-image:linear-gradient(180deg,#000 48%,transparent 100%)}
+.pl-body.is-open .pl-pre{max-height:min(70vh,900px);overflow:auto}
+.pl-more{justify-self:start;display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-10px 0 -6px -8px;padding:0 12px 0 8px;border:0;border-radius:12px;background:none;color:var(--v8-text,inherit);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:background .2s}
+.pl-more:hover{background:var(--pl-tint,rgba(127,127,127,.06))}
+#main-content .pl-more svg{width:16px;height:16px;transition:transform .3s var(--v8-ease,ease)}
+#main-content .pl-more[aria-expanded="true"] svg{transform:rotate(180deg)}
+.pl-notes{margin:0;display:flex;gap:8px;align-items:flex-start;color:var(--v8-muted,#a1a1aa);font-size:13px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere}
+#main-content .pl-notes svg{width:15px;height:15px;flex:none;margin-top:2px}
+
+/* actions */
+.pl-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:2px;min-width:0}
+#main-content .pl-actions .button{min-height:44px;padding:0 14px;gap:7px;font-size:13.5px}
+#main-content .pl-actions .icon-button{width:44px;height:44px;min-width:44px;flex:none}
+#main-content .pl-actions svg{width:16px;height:16px}
+.pl-actions .pl-del{margin-left:auto}
+@media (max-width:360px){.pl-actions .pl-lbl{display:none}}
+
+/* empty library / no results */
+.pl-empty{gap:12px}
+#main-content .pl-empty>svg{width:36px;height:36px;color:var(--v8-text,currentColor);opacity:.9}
+#main-content .pl-empty .button{min-height:46px;padding:0 22px;margin-top:4px;font-size:14.5px}
+.pl-none{display:grid;justify-items:center;gap:10px;padding:26px 18px;text-align:center;color:var(--v8-muted,#a1a1aa)}
+#main-content .pl-none>svg{width:26px;height:26px;opacity:.8}
+.pl-none p{margin:0;max-width:46ch;overflow-wrap:anywhere}
+#main-content .pl-none .button{min-height:44px}
+
+/* ---------- create / edit form ---------- */
+#prompt-form{scroll-margin-top:84px;min-width:0}
+#prompt-form .pl-tag-field{display:grid;gap:8px;min-width:0;align-content:start}
+.pl-suggest{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.pl-chip.pl-chip-sm{min-height:36px;padding:0 12px;font-size:12.5px}
+@media (pointer:coarse){.pl-chip.pl-chip-sm{min-height:44px}}
+.pl-field{display:grid;gap:6px;min-width:0}
+.pl-label-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;font-size:var(--fs-sm,13.5px)}
+.pl-label-tools{display:inline-flex;align-items:center;gap:10px;margin-left:auto}
+.pl-paste{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--v8-stroke-hi,rgba(127,127,127,.3));background:var(--pl-tint,rgba(127,127,127,.06));color:var(--v8-text,inherit);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+#main-content .pl-paste svg{width:15px;height:15px}
+@media (pointer:coarse){.pl-paste{min-height:44px}}
+.pl-counter{color:var(--v8-muted,#a1a1aa);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pl-counter.is-near{color:var(--v8-warn,#fbbf24)}
+.pl-counter.is-over{color:var(--v8-bad,#f87171);font-weight:700}
+#prompt-form .pl-body-input{display:block;width:100%;box-sizing:border-box;min-height:min(52vh,420px);resize:vertical;padding:12px 14px;font-family:var(--v8-mono,ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace);font-size:13.5px;line-height:1.55;tab-size:2;-moz-tab-size:2;white-space:pre-wrap;overflow-wrap:anywhere}
+@media (max-width:1023px){#prompt-form .pl-body-input{font-size:14px}}
+@supports (-webkit-touch-callout:none){#prompt-form .pl-body-input{font-size:16px}}/* iOS zooms into fields under 16 px */
+#prompt-form textarea[name="notes"]{min-height:72px;resize:vertical}
+#prompt-form [aria-invalid="true"]{border-color:var(--v8-bad,#f87171)!important}
+#prompt-form .form-error:empty{margin:0}
+@media (max-width:520px){#main-content #prompt-form{padding:18px 16px}}
+
+/* ---------- motion ---------- */
+@keyframes pl-flash{0%{outline-color:var(--pl-ring,rgba(255,255,255,.55));outline-offset:5px}100%{outline-color:rgba(127,127,127,0);outline-offset:1px}}
+.pl-card.pl-flash,.pl-body.pl-flash{outline:2px solid transparent;animation:pl-flash .9s var(--v8-ease,cubic-bezier(.2,.8,.2,1)) both}
+@media (prefers-reduced-motion:reduce){
+ .pl-card.pl-flash,.pl-body.pl-flash{animation:none!important}
+ #main-content .pl-copy>span,#main-content .pl-more svg,.pl-chip,.pl-more,#main-content .pl-tabs>.pl-tab{transition:none!important}}
+:root:is([data-motion="reduced"],[data-paused="true"]) :is(.pl-card.pl-flash,.pl-body.pl-flash){animation:none!important}
+:root:is([data-motion="reduced"],[data-paused="true"]) #main-content :is(.pl-copy>span,.pl-more svg){transition:none!important}

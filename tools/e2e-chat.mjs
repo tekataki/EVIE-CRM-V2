@@ -93,7 +93,7 @@ out.overflowMem = await p.evaluate(() => document.documentElement.scrollWidth > 
 // Inicio: sistemas + modes
 await p.evaluate(() => { location.hash = 'inicio' }); await until(() => document.getElementById('ivi-systems'))
 out.systems = await p.evaluate(() => document.querySelectorAll('#ivi-systems .ivi-sys').length === 5 && /Sistemas en línea/.test(document.getElementById('ivi-systems').textContent) && document.querySelectorAll('#ivi-systems .ivi-chip').length === 3)
-await p.click('[data-ivi="modes"]'); await until(() => document.querySelector('[data-ivi="set-mode"][data-mode="ventas"]')); await p.click('[data-ivi="set-mode"][data-mode="ventas"]')
+if (await p.evaluate(() => getComputedStyle(document.getElementById('ivi-rail-r')).display === 'none' || getComputedStyle(document.getElementById('ivi-rail-r')).visibility === 'hidden')) { await p.click('[data-hud-quick]'); await p.waitForTimeout(400) } /* v11: on phones (or with cards on the right) Ivi's actions live in the ✦ Atajos sheet */ await p.click('[data-ivi="modes"]'); await until(() => document.querySelector('[data-ivi="set-mode"][data-mode="ventas"]')); await p.click('[data-ivi="set-mode"][data-mode="ventas"]')
 await until(() => EvieModes.current() === 'ventas'); out.modeRoute = await p.evaluate(() => location.hash === '#soma'); await p.evaluate(() => { location.hash = 'inicio' }); await until(() => document.getElementById('ivi-systems')?.dataset.mode === 'ventas')
 out.modeOrder = await p.evaluate(() => document.querySelector('#ivi-systems .ivi-sys.is-lead small').textContent === 'Seguimientos' && IviCore.personaMode() === 'ventas')
 if (SHOT) { await p.waitForTimeout(700); await p.screenshot({ path: SHOT + '-inicio.png' }) }

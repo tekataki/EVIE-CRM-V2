@@ -74,12 +74,23 @@ export async function openaiJson(env, fetcher, { tier = 'enfoque', system, user,
   return { json, cost, model: cfg.model, data, searches }
 }
 
-/** Streams a text answer (SSE from the Responses API). onText(delta) per chunk. Optional hosted web search.
- *  Returns { text, sources, searches, cost, model, stop_reason }. Throws OpenAIError (code 'aborted' on client stop). */
-export async function openaiStream(env, fetcher, { tier = 'enfoque', instructions, input, web = null, onText = null, signal = null, timeoutMs = 120000 }) {
+/** Function calls the model asked for (client tools), in order: { call_id, name, arguments (JSON text) }. */
+export const functionCalls = (data) => (Array.isArray(data?.output) ? data.output : []).filter((o) => o?.type === 'function_call' && typeof o.call_id === 'string' && typeof o.name === 'string').map((o) => ({ call_id: o.call_id, name: o.name, arguments: typeof o.arguments === 'string' ? o.arguments : '{}' }))
+// Output items replayed verbatim as input on the next tool round (store:false keeps nothing on OpenAI's side, so a
+// reasoning item is only usable with its encrypted_content; it stays in order next to the item that followed it).
+const REPLAY = new Set(['reasoning', 'message', 'function_call', 'web_search_call'])
+export const replayItems = (data) => (Array.isArray(data?.output) ? data.output : []).filter((o) => o && REPLAY.has(o.type) && (o.type !== 'reasoning' || typeof o.encrypted_content === 'string'))
+
+/** Streams a text answer (SSE from the Responses API). onText(delta) per chunk. Optional hosted web search and
+ *  function tools (`tools`, OpenAI function definitions; `toolChoice` 'auto' | 'none'). With tools the request asks for
+ *  reasoning.encrypted_content so a tool round can continue statelessly.
+ *  Returns { text, sources, searches, cost, model, stop_reason, calls, output }. Throws OpenAIError (code 'aborted' on client stop). */
+export async function openaiStream(env, fetcher, { tier = 'enfoque', instructions, input, web = null, tools: fns = [], toolChoice = null, onText = null, signal = null, timeoutMs = 120000 }) {
   const cfg = tierConfig(env, tier)
-  const tools = web ? [{ type: 'web_search', search_context_size: 'medium', user_location: { type: 'approximate', country: 'MX', ...(web.timezone ? { timezone: web.timezone } : {}), ...(web.city ? { city: String(web.city).slice(0, 60) } : {}) } }] : []
-  const payload = { model: cfg.model, instructions, input, max_output_tokens: OPENAI_CHAT_TOKENS[cfg.id] || 4000, store: false, reasoning: { effort: cfg.effort }, stream: true, ...(tools.length ? { tools, include: ['web_search_call.action.sources'] } : {}) }
+  const hosted = web ? [{ type: 'web_search', search_context_size: 'medium', user_location: { type: 'approximate', country: 'MX', ...(web.timezone ? { timezone: web.timezone } : {}), ...(web.city ? { city: String(web.city).slice(0, 60) } : {}) } }] : []
+  const tools = [...hosted, ...(Array.isArray(fns) ? fns : [])], functions = tools.length - hosted.length
+  const include = [...(functions && cfg.effort !== 'none' ? ['reasoning.encrypted_content'] : []), ...(hosted.length ? ['web_search_call.action.sources'] : [])]
+  const payload = { model: cfg.model, instructions, input, max_output_tokens: OPENAI_CHAT_TOKENS[cfg.id] || 4000, store: false, reasoning: { effort: cfg.effort }, stream: true, ...(tools.length ? { tools } : {}), ...(functions ? { parallel_tool_calls: true, ...(toolChoice === 'none' || toolChoice === 'auto' ? { tool_choice: toolChoice } : {}) } : {}), ...(include.length ? { include } : {}) }
   const r = await post(env, fetcher, payload, timeoutMs, signal)
   let text = '', final = null, buf = ''
   const handle = (raw) => {
@@ -103,6 +114,6 @@ export async function openaiStream(env, fetcher, { tier = 'enfoque', instruction
     throw Object.assign(new OpenAIError(e?.name === 'TimeoutError' ? 504 : 499, e?.name === 'TimeoutError' ? 'timeout' : 'aborted'), { partial: text })
   }
   if (!text && final) text = outputText(final)
-  const searches = openaiSearches(final)
-  return { text, sources: openaiSources(final), searches, cost: costMicro(env, cfg.model, final?.usage) + searches * WEB_SEARCH_USD * 1e6, model: final?.model || cfg.model, stop_reason: final?.status === 'incomplete' ? 'max_tokens' : refused(final) ? 'refusal' : 'end_turn' }
+  const searches = openaiSearches(final), calls = functionCalls(final)
+  return { text, sources: openaiSources(final), searches, cost: costMicro(env, cfg.model, final?.usage) + searches * WEB_SEARCH_USD * 1e6, model: final?.model || cfg.model, stop_reason: final?.status === 'incomplete' ? 'max_tokens' : refused(final) ? 'refusal' : calls.length ? 'tool_use' : 'end_turn', calls, output: calls.length ? replayItems(final) : [] }
 }

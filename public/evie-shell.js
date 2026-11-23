@@ -18,10 +18,11 @@ window.EvieShell=(()=>{
   if(EvieAssistant.pref().wakeWord)EvieAssistant.wakeWord(true);
  }
  function mobileNav(){const nav=document.querySelector('.mobile-nav');if(!nav||nav.querySelector('.evie-orb-button'))return;
-  // 4 shortcuts + centered orb = 5 equal columns: orb is geometrically centered at every width.
-  const links=[...nav.children];links.slice(4).forEach(n=>n.remove());const kept=[...nav.children];
+  // v11: 3 shortcuts + centered orb + «Menú» (all sections, reachable with the thumb) = 5 equal columns.
+  const links=[...nav.children];links.slice(3).forEach(n=>n.remove());const kept=[...nav.children];
   const orb=document.createElement('button');orb.type='button';orb.className='evie-orb-button';orb.dataset.evie='orb';orb.setAttribute('aria-label','Hablar con EVIE');orb.innerHTML='<span class="evie-orb-core" aria-hidden="true"></span>';
-  if(kept[2])kept[2].before(orb);else nav.append(orb);nav.style.setProperty('--nav-cols',String(kept.length+1));nav.style.setProperty('--orb-col',String(Math.min(3,kept.length+1)));}
+  const menu=document.createElement('button');menu.type='button';menu.dataset.ox='menu';menu.className='ox-nav-menu';menu.setAttribute('aria-label','Abrir el menú con todas las secciones');menu.innerHTML=Views.icon('layout-grid')+'<span>Menú</span>';nav.append(menu);
+  if(kept[2])kept[2].before(orb);else menu.before(orb);nav.style.setProperty('--nav-cols',String(kept.length+2));nav.style.setProperty('--orb-col',String(Math.min(3,kept.length+1)));}
  function core(){const c=document.getElementById('neural-canvas');if(!c)return;if(window.Neural?.orb)Neural.orb();else EvieNeural.mount(c);const ctl=document.getElementById('dali-core-control');if(ctl){ctl.dataset.renderer='evie';ctl.setAttribute('aria-label','EVIE · toca para hablar');}
   const hint=document.querySelector('.neural-orb + *, .neural-core-hint');void hint;}
  function afterRender(){if(!Store.get())return;boot();mobileNav();core();credit();stage();EvieModes?.apply();EvieFX.enterRoute(UI.section+(UI.id?'/'+UI.id:''));
