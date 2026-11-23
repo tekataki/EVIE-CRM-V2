@@ -7,7 +7,10 @@ const {createRegistry}=require('../tools/registry.cjs');const {windowsTools,exec
 const {OllamaProvider,createConversation}=require('../ai/ollama.cjs');const {createVoice,validateWav}=require('../voice/local-voice.cjs');const processes=require('../voice/process.cjs');
 const {createAccountHost,serveAccountStream}=require('./account-host.cjs');const {createShortcuts}=require('./shortcuts.cjs');
 const ROOT=path.resolve(__dirname,'../..'),PUBLIC=path.join(ROOT,'public'),ORIGIN='evie://app';
-app.setName('EVIE CRM V2');app.setPath('userData',path.join(app.getPath('appData'),'EVIE-CRM-V2'));app.setAppUserModelId('com.evie.crm.v2');
+// EVIE_DESKTOP_PROFILE (QA only): an absolute folder for the whole profile. On Windows Electron resolves appData from the
+// shell's known folder, not from %APPDATA%, so automated tests need this to stay out of the person's real profile.
+const qaProfile=process.env.EVIE_DESKTOP_PROFILE&&path.isAbsolute(process.env.EVIE_DESKTOP_PROFILE)?process.env.EVIE_DESKTOP_PROFILE:'';
+app.setName('EVIE CRM V2');app.setPath('userData',qaProfile?path.join(qaProfile,'EVIE-CRM-V2'):path.join(app.getPath('appData'),'EVIE-CRM-V2'));app.setAppUserModelId('com.evie.crm.v2');
 protocol.registerSchemesAsPrivileged([{scheme:'evie',privileges:{standard:true,secure:true,supportFetchAPI:true,stream:true}}]);
 const csp="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; frame-ancestors 'none'";
 let desktopActions,googleNonce=null,accountRef=null,win,tray,settings,shortcuts,voice,conversation,registry,google,catalog,confirmation,micPrompt=null,quitting=false;const pending=new Map();

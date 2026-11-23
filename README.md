@@ -142,6 +142,11 @@ Configuración v3: ver `docs/SETUP.md §7`.
   `standalone`; en iPhone, «Instalar app» explica Compartir → Agregar a inicio. Medidas de referencia del Galaxy S25
   Ultra: 412 × 891 px CSS (DPR 3.5); las pruebas visuales corren a 412, 390 y 1440 px.
 - Pruebas: `tools/e2e-onyx.mjs` (W=1440/412/390, THEME=light).
+- **App de Windows 2.3.0**: `npm run make:win` genera `out/make/squirrel.windows/x64/EVIE-CRM-V2-Setup.exe` (y un
+  `.zip` portátil). El paquete solo lleva la app (`public/`, `electron/`, `scripts/`, iconos): las notas personales,
+  respaldos de historial, código del servidor y migraciones quedan fuera (`forge.config.cjs`). Para pruebas
+  automáticas, `EVIE_DESKTOP_PROFILE=<carpeta absoluta>` aísla el perfil (en Windows `%APPDATA%` no basta);
+  `npm run test:electron` ya lo usa.
 
 ## Novedades v10 · Fase 6: escritorio, tema claro y Android (2026-11-22)
 - **App de escritorio (Electron)**: el proxy de cuenta ahora permite todas las rutas v10 (chat, memorias, Cabina,

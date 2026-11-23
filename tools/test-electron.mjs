@@ -3,7 +3,7 @@ import fs from 'node:fs';import os from 'node:os';import path from 'node:path';i
 const profile=fs.mkdtempSync(path.join(os.tmpdir(),'evie-electron-qa-')),checks=[];let app;
 try{
  const packaged=process.env.EVIE_PACKAGED_EXECUTABLE;
- app=await electron.launch({...(packaged?{executablePath:path.resolve(packaged)}:{}),args:[...(process.platform==='linux'?['--no-sandbox']:[]),'--use-fake-device-for-media-stream',...(packaged?[]:[path.resolve('.')])],env:{...process.env,XDG_CONFIG_HOME:profile,APPDATA:profile},timeout:45000});
+ app=await electron.launch({...(packaged?{executablePath:path.resolve(packaged)}:{}),args:[...(process.platform==='linux'?['--no-sandbox']:[]),'--use-fake-device-for-media-stream',...(packaged?[]:[path.resolve('.')])],env:{...process.env,XDG_CONFIG_HOME:profile,APPDATA:profile,EVIE_DESKTOP_PROFILE:profile},timeout:45000});
  const actualProfile=await app.evaluate(({app})=>app.getPath('userData'));assert.ok(actualProfile.startsWith(profile+path.sep),'QA must never use personal profile');
  app.process().stderr.on('data',d=>process.stderr.write(d));
  const page=await app.firstWindow(),errors=[];page.on('pageerror',e=>errors.push(e.message));
