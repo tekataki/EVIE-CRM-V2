@@ -83,7 +83,7 @@ window.EvieHUD=(()=>{
     .to(n,{scale:1,y:0,duration:.42,ease:'elastic.out(1,.55)',clearProps:'filter,transform'});}
  function leave(n,done){const g=gs();if(!g||!n){done();return;}n.dataset.leaving='1';n._tl?.kill();g.timeline({onComplete:done}).to(n,{scale:1.03,duration:.1,ease:'power1.out'}).to(n,{opacity:0,scale:.86,y:14,filter:'blur(6px)',duration:.26,ease:'power2.in'});}
  /* Layout: count of visible cards drives CSS grid zones; the core gently shrinks (no restart). */
- function layout(){cancelAnimationFrame(layoutRaf);layoutRaf=requestAnimationFrame(()=>{const n=visibleCards().length;document.body.dataset.hudCards=String(n);document.body.dataset.hudTotal=String(ws.cards.length);if(!n)delete document.body.dataset.hudLg;
+ function layout(){cancelAnimationFrame(layoutRaf);layoutRaf=requestAnimationFrame(()=>{const n=visibleCards().length;document.body.dataset.hudCards=String(n);document.body.dataset.hudTotal=String(ws.cards.length);if(!n){delete document.body.dataset.hudLg;delete document.body.dataset.hudSides;}
   // v11: the core's size comes from CSS (--core-w per card count/size), animated with a width transition.
   const core=document.getElementById('hud-core');if(core&&window.gsap)gsap.set(core,{clearProps:'scale'});});}
  /* ---------- loading with generation guard ---------- */

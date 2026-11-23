@@ -55,6 +55,7 @@ if (W >= 1280) ok('cardsBesideCore', cards.every((c) => c.slot && (c.r.left >= c
 else ok('cardsBelowCore', cards.every((c) => c.r.top >= c.core.bottom - 2))
 ok('clockIsSmall', await p.evaluate(() => [...document.querySelectorAll('#hud-cards .hud-card')].some((n) => n.dataset.type === 'clock' && n.dataset.size === 'sm')))
 await p.evaluate(() => EvieHUD.close('all', { silent: true })); await p.waitForTimeout(500)
+if (W >= 1280) ok('railsBackAfterCloseAll', await p.evaluate(() => getComputedStyle(document.getElementById('ivi-rail-l')).visibility === 'visible' && getComputedStyle(document.getElementById('ivi-rail-r')).visibility === 'visible' && !document.body.dataset.hudSides))
 
 // 4 · section hero, scene and tip
 await p.evaluate(() => { localStorage.removeItem('evie-ox-tips'); location.hash = 'finanzas' }); await until(() => document.querySelector('.page-heading .ox-scene canvas')); await p.waitForTimeout(900)
@@ -71,7 +72,7 @@ ok('floatingSearchOnInner', await p.evaluate(() => getComputedStyle(document.que
 if (mobile) {
   const bar = await p.evaluate(() => [...document.querySelector('.mobile-nav').children].map((n) => n.className.includes('evie-orb-button') ? 'ORB' : n.dataset.ox === 'menu' ? 'MENU' : (n.getAttribute('href') || '')))
   ok('phoneBar', bar.length === 5 && bar[2] === 'ORB' && bar[4] === 'MENU')
-  await p.click('.mobile-nav [data-ox="menu"]'); await p.waitForTimeout(600)
+  await p.click('.mobile-nav [data-ox="menu"]'); await p.waitForTimeout(1100) /* the drawer slides for .5 s */
   ok('menuOpensDrawer', await p.evaluate(() => document.body.classList.contains('drawer-open') && document.getElementById('sidebar').getBoundingClientRect().left >= -1))
   await p.click('.ox-sb-close'); await p.waitForTimeout(500)
   ok('drawerCloses', await p.evaluate(() => !document.body.classList.contains('drawer-open')))
