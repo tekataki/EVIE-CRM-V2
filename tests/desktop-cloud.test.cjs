@@ -109,7 +109,7 @@ test('signed-in desktops talk to Ivi in the cloud; the local Ollama session is o
  assert.match(ui,/if\(a\.type==='update-ready'\)updateReady\(a\.version\);/);
  const assistant=read('public/evie-assistant.js');
  assert.match(assistant,/\.\.\.\(window\.EvieDesktopActions\?\.available\?\.\(\)\?\{app:'windows'\}:\{\}\)/);
- assert.match(assistant,/async desktop_action\(\{action,contact,message,app,query,url,level\}\)/);
+ assert.match(assistant,/async desktop_action\(\{action,contact,message,app,query,url,level,folder,page\}\)/);
 });
 
 test('desktop actions: open an app by name, Spotify and Google search, exact and stepped volume',async()=>{
@@ -140,6 +140,6 @@ test('app names: fixed Windows built-ins, spoken variants, and catalog matches w
 test('cloud Ivi knows the Windows actions only on EVIE para Windows',async()=>{
  const {TOOLS}=await import('../src/assistant.js');const t=TOOLS.find(x=>x.name==='desktop_action');
  for(const a of ['open_app','spotify_search','volume_up','volume_down','volume_mute','set_volume','open_url','search_web','media_play_pause','compose_message'])assert.ok(t.parameters.properties.action.enum.includes(a),a);
- assert.deepEqual(t.parameters.required.sort(),['action','app','contact','level','message','query','url']);assert.equal(t.parameters.additionalProperties,false);
+ assert.deepEqual(t.parameters.required.sort(),['action','app','contact','folder','level','message','page','query','url']);assert.equal(t.parameters.additionalProperties,false);
  const src=read('src/assistant.js');assert.match(src,/const desktopContext = \(ctx\) => ctx\?\.app === 'windows' \?/);assert.equal((src.match(/iviSituation\(ctx\.situation\), desktopContext\(ctx\)\]/g)||[]).length,2);
 });

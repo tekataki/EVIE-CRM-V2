@@ -50,7 +50,7 @@ window.EvieAssistant=(()=>{
   async research_web({query}){if(!cloud())return {ok:false,status:'unavailable',note:'Necesitas iniciar sesión con tu cuenta EVIE.'};try{const r=await EvieAccounts.request('info/research',{method:'POST',body:{query}});lastResearch=r;window.EvieHUD?.open('research',{query,data:r,title:'Investigación'});return {ok:true,insufficient:r.insufficient,summary:r.summary,spoken:r.spoken,event_date:r.event_date,sources:r.sources.map(x=>({title:x.title,host:x.host,published:x.published})),retrieved_at:r.retrieved_at,card_shown:true};}catch(err){return {ok:false,error:err.message};}},
   async get_weather({place}){if(!cloud())return {ok:false,status:'unavailable',note:'Necesitas iniciar sesión con tu cuenta EVIE.'};try{const r=await EvieAccounts.request('info/weather',{method:'POST',body:place?{place}:{}});if(!r.needs_location)window.EvieHUD?.open('weather',{place,data:r});return r;}catch(err){return {ok:false,error:err.message};}},
   propose_learning_path({topic}){if(!window.EvieHUD)return {ok:false};const ex=EvieHUD.findSkill(topic);EvieHUD.open('learning',{topic,title:'Ruta: '+String(topic).slice(0,40)});return {status:'preview_shown',needs_user_confirmation:true,existing_topic:ex?ex.title:null,note:'La vista previa está en una tarjeta; nada se guarda sin confirmación.'};},
-  async desktop_action({action,contact,message,app,query,url,level}){return window.EvieDesktopActions?EvieDesktopActions.run(action,{contact,message,app,query,url,level}):{ok:false,status:'unavailable'};},
+  async desktop_action({action,contact,message,app,query,url,level,folder,page}){return window.EvieDesktopActions?EvieDesktopActions.run(action,{contact,message,app,query,url,level,folder,page}):{ok:false,status:'unavailable'};},
   navigate({route}){if(['gimnasio','gym','salud'].includes(route))route='fisico';if(DALI_CONFIG.sections.some(s=>s.route===route)){location.hash=route;return {ok:true,opened:route};}return {ok:false};},
   set_mode({mode}){return window.EvieModes.set(mode);},
   run_protocol({protocol,client}){return window.IviCore?IviCore.protocol(protocol,{client,fromModel:true}):{ok:false,error:'Protocolos no disponibles.'};},
@@ -99,6 +99,16 @@ window.EvieAssistant=(()=>{
  /* ---------- local fast-path (free, no network) ---------- */
  // Windows apps EVIE para Windows opens without asking the AI (the main process resolves the name; see app-names.cjs).
  const DESKTOP_APPS=/^(?:(?:el|la) )?(?:bloc de notas|block de notas|blog de notas|notepad|calculadora|paint|explorador(?: de archivos)?|spotify|whatsapp|discord|steam|recortes|camara|microsoft store)$/;
+ // EVIE para Windows (2.5): «a trabajar» (work playlist already playing), «muestra el escritorio», «bloquea la compu»,
+ // «abre descargas», «abre la configuración de wifi». The main process maps each to a fixed target.
+ function deskLocal(q){const D=window.EvieDesktopActions;if(!D?.available?.())return null;
+  const done=(p,ok)=>p.then(r=>{const t=r.ok?ok(r):(r.note||r.error||'No pude hacerlo.');append('evie',t);if(!pref().muted)Voice.speak(t,Voice.begin());});
+  if(/^(?:(?:bueno|va|ok|vamos|ahora)\s+)?(?:a trabajar|vamos a trabajar|hora de trabajar|a darle|a chambear|modo (?:trabajo|taller|stark|tony stark|iron man))$/.test(q)){done(D.run('work_mode'),r=>r.playing?'Modo taller activado. Ya suena tu playlist de trabajo'+(r.song?': '+r.song:'')+'.':'Modo taller activado. '+(r.note||''));return '';}
+  if(/^(?:muestra(?:me)? el escritorio|minimiza (?:todo|todas las ventanas))$/.test(q)){done(D.run('show_desktop'),()=>'Listo, escritorio despejado.');return '';}
+  if(/^bloquea (?:la |el )?(?:compu|computadora|pc|pantalla|sesion|equipo)$/.test(q)){done(D.run('lock_pc'),()=>'Bloqueando la computadora.');return '';}
+  {const m=q.match(/^(?:abre|abreme|abrir)(?: (?:la|el|mis?))? (?:carpeta (?:de )?)?(descargas|documentos|imagenes|fotos|musica|videos)$/);if(m){done(D.run('open_folder',{folder:m[1]}),()=>'Abrí '+m[1]+'.');return '';}}
+  {const m=q.match(/^(?:abre|abreme|abrir|ve a)(?: la)? (?:configuracion|ajustes) (?:de windows )?(?:de |del )?(?:la |el )?(.+)$/);if(m&&D.settingOf(m[1])){done(D.run('open_settings',{page:m[1]}),()=>'Abrí la configuración de '+m[1]+' de Windows.');return '';}}
+  return null;}
  function tryLocal(text){const speakLater=t=>{if(t){append('evie',t);if(!pref().muted)Voice.speak(t,Voice.begin());}};if(window.EvieMemory){const mm=EvieMemory.intent(text,{say:speakLater});if(mm!==null)return mm;}if(window.EvieMap){const mp=EvieMap.intent(text,{say:speakLater});if(mp!==null)return mp;}if(/^(?:(?:oye |hey )?(?:ivi|ivy|evie|evi|ibi|libi)[, ]+)?(?:deshaz|deshacer|desase) (?:lo ultimo|el ultimo (?:movimiento|registro|gasto|ingreso)|eso)$/.test(IvyTools.norm(text).replace(/[¿?¡!.,]/g,''))){const u=lastUndo||window.EvieFinance?.lastUndo?.();if(!u)return 'No tengo un registro reciente que deshacer.';u();lastUndo=null;window.EvieFinance?.setLastUndo?.(null);return 'Listo, lo deshice.';}if(window.EvieTimers){const tw=EvieTimers.intent(text);if(tw!==null)return tw;}if(window.IviCore){const iv=IviCore.intent(text);if(iv!==null)return iv;}if(window.EvieFisico){const fw=EvieFisico.intent(text);if(fw!==null)return fw;}if(window.EvieFinance){const fi=EvieFinance.intent(text);if(fi!==null)return fi;}const q=IvyTools.norm(text).replace(/[¿?¡!.,]/g,'').replace(/^(oye |hey |hola |ok )?(?:evie|evi|ivi|ivy|ibi|libi|eby|evy)[, ]+/,'').trim();
   let m=q.match(/^(?:activa|activar|pon|entra en|cambia a)(?: el)? modo (\w+)/);if(m){const r=window.EvieModes.set(m[1]);return r.ok?r.say:'No conozco el modo '+m[1]+'. Tengo asistente, ventas, gym, estudio, noche, enfoque y cierre.';}
   if(/^(?:desactiva|salir? del?|quita)(?: el)? modo/.test(q)){window.EvieModes.set('normal');return 'Listo, volví al modo normal.';}
@@ -135,6 +145,7 @@ window.EvieAssistant=(()=>{
    if(card.id)EvieHUD.update(card.id,{status:x.status,note:x.note||null});say(msg);});
   return '';}
  function hudLocal(q){if(!window.EvieHUD)return null;q=q.replace(/^(oye |hey |ok )?(ivi|ivy|evie|evi|libi|ibi)[, ]*/,'').trim();
+  {const d=deskLocal(q);if(d!==null)return d;}
   {const mo=multiOpen(q);if(mo!==null)return mo;}
   // Presentation-only: closes HUD cards; never completes/deletes CRM records ("finaliza esta tarjeta" included).
   let m=q.match(/^(?:cierra|quita|oculta|cerrar|quitar|finaliza|termina|descarta)(?: (?:el|la|los|las|este|esta|ese|esa))? ?(tarjetas?|ventanas?|apartado|esto|eso|todo|todas)?(?: (?:las )?tarjetas)?(?: (?:de|del|sobre|con))? ?(.*)$/);

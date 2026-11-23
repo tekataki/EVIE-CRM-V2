@@ -500,6 +500,16 @@ html.evie-ui[data-desktop="true"] #evie-hud.hud{min-height:calc(100dvh - 38px)!i
 html.evie-ui[data-desktop="true"] #sidebar{top:38px!important;height:calc(100% - 38px)!important}
 html.evie-ui[data-desktop="true"] #desktop-titlebar{background:rgba(9,9,11,.82)!important;border-bottom:1px solid var(--ox-line);font-family:var(--ox-mono)!important;letter-spacing:.12em;font-size:10.5px!important;color:var(--ox-muted)!important;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 html.evie-ui[data-desktop="true"] .ch[data-ch-root]{height:calc(100dvh - 38px - var(--ox-band) - 16px)!important}
+/* Fullscreen (F11, 2.5): no Windows taskbar and no 38 px band; the title bar waits above the screen and slides in when
+   the pointer touches the top edge (or a control inside it gets focus). */
+html[data-desktop="true"][data-fullscreen="true"] body{padding-top:0!important}
+html.evie-ui[data-desktop="true"][data-fullscreen="true"]{--ox-top:14px}
+html.evie-ui[data-desktop="true"][data-fullscreen="true"] :is(.app-shell,main#main-content),html.evie-ui[data-desktop="true"][data-fullscreen="true"] #evie-hud.hud{min-height:100dvh!important}
+html.evie-ui[data-desktop="true"][data-fullscreen="true"] #sidebar{top:0!important;height:100%!important}
+html.evie-ui[data-desktop="true"][data-fullscreen="true"] .ch[data-ch-root]{height:calc(100dvh - var(--ox-band) - 16px)!important}
+html[data-desktop="true"][data-fullscreen="true"] #desktop-titlebar{transform:translateY(calc(-100% + 4px));opacity:0;z-index:400;transition:transform .22s ease,opacity .22s ease}
+html[data-desktop="true"][data-fullscreen="true"] #desktop-titlebar:is(:hover,:focus-within){transform:none;opacity:1}
+@media (prefers-reduced-motion:reduce){html[data-desktop="true"] #desktop-titlebar{transition:none}}
 
 /* ---------------------------------------------------------------- reduced motion */
 @media (prefers-reduced-motion:reduce){.ox-mini-orb i,.ivi-online b{animation:none}html.evie-ui #evie-hud .hud-core{transition:none}}

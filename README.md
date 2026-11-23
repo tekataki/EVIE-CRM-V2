@@ -103,6 +103,34 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades 2.5 · «Ivi» sin manos, pantalla completa y modo taller (2026-11-23)
+- **«Ivi» sin manos en Windows.** Con «Palabra clave «Ivi»» activa (Ajustes de Ivi o Configuración → Equipo), el
+  reconocedor de voz de Windows (`Windows.Media.SpeechRecognition`, en el idioma del sistema, sin internet) escucha
+  todo el tiempo una lista fija de frases: «Ivi», «oye Ivi», «hey Ivi»… También funciona con EVIE minimizada.
+  - **Cómo funciona:** `scripts/wake-listener.ps1` y `electron/voice/wake.cjs`. El script se reinicia solo si se cae.
+    Al oír «Ivi», EVIE pasa al frente, suena el aviso y te escucha con la voz de la nube. Nunca se envía audio solo
+    para detectar el nombre.
+  - **Error corregido:** antes la app usaba el reconocedor del navegador, que Electron no trae. Al activarlo, la página
+    se caía y quedaba el «recuadro negro». En escritorio ya nunca se toca.
+- **Pantalla completa:** F11, el botón ⛶ de la barra de título o la bandeja. Oculta la barra de tareas de Windows y
+  la barra de título de EVIE, que aparece al llevar el puntero al borde superior. Se recuerda para la próxima vez que
+  abras la app.
+- **«Ivi, a trabajar»** («modo taller», «vamos a trabajar»): abre Spotify con la playlist de trabajo ya sonando.
+  - Por defecto es «Tony Stark's Workshop Playlist»; la tuya se pega en Configuración → Equipo.
+  - Para que suene sola, EVIE abre la primera canción con la playlist como contexto.
+  - Después revisa el título de la ventana de Spotify (`scripts/spotify-now.ps1`) para decir si ya está sonando.
+- **Más control de Windows** (`desktop_action`; el modelo solo elige una opción de una lista fija):
+  - abrir Descargas, Documentos, Imágenes, Música o Videos;
+  - abrir páginas de la Configuración de Windows (wifi, bluetooth, pantalla, sonido, actualizaciones…);
+  - «muestra el escritorio»;
+  - «bloquea la compu».
+
+  Las teclas de música y volumen ahora son pulsaciones reales: `keybd_event`, no un mensaje a todas las ventanas.
+- **SOMA:** el «Dossier de visita» pasó al final de la cabina del prospecto.
+- **Dojo de ventas:** dificultad fácil, medio o difícil; un prospecto más humano; puntuación final 0–100 con
+  veredicto (detalles en `src/dojo.js`).
+- Pruebas: `tests/desktop-v25.test.cjs`.
+
 ## Novedades 2.4 · EVIE para Windows igual que la web, y se actualiza sola (2026-11-23)
 - **Ivi en la nube también en la app de escritorio.** Con tu sesión iniciada, el núcleo, Ctrl+Espacio y «Escuchar» de
   la bandeja usan la misma Ivi que la web: tu voz → `ai/stt` → `ai/chat` (OpenAI hoy; Claude cuando exista la llave) →

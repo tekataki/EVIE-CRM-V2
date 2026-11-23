@@ -112,5 +112,5 @@ test('Cuerpo › Recuperación (default): legend, quick «Entrené» chips, tap 
  assert.equal((h.match(/data-fm="qchip"/g)||[]).length,12);assert.match(h,/data-fm="qsave" disabled/);assert.match(h,/Toca un músculo/);
  assert.match(h,/Descansando<\/small><p>Pecho/);assert.match(h,/data-fis="del-day" data-id="g1"/);assert.match(h,/data-fm="thour"/);
  assert.equal((h.match(/class="fb-m"/g)||[]).length,16);
- x.UI.fisicoRec='chest';const t=x.M.tab({});assert.match(t,/fm-rec-detail" data-rec="red"/);assert.match(t,/Último entrenamiento: hoy \(hace 3 h\)/);
+ x.UI.fisicoRec='chest';const t=x.M.tab({});assert.match(t,/fm-rec-detail" data-rec="red"/);assert.match(t,/Último entrenamiento: (?:hoy|ayer) \(hace 3 h\)/); // «ayer» when the suite runs between 00:00 and 03:00
  assert.deepEqual([...x.M.expand(['chest','legs'])],['chest','quads','hamstrings','glutes','calves']);});

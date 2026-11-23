@@ -315,7 +315,8 @@ test('main wires the stream port behind the trusted-origin check, hotkeys throug
  assert.match(src,/ipcMain\.on\('evie:account-stream',\(event,args\)=>\{[^\n]*if\(!isTrusted\(event\)\)throw[^\n]*limit\(\);[^\n]*serveAccountStream\(ports\[0\],account,args\)/);
  assert.match(src,/shortcuts=createShortcuts\(\{globalShortcut,settings:\(\)=>settings\.get\(\),reveal,send\}\)/);
  assert.match(src,/const s=settings\.patch\(args\);registerShortcut\(\);return s;/);
- assert.match(src,/app\.on\('before-quit',\(\)=>\{if\(shortcuts\)shortcuts\.unregister\(\);else globalShortcut\.unregisterAll\(\);/);
+ // 2.5 also stops the «Ivi» wake listener first (tests/desktop-v25.test.cjs).
+ assert.match(src,/app\.on\('before-quit',\(\)=>\{(?:wake\?\.stop\(\);)?if\(shortcuts\)shortcuts\.unregister\(\);else globalShortcut\.unregisterAll\(\);/);
  assert.match(src,/app\.on\('will-quit',\(\)=>\{globalShortcut\.unregisterAll\(\);\}\)/);
  assert.ok(!/globalShortcut\.register\(/.test(src),'accelerators are only registered by shortcuts.cjs');
  const pre=fs.readFileSync(path.join(__dirname,'../electron/preload/preload.cjs'),'utf8');

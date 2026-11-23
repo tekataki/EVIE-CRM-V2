@@ -1,5 +1,9 @@
-param([ValidateSet('focus','minimize','maximize','restore','close','volume','media')][string]$Action,[string]$Value,[ValidateRange(1,10)][int]$Count=1)
+param([ValidateSet('focus','minimize','maximize','restore','close','volume','media','showdesktop','lock')][string]$Action,[string]$Value,[ValidateRange(1,10)][int]$Count=1)
 $ErrorActionPreference='Stop'
+# 2.5 · «muestra el escritorio» minimizes every window (Shell's own MinimizeAll); «bloquea la compu» locks the session
+# (the person signs back in; nothing is closed or lost).
+if($Action -eq 'showdesktop'){(New-Object -ComObject Shell.Application).MinimizeAll();'{"submitted":true}';exit 0}
+if($Action -eq 'lock'){Add-Type -TypeDefinition 'using System.Runtime.InteropServices;public static class EvieLock{[DllImport("user32.dll")]public static extern bool LockWorkStation();}';if(-not [EvieLock]::LockWorkStation()){throw 'Windows did not lock the session'};'{"submitted":true}';exit 0}
 if($Action -in @('focus','minimize','maximize','restore','close')){
  if(-not [IO.Path]::IsPathRooted($Value) -or $Value.StartsWith('\\\\') -or [IO.Path]::GetExtension($Value) -ine '.exe'){throw 'Invalid application target'}
  Add-Type -TypeDefinition @'
