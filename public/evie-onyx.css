@@ -491,13 +491,15 @@ html.evie-ui .ox-reveal{opacity:0}
 .ox-tour-ring{position:fixed;z-index:401;pointer-events:none;border-radius:999px;box-shadow:0 0 0 2px rgba(var(--ox-ivi-rgb),.9),0 0 0 9999px rgba(5,5,8,.0),0 0 40px 6px rgba(var(--ox-ivi-rgb),.45);transition:all .5s var(--ox-ease)}
 
 /* ---------------------------------------------------------------- Windows app (frameless window with its own 38 px title bar) */
-html.evie-ui[data-desktop="true"]{--ox-top:50px;--ox-band:108px}
+/* body already has padding-top:38px (phase3.css): fixed controls sit under the bar (--ox-top), flow content needs no extra band. */
+html.evie-ui[data-desktop="true"]{--ox-top:50px;--ox-band:72px}
+html.evie-ui[data-desktop="true"] :is(.app-shell,main#main-content){min-height:calc(100dvh - 38px)!important}
 html.evie-ui[data-desktop="true"] #evie-hud{--core-w:clamp(280px,min(40vw,calc(100dvh - 350px)),780px)}
 html.evie-ui[data-desktop="true"] body:not([data-hud-cards="0"]) #evie-hud{--core-w:clamp(260px,min(36vw,calc(100dvh - 370px)),660px)}
-html.evie-ui[data-desktop="true"] #evie-hud.hud{min-height:calc(100dvh - 38px)!important}
+html.evie-ui[data-desktop="true"] #evie-hud.hud{min-height:calc(100dvh - 38px)!important;padding-top:12px!important}
 html.evie-ui[data-desktop="true"] #sidebar{top:38px!important;height:calc(100% - 38px)!important}
 html.evie-ui[data-desktop="true"] #desktop-titlebar{background:rgba(9,9,11,.82)!important;border-bottom:1px solid var(--ox-line);font-family:var(--ox-mono)!important;letter-spacing:.12em;font-size:10.5px!important;color:var(--ox-muted)!important;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-html.evie-ui[data-desktop="true"] .ch[data-ch-root]{height:calc(100dvh - var(--ox-band) - 16px)!important}
+html.evie-ui[data-desktop="true"] .ch[data-ch-root]{height:calc(100dvh - 38px - var(--ox-band) - 16px)!important}
 
 /* ---------------------------------------------------------------- reduced motion */
 @media (prefers-reduced-motion:reduce){.ox-mini-orb i,.ivi-online b{animation:none}html.evie-ui #evie-hud .hud-core{transition:none}}
