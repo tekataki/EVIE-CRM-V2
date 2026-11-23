@@ -149,6 +149,11 @@ Configuración v3: ver `docs/SETUP.md §7`.
   `npm run test:electron` ya lo usa.
 - **2.3.1 · la app instalada se conecta sola a la nube** (`electron/main/origin.cjs`): cuentas, «Continuar con Google»,
   sincronización e IA funcionan sin configurar variables en Windows. `EVIE_ACCOUNT_API_ORIGIN=off` fuerza el modo local.
+- **2.3.2 · «Continuar con Google» en Windows**: antes de entrar, el candado de escritorio bloqueaba también la
+  petición que abre el navegador, y la pantalla de acceso se quedaba «esperando». Ahora `google.signin` está permitido
+  sin sesión (como `account`), y si algo falla la pantalla muestra el motivo y vuelve a habilitar el botón. Con
+  `EVIE_DESKTOP_PROFILE` (pruebas) la app ya no se registra como dueña de `evie-crm://`, para no quitarle el regreso
+  de Google a la app instalada.
 
 ## Novedades v10 · Fase 6: escritorio, tema claro y Android (2026-11-22)
 - **App de escritorio (Electron)**: el proxy de cuenta ahora permite todas las rutas v10 (chat, memorias, Cabina,

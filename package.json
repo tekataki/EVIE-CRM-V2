@@ -1,7 +1,7 @@
 {
   "name": "evie-crm-v2",
   "productName": "EVIE CRM V2",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "EVIE CRM V2 con Ivy local y Agenda personal",
   "author": "EVIE",
   "main": "electron/main/main.cjs",
