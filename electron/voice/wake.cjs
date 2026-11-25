@@ -7,10 +7,12 @@
 const FATAL=Object.freeze({2:'Windows no tiene reconocimiento de voz para tu idioma. Agrégalo en Configuración → Hora e idioma → Voz.',3:'Windows no pudo preparar el reconocimiento de «Ivi».'});
 const BACKOFF=[1000,2000,5000,10000,20000,30000];
 function createWake({spawn,powershell,script,onWake=()=>{},onState=()=>{},log=()=>{},now=()=>Date.now(),setTimer=setTimeout,clearTimer=clearTimeout}){
- let child=null,wanted=false,state='off',reason='',language='',restarts=[],timer=null,buffer='';
+ let child=null,wanted=false,state='off',reason='',language='',microphone='',restarts=[],timer=null,buffer='';const recent=[];
  const set=(s,why='')=>{state=s;reason=why;try{onState({state,reason,language});}catch{}};
  function line(text){let m;try{m=JSON.parse(text);}catch{return;}if(!m||typeof m!=='object')return;
-  if(m.type==='ready'){language=String(m.language||'').slice(0,10);set('listening');}
+  if(m.type==='ready'){language=String(m.language||'').slice(0,10);microphone=String(m.microphone||'').slice(0,80);set('listening');}
+  // What the recognizer matched (only phrases from its fixed list), for the «¿Qué oye Ivi?» diagnostics.
+  else if(m.type==='heard'){recent.unshift({text:String(m.text||'').slice(0,40),confidence:String(m.confidence||'').slice(0,10),ms:Number.isFinite(m.ms)?m.ms:0,accepted:m.accepted===true,at:now()});recent.length=Math.min(recent.length,12);}
   else if(m.type==='wake'){if(state==='listening'){try{onWake({text:String(m.text||'').slice(0,40),confidence:String(m.confidence||'').slice(0,10)});}catch{}}}
   else if(m.type==='error'){reason=String(m.error||'').slice(0,160);try{log('wake: '+reason);}catch{}}}
  function launch(){
@@ -27,7 +29,7 @@ function createWake({spawn,powershell,script,onWake=()=>{},onState=()=>{},log=()
  }
  function start(){if(wanted&&(child||timer))return status();wanted=true;restarts=[];set('starting');launch();return status();}
  function stop(){wanted=false;if(timer){clearTimer(timer);timer=null;}const c=child;child=null;if(c){try{c.kill();}catch{}}set('off');return status();}
- function status(){return {state,reason,language,running:!!child};}
+ function status(){return {state,reason,language,microphone,running:!!child,recent:recent.map(x=>({...x}))};}
  return {start,stop,status};
 }
 module.exports={createWake};

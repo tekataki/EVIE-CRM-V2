@@ -103,6 +103,26 @@ Configuración v3: ver `docs/SETUP.md §7`.
 - Documentación: `docs/BACKEND-v5.md`, `docs/V5-REPORT.md`, `docs/SMOKE-v5.md`, `docs/ANDROID-CONTRACT.md`, `docs/HANDOFF-SONNET-v5.md`.
 - Pruebas: 343/343 unitarias, 14/14 E2E. **Desplegado** en https://evie-crm-v2.pages.dev (verificado 2026-11-21: los archivos en vivo son iguales a `main`, D1 con tablas v5, Supabase con las 5 migraciones). Estado: `docs/SUPABASE-SETUP.md`.
 
+## Novedades 2.5.1 · celular y computadora siempre iguales, y «Ivi» a la primera (2026-11-25)
+- **Sincronización sin congelarse** (`public/sync-engine.js`, `merge3`):
+  - Cuando el mismo registro cambia en dos dispositivos, los cambios en campos distintos se combinan solos. Ejemplo:
+    en el celular la categoría, en la compu la nota.
+  - Tus ajustes y tu perfil (`$state/root`) ya nunca detienen la sincronización. Si el mismo ajuste cambió en los dos,
+    gana el dispositivo que sincroniza al último y ambas versiones quedan en el historial de reversión.
+  - Solo un mismo campo de un registro (un monto, un título) cambiado distinto en ambos lados sigue preguntando.
+  - Antes, cualquier choque, por pequeño que fuera, congelaba toda la sincronización hasta resolverlo a mano.
+  - Tras un choque de escritura simultánea, la app reintenta sola.
+- **EVIE para Windows sigue revisando** los cambios del celular aunque esté minimizada o tapada por otras ventanas.
+  Windows reporta como «oculta» una ventana tapada, y por eso antes dejaba de revisar.
+- **«Ivi» a la primera:**
+  - Ahora escucha 49 formas de decir su nombre: Ivi, Ibi, Evi, Ebi, Evie, Eevee, Ivy, «y vi»…, con o sin acento, y
+    con «oye», «hey», «ok» u «hola» antes.
+  - Con sensibilidad alta (predeterminada), una palabra corta (≤ 1.6 s) que Windows reconoce con confianza baja
+    también cuenta.
+  - Las pausas cortas cierran la frase antes.
+  - En Configuración → Equipo → «¿Qué oye Ivi?» se ve qué micrófono usa Windows y lo último que oyó, aceptado o ignorado.
+- Pruebas: `tests/sync-merge.test.cjs`, `tests/desktop-wake-v251.test.cjs`.
+
 ## Novedades 2.5 · «Ivi» sin manos, pantalla completa y modo taller (2026-11-23)
 - **«Ivi» sin manos en Windows.** Con «Palabra clave «Ivi»» activa (Ajustes de Ivi o Configuración → Equipo), el
   reconocedor de voz de Windows (`Windows.Media.SpeechRecognition`, en el idioma del sistema, sin internet) escucha
